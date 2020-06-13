@@ -63,7 +63,8 @@ export default {
       'reload',
       'multiple',
       'loading',
-      'show'
+      'show',
+      'sorting'
     ]),
     isPreview () {
       return !this.loading && !this.isListing && !this.isEditor || this.loading && this.$store.state.previewMode
@@ -143,7 +144,7 @@ export default {
       let url = this.$route.path
       if (url === '') url = '/'
       if (url[0] !== '/') url = '/' + url
-
+      url = url + `?sort_by=${this.sorting.by}&order=${(this.sorting.asc)? 'asc' : 'desc'}`
       try {
         const res = await api.fetch(url)
 
@@ -155,6 +156,7 @@ export default {
         document.title = res.name
       } catch (e) {
         this.error = e
+        console.log(e)
       } finally {
         this.setLoading(false)
       }
@@ -170,7 +172,7 @@ export default {
       }
 
       // Esc!
-      if (event.keyCode === 27) {        
+      if (event.keyCode === 27) {
         // If we're on a listing, unselect all
         // files and folders.
         if (this.isListing) {
@@ -183,7 +185,7 @@ export default {
         if (this.isEditor ||
           !this.isFiles ||
           this.loading ||
-          !this.user.perm.delete ||
+          !this.user.attrs.permDelete ||
           (this.isListing && this.selectedCount === 0) ||
           this.$store.state.show != null) return
 
@@ -201,7 +203,7 @@ export default {
         if (this.isEditor ||
           !this.isFiles ||
           this.loading ||
-          !this.user.perm.rename ||
+          !this.user.attrs.permRename ||
           (this.isListing && this.selectedCount === 0) ||
           (this.isListing && this.selectedCount > 1)) return
 

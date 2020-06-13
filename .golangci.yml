@@ -1,4 +1,14 @@
 linters-settings:
+  depguard:
+    list-type: blacklist
+    packages:
+      # logging is allowed only by log.Logger
+      # zap is allowed to use only in log package
+      - go.uber.org/zap
+      - log
+    packages-with-error-message:
+      - go.uber.org/zap: "logging is allowed only by filebrowser/log"
+      - log: "please use filebrowser/log"
   dupl:
     threshold: 100
   exhaustive:
@@ -6,6 +16,8 @@ linters-settings:
   funlen:
     lines: 100
     statements: 50
+  gci:
+    local-prefixes: github.com/filebrowser/filebrowser
   goconst:
     min-len: 2
     min-occurrences: 2
@@ -35,6 +47,17 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Debugf
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Infof
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Warnf
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Errorf
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Criticalf
+          - (github.com/filebrowser/filebrowser/v3/log.Logger).Fatalf
+          - (github.com/cockroachdb/errors).Wrapf
+          - (github.com/cockroachdb/errors).Errorf
   lll:
     line-length: 140
   maligned:
@@ -58,6 +81,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exhaustive
     - funlen
     - gochecknoinits
     - goconst
@@ -92,7 +116,6 @@ linters:
 
   # don't enable:
   # - asciicheck
-  # - exhaustive (TODO: enable after next release; current release at time of writing is v1.27)
   # - gochecknoglobals
   # - gocognit
   # - godot
@@ -108,6 +131,9 @@ issues:
     - path: cmd/.*.go
       linters:
         - gochecknoinits
+    - path: log/.*.go
+      linters:
+        - gochecknoinits
     - path: .*_test.go
       linters:
         - lll
@@ -119,14 +145,12 @@ issues:
     - text: "Auther"
       linters:
         - misspell
+    - text: 'declaration of "err"'
+      linters:
+        - govet
 
 run:
   skip-dirs:
     - frontend/
   skip-files:
     - http/rice-box.go
-
-# golangci.com configuration
-# https://github.com/golangci/golangci/wiki/Configuration
-service:
-  golangci-lint-version: 1.27.x # use the fixed version to not introduce new linters unexpectedly

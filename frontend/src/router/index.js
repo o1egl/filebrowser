@@ -26,7 +26,7 @@ const router = new Router({
       name: 'Login',
       component: Login,
       beforeEnter: (to, from, next) => {
-        if (store.getters.isLogged) {
+        if (store.getters.isLogged && !store.state.user.attrs.anonymous) {
           return next({ path: '/files' })
         }
 
@@ -137,7 +137,7 @@ router.beforeEach((to, from, next) => {
     }
 
     if (to.matched.some(record => record.meta.requiresAdmin)) {
-      if (!store.state.user.perm.admin) {
+      if (!store.state.user.attrs.permAdmin) {
         next({ path: '/403' })
         return
       }

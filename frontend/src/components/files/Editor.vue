@@ -9,7 +9,7 @@
         <span>{{ req.name }}</span>
       </div>
 
-      <button @click="save" v-show="user.perm.modify" :aria-label="$t('buttons.save')" :title="$t('buttons.save')" id="save-button" class="action">
+      <button @click="save" v-show="user.attrs.permModify" :aria-label="$t('buttons.save')" :title="$t('buttons.save')" id="save-button" class="action">
         <i class="material-icons">save</i>
       </button>
     </div>
@@ -82,7 +82,7 @@ export default {
     window.removeEventListener('keydown', this.keyEvent)
     this.editor.destroy();
   },
-  mounted: function () {    
+  mounted: function () {
     const fileContent = this.req.content || '';
 
     this.editor = ace.edit('editor', {

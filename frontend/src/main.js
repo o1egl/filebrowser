@@ -3,7 +3,8 @@ import store from '@/store'
 import router from '@/router'
 import i18n from '@/i18n'
 import Vue from '@/utils/vue'
-import { recaptcha, loginPage } from '@/utils/constants'
+import { loginPage } from '@/utils/constants'
+//import { recaptcha, loginPage } from '@/utils/constants'
 import { login, validateLogin } from '@/utils/auth'
 import App from '@/App'
 
@@ -13,9 +14,10 @@ async function start () {
   if (loginPage) {
     await validateLogin()
   } else {
-    await login('', '', '')
+    await login('anonymous', '', '')
   }
 
+/*
   if (recaptcha) {
     await new Promise (resolve => {
       const check = () => {
@@ -28,6 +30,11 @@ async function start () {
 
       check()
     })
+  }*/
+
+  const sort = JSON.parse(localStorage.getItem('sorting'))
+  if (sort) {
+    store.commit('setSorting', sort)
   }
 
   new Vue({

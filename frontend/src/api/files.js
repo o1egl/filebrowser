@@ -5,11 +5,11 @@ import store from '@/store'
 export async function fetch (url) {
   url = removePrefix(url)
 
-  const res = await fetchURL(`/api/resources${url}`, {})
+  const res = await fetchURL(`/api/v1/resources${url}`, {})
 
   if (res.status === 200) {
     let data = await res.json()
-    data.url = `/files${url}`
+    data.url = `/files${data.path}`
 
     if (data.isDir) {
       if (!data.url.endsWith('/')) data.url += '/'
@@ -40,13 +40,13 @@ async function resourceAction (url, method, content) {
     opts.body = content
   }
 
-  const res = await fetchURL(`/api/resources${url}`, opts)
+  const res = await fetchURL(`/api/v1/resources${url}`, opts)
 
   if (res.status !== 200) {
     throw new Error(await res.text())
-  } else {
-    return res
   }
+
+  return res
 }
 
 export async function remove (url) {
@@ -57,8 +57,20 @@ export async function put (url, content = '') {
   return resourceAction(url, 'PUT', content)
 }
 
+export async function downloadToken() {
+  const res = await fetchURL(`/api/v1/download-token`, {
+    method: 'GET'
+  })
+
+  if (res.status !== 200) {
+    throw new Error(res.status)
+  }
+
+  return await res.text()
+}
+
 export function download (format, ...files) {
-  let url = `${baseURL}/api/raw`
+  let url = `${baseURL}/api/v1/raw`
 
   if (files.length === 1) {
     url += removePrefix(files[0]) + '?'
@@ -92,7 +104,7 @@ export async function post (url, content = '', overwrite = false, onupload) {
 
   return new Promise((resolve, reject) => {
     let request = new XMLHttpRequest()
-    request.open('POST', `${baseURL}/api/resources${url}?override=${overwrite}`, true)
+    request.open('POST', `${baseURL}/api/v1/resources${url}?override=${overwrite}`, true)
     request.setRequestHeader('X-Auth', store.state.jwt)
 
     if (typeof onupload === 'function') {
@@ -100,7 +112,7 @@ export async function post (url, content = '', overwrite = false, onupload) {
     }
 
     request.onload = () => {
-      if (request.status === 200) {
+      if (request.status >= 200 && request.status < 300) {
         resolve(request.responseText)
       } else if (request.status === 409) {
         reject(request.status)

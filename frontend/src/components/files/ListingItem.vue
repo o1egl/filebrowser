@@ -1,17 +1,17 @@
 <template>
   <div class="item"
-  role="button"
-  tabindex="0"
-  :draggable="isDraggable"
-  @dragstart="dragStart"
-  @dragover="dragOver"
-  @drop="drop"
-  @click="click"
-  @dblclick="open"
-  @touchstart="touchstart"
-  :data-dir="isDir"
-  :aria-label="name"
-  :aria-selected="isSelected">
+       role="button"
+       tabindex="0"
+       :draggable="isDraggable"
+       @dragstart="dragStart"
+       @dragover="dragOver"
+       @drop="drop"
+       @click="click"
+       @dblclick="open"
+       @touchstart="touchstart"
+       :data-dir="isDir"
+       :aria-label="name"
+       :aria-selected="isSelected">
     <div>
       <img v-if="type==='image' && isThumbsEnabled" v-lazy="thumbnailUrl">
       <i v-else class="material-icons">{{ icon }}</i>
@@ -38,44 +38,44 @@ import moment from 'moment'
 import { files as api } from '@/api'
 import * as upload  from '@/utils/upload'
 
-export default {
-  name: 'item',
-  data: function () {
-    return {
-      touches: 0
-    }
-  },
-  props: ['name', 'isDir', 'url', 'type', 'size', 'modified', 'index'],
-  computed: {
-    ...mapState(['selected', 'req', 'user', 'jwt']),
-    ...mapGetters(['selectedCount']),
-    isSelected () {
-      return (this.selected.indexOf(this.index) !== -1)
-    },
-    icon () {
-      if (this.isDir) return 'folder'
-      if (this.type === 'image') return 'insert_photo'
-      if (this.type === 'audio') return 'volume_up'
-      if (this.type === 'video') return 'movie'
-      return 'insert_drive_file'
-    },
-    isDraggable () {
-      return this.user.perm.rename
-    },
-    canDrop () {
-      if (!this.isDir) return false
-
-      for (let i of this.selected) {
-        if (this.req.items[i].url === this.url) {
-          return false
-        }
+  export default {
+    name: 'item',
+    data: function () {
+      return {
+        touches: 0
       }
+    },
+    props: ['name', 'isDir', 'url', 'type', 'size', 'modified', 'index', 'downloadToken'],
+    computed: {
+      ...mapState(['selected', 'req', 'user', 'jwt']),
+      ...mapGetters(['selectedCount']),
+      isSelected () {
+        return (this.selected.indexOf(this.index) !== -1)
+      },
+      icon () {
+        if (this.isDir) return 'folder'
+        if (this.type === 'image') return 'insert_photo'
+        if (this.type === 'audio') return 'volume_up'
+        if (this.type === 'video') return 'movie'
+        return 'insert_drive_file'
+      },
+      isDraggable () {
+        return this.user.attrs.permRename
+      },
+      canDrop () {
+        if (!this.isDir) return false
+
+        for (let i of this.selected) {
+          if (this.req.items[i].url === this.url) {
+            return false
+          }
+        }
 
       return true
     },
     thumbnailUrl () {
       const path = this.url.replace(/^\/files\//, '')
-      return `${baseURL}/api/preview/thumb/${path}?auth=${this.jwt}&inline=true`
+      return `${baseURL}/api/preview/thumb/${path}?auth=${this.downloadToken}&inline=true`
     },
     isThumbsEnabled () {
       return enableThumbs
@@ -135,7 +135,7 @@ export default {
           to: this.url + this.req.items[i].name,
           name: this.req.items[i].name
         })
-      }      
+      }
 
       let base = el.querySelector('.name').innerHTML + '/'
       let path = this.$route.path + base

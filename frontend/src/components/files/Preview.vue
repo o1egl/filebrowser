@@ -13,9 +13,9 @@
       </button>
 
       <div id="dropdown" :class="{ active : showMore }">
-        <rename-button :disabled="loading" v-if="user.perm.rename"></rename-button>
-        <delete-button :disabled="loading" v-if="user.perm.delete"></delete-button>
-        <download-button :disabled="loading" v-if="user.perm.download"></download-button>
+        <rename-button :disabled="loading" v-if="user.attrs.permRename"></rename-button>
+        <delete-button :disabled="loading" v-if="user.attrs.permDelete"></delete-button>
+        <download-button :disabled="loading" v-if="user.attrs.permDownload"></download-button>
         <info-button :disabled="loading"></info-button>
       </div>
     </div>
@@ -109,13 +109,13 @@ export default {
       return (this.nextLink !== '')
     },
     download () {
-      return `${baseURL}/api/raw${url.encodePath(this.req.path)}?auth=${this.jwt}`
+      return `${baseURL}/api/raw${url.encodePath(this.req.path)}?auth=${this.downloadToken}`
     },
     previewUrl () {
       if (this.req.type === 'image' && !this.fullSize) {
-        return `${baseURL}/api/preview/big${url.encodePath(this.req.path)}?auth=${this.jwt}`
+        return `${baseURL}/api/preview/big${url.encodePath(this.req.path)}?auth=${this.downloadToken}`
       }
-      return `${baseURL}/api/raw${url.encodePath(this.req.path)}?auth=${this.jwt}`
+      return `${baseURL}/api/raw${url.encodePath(this.req.path)}?auth=${this.downloadToken}`
     },
     raw () {
       return `${this.previewUrl}&inline=true`
@@ -169,7 +169,7 @@ export default {
     },
     async updatePreview () {
       if (this.req.subtitles) {
-        this.subtitles = this.req.subtitles.map(sub => `${baseURL}/api/raw${sub}?auth=${this.jwt}&inline=true`)
+        this.subtitles = this.req.subtitles.map(sub => `${baseURL}/api/raw${sub}?token=${this.downloadToken}&inline=true`)
       }
 
       let dirs = this.$route.fullPath.split("/")

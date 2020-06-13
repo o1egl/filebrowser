@@ -14,7 +14,7 @@ export default {
   computed: {
     ...mapState(['user']),
     icon: function () {
-      if (this.user.viewMode === 'mosaic') return 'view_list'
+      if (this.user.attrs.viewMode === 'mosaic') return 'view_list'
       return 'view_module'
     }
   },
@@ -30,7 +30,7 @@ export default {
 
       try {
         await api.update(data, ['viewMode'])
-        this.updateUser(data)
+        this.updateUser({attrs:{viewMode:data.viewMode}})
       } catch (e) {
         this.$showError(e)
       }

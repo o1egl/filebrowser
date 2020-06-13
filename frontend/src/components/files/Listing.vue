@@ -1,5 +1,5 @@
 <template>
-  <div v-if="(req.numDirs + req.numFiles) == 0">
+  <div v-if="(dirs.length + files.length) == 0">
     <h2 class="message">
       <i class="material-icons">sentiment_dissatisfied</i>
       <span>{{ $t('files.lonely') }}</span>
@@ -8,36 +8,36 @@
     <input style="display:none" type="file" id="upload-folder-input" @change="uploadInput($event)" webkitdirectory multiple>
   </div>
   <div v-else id="listing"
-    :class="user.viewMode">
+       :class="user.attrs.viewMode || 'list'">
     <div>
       <div class="item header">
         <div></div>
         <div>
           <p :class="{ active: nameSorted }" class="name"
-            role="button"
-            tabindex="0"
-            @click="sort('name')"
-            :title="$t('files.sortByName')"
-            :aria-label="$t('files.sortByName')">
+             role="button"
+             tabindex="0"
+             @click="sort('name')"
+             :title="$t('files.sortByName')"
+             :aria-label="$t('files.sortByName')">
             <span>{{ $t('files.name') }}</span>
             <i class="material-icons">{{ nameIcon }}</i>
           </p>
 
           <p :class="{ active: sizeSorted }" class="size"
-            role="button"
-            tabindex="0"
-            @click="sort('size')"
-            :title="$t('files.sortBySize')"
-            :aria-label="$t('files.sortBySize')">
+             role="button"
+             tabindex="0"
+             @click="sort('size')"
+             :title="$t('files.sortBySize')"
+             :aria-label="$t('files.sortBySize')">
             <span>{{ $t('files.size') }}</span>
             <i class="material-icons">{{ sizeIcon }}</i>
           </p>
           <p :class="{ active: modifiedSorted }" class="modified"
-            role="button"
-            tabindex="0"
-            @click="sort('modified')"
-            :title="$t('files.sortByLastModified')"
-            :aria-label="$t('files.sortByLastModified')">
+             role="button"
+             tabindex="0"
+             @click="sort('modified')"
+             :title="$t('files.sortByLastModified')"
+             :aria-label="$t('files.sortByLastModified')">
             <span>{{ $t('files.lastModified') }}</span>
             <i class="material-icons">{{ modifiedIcon }}</i>
           </p>
@@ -45,31 +45,33 @@
       </div>
     </div>
 
-    <h2 v-if="req.numDirs > 0">{{ $t('files.folders') }}</h2>
-    <div v-if="req.numDirs > 0">
+    <h2 v-if="dirs.length > 0">{{ $t('files.folders') }}</h2>
+    <div v-if="dirs.length > 0">
       <item v-for="(item) in dirs"
-        :key="base64(item.name)"
-        v-bind:index="item.index"
-        v-bind:name="item.name"
-        v-bind:isDir="item.isDir"
-        v-bind:url="item.url"
-        v-bind:modified="item.modified"
-        v-bind:type="item.type"
-        v-bind:size="item.size">
+            :key="base64(item.name)"
+            v-bind:index="item.index"
+            v-bind:name="item.name"
+            v-bind:isDir="item.isDir"
+            v-bind:url="item.url"
+            v-bind:modified="item.modified"
+            v-bind:type="item.type"
+            v-bind:size="item.size"
+            v-bind:downloadToken="item.downloadToken">
       </item>
     </div>
 
-    <h2 v-if="req.numFiles > 0">{{ $t('files.files') }}</h2>
-    <div v-if="req.numFiles > 0">
+    <h2 v-if="files.length > 0">{{ $t('files.files') }}</h2>
+    <div v-if="files.length > 0">
       <item v-for="(item) in files"
-        :key="base64(item.name)"
-        v-bind:index="item.index"
-        v-bind:name="item.name"
-        v-bind:isDir="item.isDir"
-        v-bind:url="item.url"
-        v-bind:modified="item.modified"
-        v-bind:type="item.type"
-        v-bind:size="item.size">
+            :key="base64(item.name)"
+            v-bind:index="item.index"
+            v-bind:name="item.name"
+            v-bind:isDir="item.isDir"
+            v-bind:url="item.url"
+            v-bind:modified="item.modified"
+            v-bind:type="item.type"
+            v-bind:size="item.size"
+            v-bind:downloadToken="item.downloadToken">
       </item>
     </div>
 
@@ -77,7 +79,7 @@
     <input style="display:none" type="file" id="upload-folder-input" @change="uploadInput($event)" webkitdirectory multiple>
 
     <div :class="{ active: $store.state.multiple }" id="multiple-selection">
-    <p>{{ $t('files.multipleSelectionEnabled') }}</p>
+      <p>{{ $t('files.multipleSelectionEnabled') }}</p>
       <div @click="$store.commit('multiple', false)" tabindex="0" role="button" :title="$t('files.clear')" :aria-label="$t('files.clear')" class="action">
         <i class="material-icons">clear</i>
       </div>
@@ -86,11 +88,11 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex'
-import Item from './ListingItem'
-import css from '@/utils/css'
-import { users, files as api } from '@/api'
-import * as upload  from '@/utils/upload'
+  import { mapState, mapMutations } from 'vuex'
+  import Item from './ListingItem'
+  import css from '@/utils/css'
+  import { files as api } from '@/api'
+  import * as upload  from '@/utils/upload'
 
 export default {
   name: 'listing',
@@ -98,22 +100,23 @@ export default {
   data: function () {
     return {
       showLimit: 50,
-      dragCounter: 0
+      dragCounter: 0,
+      downloadToken: ""
     }
   },
   computed: {
-    ...mapState(['req', 'selected', 'user', 'show']),
+    ...mapState(['req', 'sorting', 'selected', 'user', 'show']),
     nameSorted () {
-      return (this.req.sorting.by === 'name')
+      return (this.sorting.by === 'name')
     },
     sizeSorted () {
-      return (this.req.sorting.by === 'size')
+      return (this.sorting.by === 'size')
     },
     modifiedSorted () {
-      return (this.req.sorting.by === 'modified')
+      return (this.sorting.by === 'modified')
     },
     ascOrdered () {
-      return this.req.sorting.asc
+      return this.sorting.asc
     },
     items () {
       const dirs = []
@@ -162,6 +165,7 @@ export default {
     }
   },
   mounted: function () {
+    api.downloadToken().then(token => this.downloadToken = token)
     // Check the columns size for the first time.
     this.resizeEvent()
 
@@ -434,7 +438,7 @@ export default {
         file.style.opacity = 1
       })
     },
-    async sort (by) {
+    sort (by) {
       let asc = false
 
       if (by === 'name') {
@@ -451,13 +455,8 @@ export default {
         }
       }
 
-      try {
-        await users.update({ id: this.user.id, sorting: { by, asc } }, ['sorting'])
-      } catch (e) {
-        this.$showError(e)
-      }
-
-      this.$store.commit('setReload', true)
+      this.$store.commit('setSorting', {by:by, asc:asc})
+      this.$store.commit('sortRequestItems', {by:by, asc:asc})
     }
   }
 }

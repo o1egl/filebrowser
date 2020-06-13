@@ -16,7 +16,7 @@
       </div>
     </form>
 
-    <form class="card" v-if="!user.lockPassword" @submit="updatePassword">
+    <form class="card" v-if="!user.attrs.lock_password" @submit="updatePassword">
       <div class="card-title">
         <h2>{{ $t('settings.changePassword') }}</h2>
       </div>

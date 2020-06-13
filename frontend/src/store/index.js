@@ -10,6 +10,10 @@ const state = {
   user: null,
   req: {},
   oldReq: {},
+  sorting: {
+    by: 'name',
+    ask: true,
+  },
   clipboard: {
     key: '',
     items: []

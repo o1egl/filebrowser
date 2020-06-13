@@ -1,6 +1,12 @@
-import store from '@/store'
-import { renew } from '@/utils/auth'
 import { baseURL } from '@/utils/constants'
+
+function getCookies() {
+  return document.cookie.split("; ").reduce((c, x) => {
+    const splitted = x.split("=");
+    c[splitted[0]] = splitted[1];
+    return c;
+  }, {});
+}
 
 export async function fetchURL (url, opts) {
   opts = opts || {}
@@ -8,17 +14,15 @@ export async function fetchURL (url, opts) {
 
   let { headers, ...rest } = opts
 
-  const res = await fetch(`${baseURL}${url}`, {
+  const cookies = getCookies()
+  const token = cookies["XSRF-TOKEN"];
+  const res = await fetch(pathJoin([baseURL, url]), {
     headers: {
-      'X-Auth': store.state.jwt,
+      'X-XSRF-TOKEN': token,
       ...headers
     },
     ...rest
   })
-
-  if (res.headers.get('X-Renew-Token') === 'true') {
-    await renew(store.state.jwt)
-  }
 
   return res
 }
@@ -43,3 +47,8 @@ export function removePrefix (url) {
   return url
 }
 
+function pathJoin(parts, sep){
+  let separator = sep || '/';
+  let replace   = new RegExp(separator+'{1,}', 'g');
+  return parts.join(separator).replace(replace, separator);
+}

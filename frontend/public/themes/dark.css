@@ -176,6 +176,14 @@ table th {
   background: var(--surfacePrimary);
 }
 
+#editor-container {
+  background: var(--background);
+}
+
+#editor-container .bar {
+  background: var(--surfacePrimary);
+}
+
 @media (max-width: 736px) {
   #file-selection {
     background: var(--surfaceSecondary) !important;

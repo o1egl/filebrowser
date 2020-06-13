@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "commitlint": "^8.3.5",
+    "standard-version": "^8.0.0"
+  }
+}

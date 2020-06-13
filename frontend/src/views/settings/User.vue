@@ -75,8 +75,8 @@ export default {
   },
   watch: {
     '$route': 'fetchData',
-    'user.perm.admin': function () {
-      if (!this.user.perm.admin) return
+    'user.attrs.permAdmin': function () {
+      if (!this.user.attrs.permAdmin) return
       this.user.lockPassword = false
     }
   },

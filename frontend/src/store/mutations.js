@@ -35,7 +35,7 @@ const mutations = {
       return
     }
 
-    let locale = value.locale
+    let locale = value.attrs.locale
 
     if (locale === '') {
       locale = i18n.detectLocale()
@@ -44,6 +44,10 @@ const mutations = {
     moment.locale(locale)
     i18n.default.locale = locale
     state.user = value
+  },
+  setSorting: (state, value) => {
+    state.sorting = value
+    localStorage.setItem('sorting', JSON.stringify(value))
   },
   setJWT: (state, value) => (state.jwt = value),
   multiple: (state, value) => (state.multiple = value),
@@ -63,17 +67,34 @@ const mutations = {
     if (typeof value !== 'object') return
 
     for (let field in value) {
-      if (field === 'locale') {
-        moment.locale(value[field])
-        i18n.default.locale = value[field]
+      if (field === 'attrs') {
+        for (let attr in value[field]) {
+          if (attr === 'locale') {
+            moment.locale(value[field])
+            i18n.default.locale = value[field]
+          }
+          state.user[field][attr] = value[field][attr]
+        }
+      } else {
+        state.user[field] = value[field]
       }
-
-      state.user[field] = value[field]
     }
   },
   updateRequest: (state, value) => {
     state.oldReq = state.req
     state.req = value
+    state.req.items && state.req.items.sort((a, b) => {
+      const sortOrder = (state.sorting.asc === true)? -1 : 1;
+      const result = (a[state.sorting.by] < b[state.sorting.by]) ? -1 : (a[state.sorting.by] > b[state.sorting.by]) ? 1 : 0;
+      return sortOrder*result
+    })
+  },
+  sortRequestItems: (state, sorting) => {
+    state.req.items && state.req.items.sort((a, b) => {
+      const sortOrder = (sorting.asc === true)? -1 : 1;
+      const result = (a[sorting.by] < b[sorting.by]) ? -1 : (a[sorting.by] > b[sorting.by]) ? 1 : 0;
+      return sortOrder*result
+    })
   },
   updateClipboard: (state, value) => {
     state.clipboard.key = value.key
