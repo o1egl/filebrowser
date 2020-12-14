@@ -10,7 +10,7 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-pkgz/auth v0.12.1
-	github.com/go-pkgz/lcw v0.8.1
+	github.com/go-pkgz/lcw v0.7.1
 	github.com/golang/mock v1.4.4
 	github.com/google/uuid v1.1.2
 	github.com/markbates/pkger v0.17.1

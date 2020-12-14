@@ -1,3 +1,4 @@
+//go:generate go-enum --sql --marshal --lower --names --file $GOFILE
 package api
 
 import (
@@ -179,6 +180,58 @@ func checkFileExistence(fs afero.Fs, filename string, isDir, override bool) *res
 	}
 
 	return nil
+}
+
+/*
+ENUM(
+copy
+move
+)
+*/
+type FileAction int
+
+/*
+ENUM(
+error
+override
+rename
+)
+*/
+type OnConflictAction int
+
+func (fc *fileController) MoveHandler(c *gin.Context) {
+	filename := c.Param("path")
+	action, err := ParseFileAction(c.Query("action"))
+	if err != nil {
+		rest.NewHttpError(err, err.Error(), rest.ErrBadRequest, http.StatusBadRequest)
+		return
+	}
+	_, err = ParseOnConflictAction(c.Query("on-conflict"))
+	if err != nil {
+		rest.NewHttpError(err, err.Error(), rest.ErrBadRequest, http.StatusBadRequest)
+		return
+	}
+
+	user := rest.MustGetUser(c)
+	userFs := afero.NewBasePathFs(fc.root, user.Scope)
+
+	switch action {
+	case FileActionCopy:
+		if !user.Permissions.CanCreate() {
+			msg := "no permissions to create resource"
+			rest.SendErrorJSON(c, http.StatusForbidden, errors.New(msg), msg, rest.ErrCodeNoPermissions)
+		}
+	case FileActionMove:
+		if !user.Permissions.CanRename() {
+			msg := "no permissions to rename resource"
+			rest.SendErrorJSON(c, http.StatusForbidden, errors.New(msg), msg, rest.ErrCodeNoPermissions)
+		}
+	}
+
+	if err := userFs.RemoveAll(filename); err != nil {
+		rest.SendErrorJSON(c, http.StatusInternalServerError, err, "failed to delete file", rest.ErrCodeInternal)
+		return
+	}
 }
 
 func (fc *fileController) DeleteHandler(c *gin.Context) {

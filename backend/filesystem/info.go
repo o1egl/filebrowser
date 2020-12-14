@@ -92,13 +92,13 @@ func ReadDir(fs afero.Fs, fPath string) ([]Info, error) {
 // of files couldn't be opened: we'd have immediately
 // a 500 even though it doesn't matter. So we just log it.
 func detectFileType(fs afero.Fs, fileName string) Type {
-	header, n, err := readHeader(fs, fileName)
-	if err != nil {
-		return TypeBlob
-	}
 
 	mimetype := mime.TypeByExtension(filepath.Ext(fileName))
 	if mimetype == "" {
+		header, n, err := readHeader(fs, fileName)
+		if err != nil {
+			return TypeBlob
+		}
 		mimetype = http.DetectContentType(header[:n])
 	}
 
@@ -109,7 +109,7 @@ func detectFileType(fs afero.Fs, fileName string) Type {
 		return TypeAudio
 	case strings.HasPrefix(mimetype, "image"):
 		return TypeImage
-	case strings.HasPrefix(mimetype, "text") || isText(header[:n]):
+	case strings.HasPrefix(mimetype, "text"):
 		return TypeText
 	default:
 		return TypeBlob
