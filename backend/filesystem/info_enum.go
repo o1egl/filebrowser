@@ -22,9 +22,11 @@ const (
 	TypeText
 	// TypeDir is a Type of type Dir
 	TypeDir
+	// TypeSpecial is a Type of type Special
+	TypeSpecial
 )
 
-const _TypeName = "blobvideoaudioimagetextdir"
+const _TypeName = "blobvideoaudioimagetextdirspecial"
 
 var _TypeNames = []string{
 	_TypeName[0:4],
@@ -33,6 +35,7 @@ var _TypeNames = []string{
 	_TypeName[14:19],
 	_TypeName[19:23],
 	_TypeName[23:26],
+	_TypeName[26:33],
 }
 
 // TypeNames returns a list of possible string values of Type.
@@ -49,6 +52,7 @@ var _TypeMap = map[Type]string{
 	3: _TypeName[14:19],
 	4: _TypeName[19:23],
 	5: _TypeName[23:26],
+	6: _TypeName[26:33],
 }
 
 // String implements the Stringer interface.
@@ -72,6 +76,8 @@ var _TypeValue = map[string]Type{
 	strings.ToLower(_TypeName[19:23]): 4,
 	_TypeName[23:26]:                  5,
 	strings.ToLower(_TypeName[23:26]): 5,
+	_TypeName[26:33]:                  6,
+	strings.ToLower(_TypeName[26:33]): 6,
 }
 
 // ParseType attempts to convert a string to a Type

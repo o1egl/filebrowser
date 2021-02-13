@@ -1,0 +1,8 @@
+version: v1beta1
+build:
+  roots:
+    - proto
+lint:
+  allow_comment_ignores: true
+  ignore:
+    - github.com/envoyproxy/protoc-gen-validate

@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v3/backend/image"
+	"github.com/filebrowser/filebrowser/v3/image"
 )
 
 type TokenService interface {
@@ -23,7 +23,6 @@ type imageHandlers struct {
 	fileCache           FileCache
 	enablePreviewResize bool
 	enableThumbnails    bool
-	dataStore           userGetterStore
 }
 
 type ImageResizer interface {

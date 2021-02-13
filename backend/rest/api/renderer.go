@@ -1,20 +1,19 @@
 package api
 
 import (
+	"fmt"
+	"io/fs"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 	"text/template"
 
-	"github.com/markbates/pkger"
-
 	"github.com/gin-gonic/gin/render"
+
+	"github.com/filebrowser/filebrowser/v3/assets"
 )
 
 type tplEngine struct {
-	Reload bool
-
 	tpl  *template.Template
 	once sync.Once
 }
@@ -24,9 +23,6 @@ func (e *tplEngine) Instance(name string, data interface{}) render.Render {
 		e.tpl = e.loadTemplate()
 	})
 	tpl := e.tpl
-	if e.Reload {
-		tpl = e.loadTemplate()
-	}
 	return &tplRenderer{
 		Template: tpl,
 		Name:     name,
@@ -36,18 +32,53 @@ func (e *tplEngine) Instance(name string, data interface{}) render.Render {
 
 func (e *tplEngine) loadTemplate() *template.Template {
 	var files []string
-	const distPath = "/frontend/dist"
-	err := pkger.Walk(distPath, func(path string, info os.FileInfo, err error) error {
-		if !info.IsDir() && (strings.HasSuffix(info.Name(), ".js") || strings.HasSuffix(info.Name(), ".html")) {
-			fileName := path[strings.Index(path, distPath):]
-			files = append(files, fileName)
+	err := fs.WalkDir(assets.FS(), ".", func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() && (strings.HasSuffix(d.Name(), ".js") || strings.HasSuffix(d.Name(), ".html")) {
+			files = append(files, path)
 		}
 		return nil
 	})
 	if err != nil {
 		panic(err)
 	}
-	return template.Must(parsePkgerTplFiles(template.New("").Delims("[{[", "]}]"), files...))
+	return template.Must(loadTplFiles(template.New("").Delims("[{[", "]}]"), files...))
+}
+
+// loadTplFiles is the helper that loads templates from the assets. If the argument
+// template is nil, it is created from the first file.
+func loadTplFiles(t *template.Template, filenames ...string) (*template.Template, error) {
+	if len(filenames) == 0 {
+		// Not really a problem, but be consistent.
+		return nil, fmt.Errorf("template: no files named in call to ParseFiles")
+	}
+	for _, filename := range filenames {
+		b, err := fs.ReadFile(assets.FS(), filename)
+		if err != nil {
+			return nil, err
+		}
+		s := string(b)
+		name := filename
+		// First template becomes return value if not already defined,
+		// and we use that one for subsequent New calls to associate
+		// all the templates together. Also, if this file has the same name
+		// as t, this file becomes the contents of t, so
+		//  t, err := New(name).Funcs(xxx).ParseFiles(name)
+		// works. Otherwise we create a new template associated with t.
+		var tmpl *template.Template
+		if t == nil {
+			t = template.New(name)
+		}
+		if name == t.Name() {
+			tmpl = t
+		} else {
+			tmpl = t.New(name)
+		}
+		_, err = tmpl.Parse(s)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return t, nil
 }
 
 type tplRenderer struct {

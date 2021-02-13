@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	bolt "go.etcd.io/bbolt"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	"github.com/filebrowser/filebrowser/v3/backend/store"
+	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/filebrowser/filebrowser/v3/store"
 )
 
 // BoltDB implements store.Interface

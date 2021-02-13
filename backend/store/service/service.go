@@ -6,8 +6,8 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/filebrowser/filebrowser/v3/backend/store"
-	"github.com/filebrowser/filebrowser/v3/backend/store/engine"
+	"github.com/filebrowser/filebrowser/v3/store"
+	"github.com/filebrowser/filebrowser/v3/store/engine"
 )
 
 // DataStore wraps store.Interface with additional methods

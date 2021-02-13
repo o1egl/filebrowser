@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	authToken "github.com/go-pkgz/auth/token"
 
-	"github.com/filebrowser/filebrowser/v3/backend/rest"
-	"github.com/filebrowser/filebrowser/v3/backend/store"
+	"github.com/filebrowser/filebrowser/v3/rest"
+	"github.com/filebrowser/filebrowser/v3/store"
 )
 
 type UserStore interface {

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/filebrowser/filebrowser/v3/backend/gen/proto/user/v1;user";
+
+service UserService {
+    rpc Find (FindRequest) returns (FindResponse) {};
+}
+
+message FindRequest {
+}
+
+message FindResponse {
+}

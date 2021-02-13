@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package file.v1;
+
+import "github.com/envoyproxy/protoc-gen-validate/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/filebrowser/filebrowser/v3/backend/gen/proto/file/v1;file";
+
+service FileService {
+    rpc FileInfo (FileInfoRequest) returns (FileInfoResponse) {};
+    rpc List (ListRequest) returns (ListResponse) {};
+    rpc CreateFile (CreateFileRequest) returns (CreateFileResponse) {};
+    rpc CreateDir (CreateDirRequest) returns (CreateDirResponse) {};
+    rpc Remove (RemoveRequest) returns (RemoveResponse) {};
+}
+
+message FileInfoRequest {
+    string path = 1 [(validate.rules).string.prefix = "/"];
+}
+
+message FileInfoResponse {
+    FileInfo info = 1;
+}
+
+enum FileType {
+    FILE_TYPE_UNSPECIFIED = 0;
+    FILE_TYPE_BLOB = 1;
+    FILE_TYPE_VIDEO = 2;
+    FILE_TYPE_AUDIO = 3;
+    FILE_TYPE_IMAGE = 4;
+    FILE_TYPE_TEXT = 5;
+    FILE_TYPE_DIR = 6;
+    // named pipe, device file, or socket
+    FILE_TYPE_SPECIAL = 7;
+}
+
+message FileInfo {
+    string path = 1;
+    string name = 2;
+    int64 size = 3;
+    FileType type = 4;
+    bool is_symlink = 5;
+    google.protobuf.Timestamp mod_time = 6;
+    uint32 mode = 7;
+}
+
+enum FileSortBy {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    FILE_SORT_BY_NAME = 0;
+    FILE_SORT_BY_SIZE = 1;
+    FILE_SORT_BY_MOD_TIME = 2;
+}
+
+enum SortOrder {
+    // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+    SORT_ORDER_DESC = 0;
+    SORT_ORDER_ASC = 1;
+}
+
+message ListRequest {
+    string path = 1 [(validate.rules).string = {prefix: "/"}];
+    FileSortBy sort_by = 2;
+    SortOrder sort_order = 3;
+}
+
+message ListResponse {
+    FileInfo info = 1;
+    repeated FileInfo children = 2;
+}
+
+message CreateFileRequest {
+    string path = 1 [(validate.rules).string = {prefix: "/"}];
+    bool override = 2;
+    bytes content = 3;
+}
+
+message CreateFileResponse {}
+
+message CreateDirRequest {
+    string path = 1 [(validate.rules).string = {prefix: "/"}];
+}
+
+message CreateDirResponse {}
+
+message RemoveRequest {
+    string path = 1 [(validate.rules).string = {prefix: "/"}];
+    bool force = 2;
+}
+
+message RemoveResponse {}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,9 +16,10 @@ import (
 	"github.com/go-pkgz/lcw"
 	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	"github.com/filebrowser/filebrowser/v3/backend/rest/middleware"
-	"github.com/filebrowser/filebrowser/v3/backend/token"
+	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/filebrowser/filebrowser/v3/rest/middleware"
+	"github.com/filebrowser/filebrowser/v3/rest/rpc"
+	"github.com/filebrowser/filebrowser/v3/token"
 )
 
 const (
@@ -174,18 +176,19 @@ func (s *Server) newEngine() *gin.Engine {
 		MaxAge:           300,
 		AllowWebSockets:  true,
 	}))
-	engine.HTMLRender = &tplEngine{Reload: true}
+	engine.HTMLRender = &tplEngine{}
 
 	authHandler, avatarHandler := s.Authenticator.Handlers()
 	authMiddleware := s.Authenticator.Middleware()
 
-	publicCtrl, fileCtrl := s.makeHandlerGroups()
+	publicCtrl, _ := s.makeHandlerGroups()
 
 	engine.NoRoute(publicCtrl.indexHandler)
 	router := engine.Group(s.getServerBasePath())
 	router.GET("/static/*path", publicCtrl.staticHandler)
 	router.Any("/auth/*path", middleware.NoCache, gin.WrapH(authHandler))
-	v1 := router.Group("/api/v1")
+	router.GET("/avatar/*path", gin.WrapH(avatarHandler))
+	/*v1 := router.Group("/api/v1")
 	{
 		public := v1.Group("")
 		{
@@ -204,6 +207,19 @@ func (s *Server) newEngine() *gin.Engine {
 			protected.PUT("/resources/*path", fileCtrl.ModifyHandler)
 			protected.DELETE("/resources/*path", fileCtrl.DeleteHandler)
 		}
+	}*/
+
+	const rpcPathPrefix = "/api"
+	apiRouter := router.Group(rpcPathPrefix)
+	{
+		apiRouter.Use(middleware.Timeout(ProtectedRoutesTimeout))
+		apiRouter.Use(middleware.LimitHandler(tollbooth.NewLimiter(ProtectedRouterLimiter, nil)))
+		apiRouter.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(s.Store), middleware.NoCache)
+		// mount rpc handlers
+		fileServer := rpc.NewFileServiceServer(rpcPathPrefix, s.Root)
+		apiRouter.POST(strings.TrimPrefix(fileServer.PathPrefix(), rpcPathPrefix)+"*method", gin.WrapH(fileServer))
+		userServer := rpc.NewUserServiceServer(rpcPathPrefix)
+		apiRouter.POST(strings.TrimPrefix(userServer.PathPrefix(), rpcPathPrefix)+"*method", gin.WrapH(userServer))
 	}
 
 	return engine
@@ -217,7 +233,7 @@ func (s *Server) makeHandlerGroups() (*publicHandlers, *fileController) {
 	}
 
 	fileCtrl := &fileController{
-		root: s.Root,
+		//root: s.Root,
 	}
 
 	return publicHandlers, fileCtrl

@@ -1,9 +1,9 @@
 *.db
 .idea/
-filebrowser
+/filebrowser
 dist/
 var/
-
+build/
 .DS_Store
 node_modules
 /frontend/dist

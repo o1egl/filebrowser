@@ -2,25 +2,11 @@
 package api
 
 import (
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-
-	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
-	"github.com/spf13/afero"
-
-	"github.com/filebrowser/filebrowser/v3/backend/filesystem"
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	"github.com/filebrowser/filebrowser/v3/backend/rest"
+	"github.com/filebrowser/filebrowser/v3/filesystem"
 )
 
 type fileController struct {
-	root afero.Fs
+	root string
 }
 
 type Resource struct {
@@ -29,7 +15,7 @@ type Resource struct {
 	Items   []filesystem.Info `json:"items"`
 }
 
-func (fc *fileController) ListHandler(c *gin.Context) {
+/*func (fc *fileController) ListHandler(c *gin.Context) {
 	filename := c.Param("path")
 	sortBy := c.Param("sort_by")
 	sortOrder := c.Param("order")
@@ -180,7 +166,7 @@ func checkFileExistence(fs afero.Fs, filename string, isDir, override bool) *res
 	}
 
 	return nil
-}
+}*/
 
 /*
 ENUM(
@@ -199,7 +185,7 @@ rename
 */
 type OnConflictAction int
 
-func (fc *fileController) MoveHandler(c *gin.Context) {
+/*func (fc *fileController) MoveHandler(c *gin.Context) {
 	filename := c.Param("path")
 	action, err := ParseFileAction(c.Query("action"))
 	if err != nil {
@@ -249,4 +235,4 @@ func (fc *fileController) DeleteHandler(c *gin.Context) {
 		rest.SendErrorJSON(c, http.StatusInternalServerError, err, "failed to delete file", rest.ErrCodeInternal)
 		return
 	}
-}
+}*/

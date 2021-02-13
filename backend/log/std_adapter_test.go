@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	mock "github.com/filebrowser/filebrowser/v3/backend/log/mock"
+	"github.com/filebrowser/filebrowser/v3/log"
+	mock "github.com/filebrowser/filebrowser/v3/log/mock"
 )
 
 func TestToStdLogger(t *testing.T) {

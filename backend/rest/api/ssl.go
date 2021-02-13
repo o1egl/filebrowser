@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/acme/autocert"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	"github.com/filebrowser/filebrowser/v3/backend/rest/middleware"
+	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/filebrowser/filebrowser/v3/rest/middleware"
 )
 
 // sslMode defines ssl mode for Server server

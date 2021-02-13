@@ -13,7 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
+	"github.com/filebrowser/filebrowser/v3/log"
 )
 
 func TestMain(m *testing.M) {

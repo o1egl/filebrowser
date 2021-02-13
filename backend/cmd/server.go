@@ -21,13 +21,13 @@ import (
 	"github.com/spf13/afero"
 	bolt "go.etcd.io/bbolt"
 
-	"github.com/filebrowser/filebrowser/v3/backend/hash"
-	"github.com/filebrowser/filebrowser/v3/backend/log"
-	"github.com/filebrowser/filebrowser/v3/backend/rest/api"
-	"github.com/filebrowser/filebrowser/v3/backend/store"
-	"github.com/filebrowser/filebrowser/v3/backend/store/engine"
-	"github.com/filebrowser/filebrowser/v3/backend/store/service"
-	"github.com/filebrowser/filebrowser/v3/backend/token"
+	"github.com/filebrowser/filebrowser/v3/hash"
+	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/filebrowser/filebrowser/v3/rest/api"
+	"github.com/filebrowser/filebrowser/v3/store"
+	"github.com/filebrowser/filebrowser/v3/store/engine"
+	"github.com/filebrowser/filebrowser/v3/store/service"
+	"github.com/filebrowser/filebrowser/v3/token"
 )
 
 // ServerCommand with command line flags and env

@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/filebrowser/filebrowser/v3/backend/store"
+	"github.com/filebrowser/filebrowser/v3/store"
 )
 
 type userKeyType int

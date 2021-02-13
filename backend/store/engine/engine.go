@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 
-	"github.com/filebrowser/filebrowser/v3/backend/store"
+	"github.com/filebrowser/filebrowser/v3/store"
 )
 
 // Interface defines methods provided by low-level storage engine

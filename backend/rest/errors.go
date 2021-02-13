@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
+	"github.com/filebrowser/filebrowser/v3/log"
 )
 
 // All error codes for UI mapping and translation

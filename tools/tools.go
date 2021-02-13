@@ -10,7 +10,11 @@ package tools
 // nolint
 import (
 	_ "github.com/abice/go-enum"
+	_ "github.com/bufbuild/buf/cmd/buf"
+	_ "github.com/envoyproxy/protoc-gen-validate"
 	_ "github.com/golang/mock/gomock"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/hexdigest/gowrap"
+	_ "github.com/twitchtv/twirp"
 	_ "golang.org/x/tools/cmd/goimports"
 )

@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
+	"github.com/filebrowser/filebrowser/v3/log"
 )
 
 // Key to use when setting the request ID.

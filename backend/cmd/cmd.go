@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filebrowser/filebrowser/v3/backend/log"
+	"github.com/filebrowser/filebrowser/v3/log"
 )
 
 // CommonOptionsCommander extends flags.Commander with SetCommon
