@@ -17,4 +17,6 @@ import (
 	_ "github.com/hexdigest/gowrap"
 	_ "github.com/twitchtv/twirp"
 	_ "golang.org/x/tools/cmd/goimports"
+	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	_ "entgo.io/ent/cmd/ent"
 )

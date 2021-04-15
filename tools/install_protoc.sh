@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-readonly version=3.14.0
+readonly version=3.15.6
 
 case "$(uname -s)" in
   Linux*)
@@ -23,5 +23,6 @@ esac
 rm -rf protoc
 curl -L "https://github.com/protocolbuffers/protobuf/releases/download/v${version}/${filename}" -o protoc.zip
 unzip -o protoc.zip -d protoc
+mkdir -p bin/
 mv protoc/bin/protoc bin/protoc
 rm protoc.zip

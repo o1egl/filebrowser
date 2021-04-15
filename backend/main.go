@@ -16,9 +16,10 @@ type Opts struct {
 
 	Log LogGroup `group:"log" namespace:"log" env-namespace:"LOG"`
 
-	ServerURL    string `long:"url" env:"SERVER_URL" required:"true" description:"url to file browser"`
-	SharedSecret string `long:"secret" env:"SECRET" required:"true" description:"shared secret key"`
-	Version      func() `long:"version" description:"print version"`
+	Config       func(string) `long:"config" short:"c" env:"CONFIG" description:"path to config.ini"`
+	ServerURL    string       `long:"url" env:"SERVER_URL" required:"true" description:"url to file browser"`
+	SharedSecret string       `long:"secret" env:"SECRET" required:"true" description:"shared secret key"`
+	Version      func()       `long:"version" description:"print version"`
 }
 
 // LogGroup defines options group log params
@@ -31,11 +32,19 @@ var revision = "unknown"
 
 func main() {
 	var opts Opts
+	p := flags.NewParser(&opts, flags.Default)
+
 	opts.Version = func() {
 		fmt.Printf("File Browser %s\n", revision)
 		os.Exit(0)
 	}
-	p := flags.NewParser(&opts, flags.Default)
+	opts.Config = func(filename string) {
+		err := flags.NewIniParser(p).ParseFile(filename)
+		if err != nil {
+			log.Fatalf("Failed to read config file: %s", err)
+		}
+	}
+
 	p.CommandHandler = func(command flags.Commander, args []string) error {
 		if err := setupLogger(opts.Log.Level, opts.Log.Format); err != nil {
 			fmt.Printf("[ERROR] failed to initialize logger: %s", err)

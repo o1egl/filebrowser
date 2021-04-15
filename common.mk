@@ -22,79 +22,65 @@ PATH := $(TOOLS_BIN):$(PATH)
 export PATH
 
 # go tools
-.PHONY: go-deps
-go-deps: $(TOOLS_DIR)/go.mod $(TOOLS_DIR)/go.sum
+TOOLS_GO_DEPS := $(TOOLS_DIR)/go.mod $(TOOLS_DIR)/go.sum
 
 go-enum=$(TOOLS_BIN)/go-enum
-install-go-enum: $(TOOLS_BIN)/go-enum
-$(TOOLS_BIN)/go-enum: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/go-enum: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/go-enum github.com/abice/go-enum
+$(go-enum): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/abice/go-enum
 
 goimports=$(TOOLS_BIN)/goimports
-install-goimports: $(TOOLS_BIN)/goimports
-$(TOOLS_BIN)/goimports: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/goimports: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/goimports golang.org/x/tools/cmd/goimports
+$(goimports): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ golang.org/x/tools/cmd/goimports
 
 golangci-lint=$(TOOLS_BIN)/golangci-lint
-install-golangci-lint: $(TOOLS_BIN)/golangci-lint
-$(TOOLS_BIN)/golangci-lint: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/golangci-lint: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/golangci-lint github.com/golangci/golangci-lint/cmd/golangci-lint
+$(golangci-lint): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/golangci/golangci-lint/cmd/golangci-lint
 
 mockgen=$(TOOLS_BIN)/mockgen
-install-mockgen: $(TOOLS_BIN)/mockgen
-$(TOOLS_BIN)/mockgen: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/mockgen: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/mockgen github.com/golang/mock/mockgen
+$(mockgen): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/golang/mock/mockgen
 
 buf=$(TOOLS_BIN)/buf
-install-buf: $(TOOLS_BIN)/buf
-$(TOOLS_BIN)/buf: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/buf: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/buf github.com/bufbuild/buf/cmd/buf
+$(buf): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/bufbuild/buf/cmd/buf
 
 protoc=$(TOOLS_BIN)/protoc
-install-protoc: $(TOOLS_BIN)/protoc
-$(TOOLS_BIN)/protoc: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/protoc: tools/install_protoc.sh
+$(protoc): $(TOOLS_DIR)/install_protoc.sh
 	$Q cd ${TOOLS_DIR} && ./install_protoc.sh && touch $@
 
+protoc-gen-go=$(TOOLS_BIN)/protoc-gen-go
+$(protoc-gen-go): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ google.golang.org/protobuf/cmd/protoc-gen-go
+
 protoc-gen-validate=$(TOOLS_BIN)/protoc-gen-validate
-install-protoc-gen-validate: $(TOOLS_BIN)/protoc-gen-validate
-$(TOOLS_BIN)/protoc-gen-validate: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/protoc-gen-validate: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/protoc-gen-validate github.com/envoyproxy/protoc-gen-validate
+$(protoc-gen-validate): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/envoyproxy/protoc-gen-validate
 
 protoc-gen-twirp=$(TOOLS_BIN)/protoc-gen-twirp
-install-protoc-gen-twirp: $(TOOLS_BIN)/protoc-gen-twirp
-$(TOOLS_BIN)/protoc-gen-twirp: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/protoc-gen-twirp: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/protoc-gen-twirp github.com/twitchtv/twirp/protoc-gen-twirp
+$(protoc-gen-twirp): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/twitchtv/twirp/protoc-gen-twirp
 
 gowrap=$(TOOLS_BIN)/gowrap
-install-gowrap: $(TOOLS_BIN)/gowrap
-$(TOOLS_BIN)/gowrap: export GOFLAGS = -mod=readonly
-$(TOOLS_BIN)/gowrap: go-deps
-	$Q cd ${TOOLS_DIR} && go build -o bin/gowrap github.com/hexdigest/gowrap/cmd/gowrap
+$(gowrap): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/hexdigest/gowrap/cmd/gowrap
+
+ent=$(TOOLS_BIN)/ent
+$(ent): $(TOOLS_GO_DEPS)
+	$Q cd ${TOOLS_DIR} && go build -o $@ entgo.io/ent/cmd/ent
 
 # js tools
-.PHONY: js-deps
-js-deps: $(TOOLS_DIR)/node_modules/.modified
-$(TOOLS_DIR)/node_modules/.modified: $(TOOLS_DIR)/package.json $(TOOLS_DIR)/yarn.lock
+TOOLS_JS_DEPS: $(TOOLS_DIR)/node_modules/.modified
+$(TOOLS_JS_DEPS): $(TOOLS_DIR)/package.json $(TOOLS_DIR)/yarn.lock
 	$Q cd ${TOOLS_DIR} && yarn install
 #	$Q find ${TOOLS_DIR}/node_modules -type f | xargs touch -am
-	$Q touch $@
+	$Q touch -am $@
 
 standard-version=$(TOOLS_BIN)/standard-version
-install-standard-version: $(TOOLS_BIN)/standard-version
-$(TOOLS_BIN)/standard-version: js-deps
+$(standard-version): $(TOOLS_JS_DEPS)
 	$Q ln -sf $(TOOLS_DIR)/node_modules/.bin/standard-version $@
-	$Q touch $@
+	$Q touch -am $@
 
 commitlint=$(TOOLS_BIN)/commitlint
-install-commitlint: $(TOOLS_BIN)/commitlint
-$(TOOLS_BIN)/commitlint: js-deps
+$(commitlint): $(TOOLS_JS_DEPS)
 	$Q ln -sf $(TOOLS_DIR)/node_modules/.bin/commitlint $@
-	$Q touch $@
+	$Q touch -am $@

@@ -5,14 +5,15 @@ package log
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 const (
-	// FormatPlain is a Format of type Plain
+	// FormatPlain is a Format of type Plain.
 	FormatPlain Format = iota
-	// FormatJson is a Format of type Json
+	// FormatJson is a Format of type Json.
 	FormatJson
 )
 
@@ -74,26 +75,72 @@ func (x *Format) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _FormatErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *Format) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *Format) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = Format(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseFormat(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = Format(v)
+	case string:
+		*x, err = ParseFormat(v)
+	case []byte:
+		*x, err = ParseFormat(string(v))
+	case Format:
+		*x = v
+	case int:
+		*x = Format(v)
+	case *Format:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = Format(v)
+	case uint64:
+		*x = Format(v)
+	case *int:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *int64:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = Format(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *uint:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *uint64:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *string:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x, err = ParseFormat(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.
@@ -102,17 +149,17 @@ func (x Format) Value() (driver.Value, error) {
 }
 
 const (
-	// LevelDebug is a Level of type Debug
+	// LevelDebug is a Level of type Debug.
 	LevelDebug Level = iota
-	// LevelInfo is a Level of type Info
+	// LevelInfo is a Level of type Info.
 	LevelInfo
-	// LevelWarn is a Level of type Warn
+	// LevelWarn is a Level of type Warn.
 	LevelWarn
-	// LevelError is a Level of type Error
+	// LevelError is a Level of type Error.
 	LevelError
-	// LevelCritical is a Level of type Critical
+	// LevelCritical is a Level of type Critical.
 	LevelCritical
-	// LevelFatal is a Level of type Fatal
+	// LevelFatal is a Level of type Fatal.
 	LevelFatal
 )
 
@@ -190,26 +237,72 @@ func (x *Level) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _LevelErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *Level) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *Level) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = Level(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseLevel(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = Level(v)
+	case string:
+		*x, err = ParseLevel(v)
+	case []byte:
+		*x, err = ParseLevel(string(v))
+	case Level:
+		*x = v
+	case int:
+		*x = Level(v)
+	case *Level:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = Level(v)
+	case uint64:
+		*x = Level(v)
+	case *int:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = Level(*v)
+	case *int64:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = Level(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = Level(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = Level(*v)
+	case *uint:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = Level(*v)
+	case *uint64:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x = Level(*v)
+	case *string:
+		if v == nil {
+			return _LevelErrNilPtr
+		}
+		*x, err = ParseLevel(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.

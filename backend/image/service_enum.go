@@ -5,20 +5,21 @@ package image
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 const (
-	// FormatJpeg is a Format of type Jpeg
+	// FormatJpeg is a Format of type Jpeg.
 	FormatJpeg Format = iota
-	// FormatPng is a Format of type Png
+	// FormatPng is a Format of type Png.
 	FormatPng
-	// FormatGif is a Format of type Gif
+	// FormatGif is a Format of type Gif.
 	FormatGif
-	// FormatTiff is a Format of type Tiff
+	// FormatTiff is a Format of type Tiff.
 	FormatTiff
-	// FormatBmp is a Format of type Bmp
+	// FormatBmp is a Format of type Bmp.
 	FormatBmp
 )
 
@@ -92,26 +93,72 @@ func (x *Format) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _FormatErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *Format) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *Format) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = Format(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseFormat(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = Format(v)
+	case string:
+		*x, err = ParseFormat(v)
+	case []byte:
+		*x, err = ParseFormat(string(v))
+	case Format:
+		*x = v
+	case int:
+		*x = Format(v)
+	case *Format:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = Format(v)
+	case uint64:
+		*x = Format(v)
+	case *int:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *int64:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = Format(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *uint:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *uint64:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x = Format(*v)
+	case *string:
+		if v == nil {
+			return _FormatErrNilPtr
+		}
+		*x, err = ParseFormat(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.
@@ -120,11 +167,11 @@ func (x Format) Value() (driver.Value, error) {
 }
 
 const (
-	// QualityHigh is a Quality of type High
+	// QualityHigh is a Quality of type High.
 	QualityHigh Quality = iota
-	// QualityMedium is a Quality of type Medium
+	// QualityMedium is a Quality of type Medium.
 	QualityMedium
-	// QualityLow is a Quality of type Low
+	// QualityLow is a Quality of type Low.
 	QualityLow
 )
 
@@ -190,26 +237,72 @@ func (x *Quality) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _QualityErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *Quality) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *Quality) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = Quality(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseQuality(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = Quality(v)
+	case string:
+		*x, err = ParseQuality(v)
+	case []byte:
+		*x, err = ParseQuality(string(v))
+	case Quality:
+		*x = v
+	case int:
+		*x = Quality(v)
+	case *Quality:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = Quality(v)
+	case uint64:
+		*x = Quality(v)
+	case *int:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = Quality(*v)
+	case *int64:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = Quality(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = Quality(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = Quality(*v)
+	case *uint:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = Quality(*v)
+	case *uint64:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x = Quality(*v)
+	case *string:
+		if v == nil {
+			return _QualityErrNilPtr
+		}
+		*x, err = ParseQuality(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.
@@ -218,9 +311,9 @@ func (x Quality) Value() (driver.Value, error) {
 }
 
 const (
-	// ResizeModeFit is a ResizeMode of type Fit
+	// ResizeModeFit is a ResizeMode of type Fit.
 	ResizeModeFit ResizeMode = iota
-	// ResizeModeFill is a ResizeMode of type Fill
+	// ResizeModeFill is a ResizeMode of type Fill.
 	ResizeModeFill
 )
 
@@ -282,26 +375,72 @@ func (x *ResizeMode) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _ResizeModeErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *ResizeMode) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *ResizeMode) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = ResizeMode(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseResizeMode(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = ResizeMode(v)
+	case string:
+		*x, err = ParseResizeMode(v)
+	case []byte:
+		*x, err = ParseResizeMode(string(v))
+	case ResizeMode:
+		*x = v
+	case int:
+		*x = ResizeMode(v)
+	case *ResizeMode:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = ResizeMode(v)
+	case uint64:
+		*x = ResizeMode(v)
+	case *int:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = ResizeMode(*v)
+	case *int64:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = ResizeMode(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = ResizeMode(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = ResizeMode(*v)
+	case *uint:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = ResizeMode(*v)
+	case *uint64:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x = ResizeMode(*v)
+	case *string:
+		if v == nil {
+			return _ResizeModeErrNilPtr
+		}
+		*x, err = ParseResizeMode(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.

@@ -5,24 +5,25 @@ package filesystem
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 const (
-	// TypeBlob is a Type of type Blob
+	// TypeBlob is a Type of type Blob.
 	TypeBlob Type = iota
-	// TypeVideo is a Type of type Video
+	// TypeVideo is a Type of type Video.
 	TypeVideo
-	// TypeAudio is a Type of type Audio
+	// TypeAudio is a Type of type Audio.
 	TypeAudio
-	// TypeImage is a Type of type Image
+	// TypeImage is a Type of type Image.
 	TypeImage
-	// TypeText is a Type of type Text
+	// TypeText is a Type of type Text.
 	TypeText
-	// TypeDir is a Type of type Dir
+	// TypeDir is a Type of type Dir.
 	TypeDir
-	// TypeSpecial is a Type of type Special
+	// TypeSpecial is a Type of type Special.
 	TypeSpecial
 )
 
@@ -104,26 +105,72 @@ func (x *Type) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _TypeErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *Type) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *Type) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = Type(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseType(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = Type(v)
+	case string:
+		*x, err = ParseType(v)
+	case []byte:
+		*x, err = ParseType(string(v))
+	case Type:
+		*x = v
+	case int:
+		*x = Type(v)
+	case *Type:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = Type(v)
+	case uint64:
+		*x = Type(v)
+	case *int:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = Type(*v)
+	case *int64:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = Type(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = Type(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = Type(*v)
+	case *uint:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = Type(*v)
+	case *uint64:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x = Type(*v)
+	case *string:
+		if v == nil {
+			return _TypeErrNilPtr
+		}
+		*x, err = ParseType(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.

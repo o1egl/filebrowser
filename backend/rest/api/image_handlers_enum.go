@@ -5,14 +5,15 @@ package api
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 const (
-	// PreviewSizeThumb is a PreviewSize of type Thumb
+	// PreviewSizeThumb is a PreviewSize of type Thumb.
 	PreviewSizeThumb PreviewSize = iota
-	// PreviewSizeBig is a PreviewSize of type Big
+	// PreviewSizeBig is a PreviewSize of type Big.
 	PreviewSizeBig
 )
 
@@ -74,26 +75,72 @@ func (x *PreviewSize) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _PreviewSizeErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *PreviewSize) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *PreviewSize) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = PreviewSize(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParsePreviewSize(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = PreviewSize(v)
+	case string:
+		*x, err = ParsePreviewSize(v)
+	case []byte:
+		*x, err = ParsePreviewSize(string(v))
+	case PreviewSize:
+		*x = v
+	case int:
+		*x = PreviewSize(v)
+	case *PreviewSize:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = PreviewSize(v)
+	case uint64:
+		*x = PreviewSize(v)
+	case *int:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = PreviewSize(*v)
+	case *int64:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = PreviewSize(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = PreviewSize(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = PreviewSize(*v)
+	case *uint:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = PreviewSize(*v)
+	case *uint64:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x = PreviewSize(*v)
+	case *string:
+		if v == nil {
+			return _PreviewSizeErrNilPtr
+		}
+		*x, err = ParsePreviewSize(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.

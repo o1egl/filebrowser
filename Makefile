@@ -1,27 +1,17 @@
 include common.mk
 
-## lint: Run all lints
-.PHONY: lint
-lint: lint-proto lint-commits | ; $(info $(M) running linters…)
+## build: Build app
+.PHONY: build
+build: build-backend
 
-## lint-proto: Run proto linters
-.PHONY: lint-proto
-lint-proto: install-buf | ; $(info $(M) running proto linters…)
-	$Q $(buf) check lint
-
-## lint-commits: Run commit linters
-.PHONY: lint-commits
-lint-commits: install-commitlint | ; $(info $(M) running commit linters…)
-	$Q ./scripts/commitlint.sh
-
-## release: Bump applivation version
-.PHONY: bump-version
-bump-version: install-standard-version | ; $(info $(M) bumping app version…)
-	$Q ./scripts/bump_version.sh
+## build-backend: Build backend
+.PHONY: build-backend
+build-backend:
+	$Q cd backend && make build
 
 ## proto: Compile proto files
 .PHONY: proto
-proto: install-protoc install-protoc-gen-validate install-protoc-gen-twirp install-gowrap | ; $(info $(M) generate protos…)
+proto: $(protoc) $(protoc-gen-go) $(protoc-gen-validate) $(protoc-gen-twirp) $(gowrap) | ; $(info $(M) generate protos…)
 	$Q rm -rf ./backend/gen/proto
 	$Q mkdir -p ./backend/gen/proto
 	$Q for file in $$(find ./proto -name '*.proto' -not -path "*github.com*"); do \
@@ -34,13 +24,26 @@ proto: install-protoc install-protoc-gen-validate install-protoc-gen-twirp insta
 	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/file/v1 -i FileService -t twirp_validate -g -o ./gen/proto/file/v1/file_service.validate.go
 	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/user/v1 -i UserService -t twirp_validate -g -o ./gen/proto/user/v1/user_service.validate.go
 
+## lint: Run all lints
+.PHONY: lint
+lint: lint-commits | ; $(info $(M) running linters…)
+
+## lint-commits: Run commit linters
+.PHONY: lint-commits
+lint-commits: $(commitlint) | ; $(info $(M) running commit linters…)
+	$Q ./scripts/commitlint.sh
+
+## bump-version: Bump version
+.PHONY: bump-version
+bump-version: $(standard-version) | ; $(info $(M) bumping app version…)
+	$Q ./scripts/bump_version.sh
+
 ## clean: Remove generated files
 .PHONY: clean
 clean:
 #	tools
 	$Q rm -rf $(TOOLS_DIR)/bin
 	$Q rm -rf $(TOOLS_DIR)/node_modules
-	$Q rm -rf $(TOOLS_DIR)/protoc
 #	frontend
 	$Q rm -rf $(BASEPATH)/frontend/node_modules
 	$Q rm -rf $(BASEPATH)/frontend/dist

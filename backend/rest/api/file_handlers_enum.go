@@ -5,14 +5,15 @@ package api
 
 import (
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	"strings"
 )
 
 const (
-	// FileActionCopy is a FileAction of type Copy
+	// FileActionCopy is a FileAction of type Copy.
 	FileActionCopy FileAction = iota
-	// FileActionMove is a FileAction of type Move
+	// FileActionMove is a FileAction of type Move.
 	FileActionMove
 )
 
@@ -74,26 +75,72 @@ func (x *FileAction) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _FileActionErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *FileAction) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *FileAction) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = FileAction(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseFileAction(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = FileAction(v)
+	case string:
+		*x, err = ParseFileAction(v)
+	case []byte:
+		*x, err = ParseFileAction(string(v))
+	case FileAction:
+		*x = v
+	case int:
+		*x = FileAction(v)
+	case *FileAction:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = FileAction(v)
+	case uint64:
+		*x = FileAction(v)
+	case *int:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = FileAction(*v)
+	case *int64:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = FileAction(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = FileAction(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = FileAction(*v)
+	case *uint:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = FileAction(*v)
+	case *uint64:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x = FileAction(*v)
+	case *string:
+		if v == nil {
+			return _FileActionErrNilPtr
+		}
+		*x, err = ParseFileAction(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.
@@ -102,11 +149,11 @@ func (x FileAction) Value() (driver.Value, error) {
 }
 
 const (
-	// OnConflictActionError is a OnConflictAction of type Error
+	// OnConflictActionError is a OnConflictAction of type Error.
 	OnConflictActionError OnConflictAction = iota
-	// OnConflictActionOverride is a OnConflictAction of type Override
+	// OnConflictActionOverride is a OnConflictAction of type Override.
 	OnConflictActionOverride
-	// OnConflictActionRename is a OnConflictAction of type Rename
+	// OnConflictActionRename is a OnConflictAction of type Rename.
 	OnConflictActionRename
 )
 
@@ -172,26 +219,72 @@ func (x *OnConflictAction) UnmarshalText(text []byte) error {
 	return nil
 }
 
+var _OnConflictActionErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
 // Scan implements the Scanner interface.
-func (x *OnConflictAction) Scan(value interface{}) error {
-	var name string
-
-	switch v := value.(type) {
-	case string:
-		name = v
-	case []byte:
-		name = string(v)
-	case nil:
+func (x *OnConflictAction) Scan(value interface{}) (err error) {
+	if value == nil {
 		*x = OnConflictAction(0)
-		return nil
+		return
 	}
 
-	tmp, err := ParseOnConflictAction(name)
-	if err != nil {
-		return err
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = OnConflictAction(v)
+	case string:
+		*x, err = ParseOnConflictAction(v)
+	case []byte:
+		*x, err = ParseOnConflictAction(string(v))
+	case OnConflictAction:
+		*x = v
+	case int:
+		*x = OnConflictAction(v)
+	case *OnConflictAction:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = OnConflictAction(v)
+	case uint64:
+		*x = OnConflictAction(v)
+	case *int:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = OnConflictAction(*v)
+	case *int64:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = OnConflictAction(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = OnConflictAction(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = OnConflictAction(*v)
+	case *uint:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = OnConflictAction(*v)
+	case *uint64:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x = OnConflictAction(*v)
+	case *string:
+		if v == nil {
+			return _OnConflictActionErrNilPtr
+		}
+		*x, err = ParseOnConflictAction(*v)
 	}
-	*x = tmp
-	return nil
+
+	return
 }
 
 // Value implements the driver Valuer interface.

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"crypto/sha1" //nolint:gosec
+	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
@@ -12,48 +13,52 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dgraph-io/ristretto"
+	"github.com/filebrowser/filebrowser/v3/store/sql"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 	"github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/provider"
 	authToken "github.com/go-pkgz/auth/token"
-	cache "github.com/go-pkgz/lcw"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
-	bolt "go.etcd.io/bbolt"
 
+	"github.com/filebrowser/filebrowser/v3/cache"
 	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/rest/api"
 	"github.com/filebrowser/filebrowser/v3/store"
-	"github.com/filebrowser/filebrowser/v3/store/engine"
-	"github.com/filebrowser/filebrowser/v3/store/service"
 	"github.com/filebrowser/filebrowser/v3/token"
 )
 
 // ServerCommand with command line flags and env
 type ServerCommand struct {
-	Auth   AuthGroup   `group:"auth" namespace:"auth" env-namespace:"AUTH"`
-	Avatar AvatarGroup `group:"avatar" namespace:"avatar" env-namespace:"AVATAR"`
-	Cache  CacheGroup  `group:"cache" namespace:"cache" env-namespace:"CACHE"`
-	Store  StoreGroup  `group:"store" namespace:"store" env-namespace:"STORE"`
-	SSL    SSLGroup    `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
+	Auth      AuthGroup      `group:"auth" namespace:"auth" env-namespace:"AUTH"`
+	Cache     CacheGroup     `group:"cache" namespace:"cache" env-namespace:"CACHE"`
+	Store     StoreGroup     `group:"store" namespace:"store" env-namespace:"STORE"`
+	SSL       SSLGroup       `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
+	AccessLog AccessLogGroup `group:"access-log" namespace:"access-log" env-namespace:"ACCESS_LOG"`
 
-	Locale    string `long:"locale" env:"LOCALE" default:"en" description:"default locale"`
-	AccessLog bool   `long:"enable-access-log" env:"ENABLE_ACCESS_LOG" description:"enable access log"`
-	RootPath  string `long:"root" env:"ROOT_PATH" default:"." description:"root folder"`
-	Host      string `long:"host" env:"HOST" default:"0.0.0.0" description:"host"`
-	Port      int    `long:"port" env:"PORT" default:"8080" description:"port"`
+	Locale   string `long:"locale" env:"LOCALE" default:"en" description:"default locale"`
+	RootPath string `long:"root" env:"ROOT_PATH" default:"." description:"root folder"`
+	Host     string `long:"host" env:"HOST" default:"0.0.0.0" description:"host"`
+	Port     int    `long:"port" env:"PORT" default:"8080" description:"port"`
 
 	CommonOpts
 }
 
-// AuthGroup defines options group store params
+// StoreGroup defines options group for storage
 type StoreGroup struct {
-	Type string `long:"type" env:"TYPE" description:"type of storage" choice:"bolt" default:"bolt"`
-	Bolt struct {
-		File    string        `long:"file" env:"FILE" default:"./var/filebrowser.db" description:"bolt file location"`
-		Timeout time.Duration `long:"timeout" env:"TIMEOUT" default:"30s" description:"bolt timeout"`
-	} `group:"bolt" namespace:"bolt" env-namespace:"BOLT"`
+	Type   string `long:"type" env:"TYPE" description:"type of storage" choice:"sqlite" choice:"postgres" choice:"mysql" default:"sqlite"`
+	SQLite struct {
+		File string `long:"file" env:"FILE" default:"./var/filebrowser.db" description:"sqlite file location"`
+	} `group:"sqlite" namespace:"sqlite" env-namespace:"SQLITE"`
+	Postgres struct {
+		DSN string `long:"dsn" env:"DSN" description:"postgres dsn (postgres://username:password@address/dbname?sslmode=disable)"`
+	} `group:"postgres" namespace:"postgres" env-namespace:"POSTGRES"`
+	MySQL struct {
+		DSN string `long:"dsn" env:"DSN" description:"mysql dsn (username:password@protocol(address)/dbname)"`
+	} `group:"mysql" namespace:"mysql" env-namespace:"MYSQL"`
 }
 
 // AuthGroup defines options group auth params
@@ -95,7 +100,7 @@ type AuthGroup struct {
 	} `group:"anon" namespace:"anon" env-namespace:"ANON"`
 	Admin struct {
 		Username string `long:"username" env:"USERNAME" default:"admin" description:"admin username"`
-		Password string `long:"password" env:"PASSWORD" default:"admin" description:"admin password"`
+		Password string `long:"password" env:"PASSWORD" default:"admin" description:"encrypted admin password"`
 	} `group:"admin" namespace:"admin" env-namespace:"ADMIN"`
 }
 
@@ -103,19 +108,6 @@ type AuthGroup struct {
 type OAuthGroup struct {
 	CID  string `long:"cid" env:"CID" description:"OAuth client ID"`
 	CSEC string `long:"csec" env:"CSEC" description:"OAuth client secret"`
-}
-
-// AvatarGroup defines options group for avatar params
-type AvatarGroup struct {
-	Type string `long:"type" env:"TYPE" description:"type of avatar storage" choice:"fs" choice:"bolt" choice:"uri" default:"fs"` //nolint
-	FS   struct {
-		Path string `long:"path" env:"PATH" default:"./var/avatars" description:"avatars location"`
-	} `group:"fs" namespace:"fs" env-namespace:"FS"`
-	Bolt struct {
-		File string `long:"file" env:"FILE" default:"./var/avatars.db" description:"avatars bolt file location"`
-	} `group:"bolt" namespace:"bolt" env-namespace:"bolt"`
-	URI    string `long:"uri" env:"URI" default:"./var/avatars" description:"avatar's store URI"`
-	RszLmt int    `long:"rsz-lmt" env:"RESIZE" default:"0" description:"max image size for resizing avatars on save"`
 }
 
 // CacheGroup defines options group for cache params
@@ -130,19 +122,26 @@ type CacheGroup struct {
 
 // SSLGroup defines options group for server ssl params
 type SSLGroup struct {
-	Type         string `long:"type" env:"TYPE" description:"ssl (auto) support" choice:"none" choice:"static" choice:"auto" default:"none"` //nolint
-	Port         int    `long:"port" env:"PORT" description:"port number for https server" default:"8443"`
-	Cert         string `long:"cert" env:"CERT" description:"path to cert.pem file"`
-	Key          string `long:"key" env:"KEY" description:"path to key.pem file"`
-	ACMELocation string `long:"acme-location" env:"ACME_LOCATION" description:"dir where certificates will be stored by autocert manager" default:"./var/acme"` //nolint
-	ACMEEmail    string `long:"acme-email" env:"ACME_EMAIL" description:"admin email for certificate notifications"`
+	Type         string   `long:"type" env:"TYPE" description:"ssl (auto) support" choice:"none" choice:"static" choice:"auto" default:"none"` //nolint
+	Port         int      `long:"port" env:"PORT" description:"port number for https server" default:"8443"`
+	Cert         string   `long:"cert" env:"CERT" description:"path to cert.pem file"`
+	Key          string   `long:"key" env:"KEY" description:"path to key.pem file"`
+	ACMELocation string   `long:"acme-location" env:"ACME_LOCATION" description:"dir where certificates will be stored by autocert manager" default:"./var/acme"` //nolint
+	ACMEEmail    string   `long:"acme-email" env:"ACME_EMAIL" description:"admin email for certificate notifications"`
+	FQDNs        []string `long:"fqdn" env:"ACME_FQDN" env-delim:"," description:"FQDN(s) for ACME certificates"`
 }
 
-// LoadingCache defines interface for caching
-type LoadingCache interface {
-	Get(key cache.Key, fn func() ([]byte, error)) (data []byte, err error) // load from cache if found or put to cache and return
-	Flush(req cache.FlusherRequest)                                        // evict matched records
-	Close() error
+// AccessLogGroup defines options group for access log
+type AccessLogGroup struct {
+	Enable bool   `long:"enable" env:"ENABLE" description:"enable access log"`
+	Out    string `long:"out" env:"OUT" description:"output" choice:"stdout" choice:"file" default:"stdout"`
+	File   struct {
+		Name       string `long:"name" env:"NAME" default:"./var/log/access.log" description:"path to access.log file"`
+		MaxSize    int    `long:"size" env:"SIZE" default:"500" description:"maximum size in megabytes"`
+		MaxBackups int    `long:"backups" env:"BACKUPS" default:"3" description:"maximum number of old log files"`
+		MaxAge     int    `long:"age" env:"AGE" default:"30" description:"maximum number of days to retain"`
+		Compress   bool   `long:"compress" env:"COMPRESS" default:"true" description:"compress rotated log files"`
+	} `group:"file" namespace:"file" env-namespace:"FILE"`
 }
 
 // serverApp holds all active objects
@@ -160,6 +159,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 		"GITHUB_CID", "GITHUB_CSEC",
 		"FACEBOOK_CID", "FACEBOOK_CSEC",
 		"TWITTER_CID", "TWITTER_CSEC",
+		"STORE_POSTGRES_DSN", "STORE_MYSQL_DSN",
 	)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -171,7 +171,7 @@ func (s *ServerCommand) Execute(_ []string) error {
 		cancel()
 	}()
 
-	app, err := s.newServerApp()
+	app, err := s.newServerApp(ctx)
 	if err != nil {
 		log.Fatalf("failed to setup application, %+v", err)
 		return err
@@ -186,36 +186,27 @@ func (s *ServerCommand) Execute(_ []string) error {
 
 // newServerApp prepares application and return it with all active parts
 // doesn't start anything
-func (s *ServerCommand) newServerApp() (*serverApp, error) {
+func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 	loadingCache, err := s.makeCache()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make cache")
 	}
 
-	dataEngine, err := s.makeDataEngine()
+	userStore, err := s.makeDataStore(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to initiate data engine")
 	}
 
-	dataStore := &service.DataStore{
-		Engine: dataEngine,
-	}
-
-	if err := s.createAdminUser(dataStore); err != nil {
+	/*if err := s.createAdminUser(dataStore); err != nil {
 		return nil, errors.Wrap(err, "failed to create admin user")
 	}
 
 	if err := s.createAnonymousUser(dataStore); err != nil {
 		return nil, errors.Wrap(err, "failed to create anonymous user")
-	}
-
-	avatarStore, err := s.makeAvatarStore()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make avatar store")
-	}
+	}*/
 
 	authRefreshCache := newAuthRefreshCache()
-	localAuthProvider := newLocalAuthProvider(dataStore)
+	localAuthProvider := newLocalAuthProvider(userStore)
 	authenticator, err := s.makeAuthenticator(dataStore, avatarStore, authRefreshCache, localAuthProvider)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make authenticator")
@@ -255,7 +246,7 @@ func (s *ServerCommand) newServerApp() (*serverApp, error) {
 }
 
 func (s *ServerCommand) makeAuthenticator(
-	dataStore *service.DataStore,
+	dataStore store.UserStore,
 	avatarStore avatar.Store,
 	authRefreshCache *authRefreshCache, //nolint:interfacer
 	localProvider provider.CredChecker,
@@ -280,12 +271,11 @@ func (s *ServerCommand) makeAuthenticator(
 			}
 			return !claims.User.BoolAttr("blocked")
 		}),
-		AvatarResizeLimit: s.Avatar.RszLmt,
-		AvatarRoutePath:   path.Join(s.getServerBasePath(), "/api/v1/avatar"),
-		AvatarStore:       avatarStore,
-		Logger:            log.NewLogrAdapter(log.DefaultLogger),
-		RefreshCache:      authRefreshCache,
-		UseGravatar:       true,
+		AvatarRoutePath: path.Join(s.getServerBasePath(), "/api/v1/avatar"),
+		AvatarStore:     avatarStore,
+		Logger:          log.NewLogrAdapter(log.DefaultLogger),
+		RefreshCache:    authRefreshCache,
+		UseGravatar:     true,
 	})
 
 	s.addAuthProviders(authenticator, localProvider)
@@ -293,9 +283,9 @@ func (s *ServerCommand) makeAuthenticator(
 	return authenticator, nil
 }
 
-func (s *ServerCommand) newClaimsUpdater(ctx context.Context, dataStore *service.DataStore) authToken.ClaimsUpdater {
+func (s *ServerCommand) newClaimsUpdater(ctx context.Context, userStore store.UserStore) authToken.ClaimsUpdater {
 	return authToken.ClaimsUpdFunc(func(c authToken.Claims) authToken.Claims {
-		if c.User == nil {
+		/*if c.User == nil {
 			return c
 		}
 		user, err := dataStore.FindUserByID(ctx, c.User.ID)
@@ -311,19 +301,8 @@ func (s *ServerCommand) newClaimsUpdater(ctx context.Context, dataStore *service
 				Scope:        s.Auth.User.Scope,
 				Locale:       s.Locale,
 				Rules:        nil,
-				Commands:     nil,
 				LockPassword: false,
-				Permissions: store.Permissions{
-					Admin:    false,
-					Execute:  s.Auth.User.Permissions.Execute,
-					Create:   s.Auth.User.Permissions.Create,
-					Rename:   s.Auth.User.Permissions.Rename,
-					Modify:   s.Auth.User.Permissions.Modify,
-					Delete:   s.Auth.User.Permissions.Delete,
-					Share:    s.Auth.User.Permissions.Share,
-					Download: s.Auth.User.Permissions.Download,
-				},
-				Blocked: false,
+				Blocked:      false,
 			}
 			if err := dataStore.SaveUser(ctx, user); err != nil {
 				log.WithContext(ctx).Errorf("failed to create user: %+v", err)
@@ -347,7 +326,7 @@ func (s *ServerCommand) newClaimsUpdater(ctx context.Context, dataStore *service
 		c.User.SetBoolAttr("permDownload", user.Permissions.CanDownload())
 		c.User.SetStrAttr("viewMode", "mosaic")
 		c.User.SetStrAttr("locale", user.Locale)
-		c.User.SetBoolAttr("blocked", user.Blocked)
+		c.User.SetBoolAttr("blocked", user.Blocked)*/
 
 		return c
 	})
@@ -413,42 +392,41 @@ func newLocalAuthProvider(dataStore *service.DataStore) provider.CredChecker {
 	})
 }
 
-func (s *ServerCommand) makeDataEngine() (result engine.Interface, err error) {
-	log.Infof("make data store, type=%s", s.Store.Type)
+func (s *ServerCommand) makeDataStore(ctx context.Context) (userStore store.UserStore, err error) {
+	log.Debugf("Make data store, type=%s", s.Store.Type)
+	var (
+		client *ent.Client
+	)
+
 	switch s.Store.Type {
-	case "bolt": //nolint:goconst
-		if err = makeDirs(path.Dir(s.Store.Bolt.File)); err != nil {
-			return nil, errors.Wrap(err, "failed to create bolt store")
+	case "sqlite":
+		if err = makeDirs(filepath.Dir(s.Store.SQLite.File)); err != nil {
+			return nil, errors.Wrap(err, "failed to create sqlite store")
 		}
-		result, err = engine.NewBoltDB(context.Background(), s.Store.Bolt.File, &bolt.Options{Timeout: s.Store.Bolt.Timeout})
+		client, err = ent.Open("sqlite", fmt.Sprintf("file:%s?cache=shared&mode=rwc", s.Store.SQLite.File))
+	case "postgres":
+		client, err = ent.Open("postgres", s.Store.Postgres.DSN)
+	case "mysql":
+		client, err = ent.Open("mysql", s.Store.Postgres.DSN)
 	default:
 		return nil, errors.Errorf("unsupported store type %s", s.Store.Type)
 	}
-	return result, errors.Wrap(err, "can't initialize data store")
-}
-
-func (s *ServerCommand) makeAvatarStore() (avatar.Store, error) {
-	log.Infof("make avatar store, type=%s", s.Avatar.Type)
-
-	switch s.Avatar.Type {
-	case "fs":
-		if err := makeDirs(s.Avatar.FS.Path); err != nil {
-			return nil, errors.Wrap(err, "failed to create avatar store")
-		}
-		return avatar.NewLocalFS(s.Avatar.FS.Path), nil
-	case "bolt":
-		if err := makeDirs(path.Dir(s.Avatar.Bolt.File)); err != nil {
-			return nil, errors.Wrap(err, "failed to create avatar store")
-		}
-		return avatar.NewBoltDB(s.Avatar.Bolt.File, bolt.Options{})
-	case "uri":
-		return avatar.NewStore(s.Avatar.URI)
+	if err != nil {
+		return nil, errors.Wrap(err, "can't initialize data store")
 	}
-	return nil, errors.Errorf("unsupported avatar store type %s", s.Avatar.Type)
+
+	log.WithContext(ctx).Debugf("Apply schema migrations")
+	if err := client.Schema.Create(ctx); err != nil {
+		return nil, err
+	}
+
+	userStore = sql.NewUserStore(client)
+
+	return userStore, nil
 }
 
 func (s *ServerCommand) makeCache() (LoadingCache, error) {
-	log.Infof("make cache, type=%s", s.Cache.Type)
+	log.Debugf("make cache, type=%s", s.Cache.Type)
 	switch s.Cache.Type {
 	case "mem":
 		backend, err := cache.NewLruCache(cache.MaxCacheSize(s.Cache.Max.Size), cache.MaxValSize(s.Cache.Max.Value),
@@ -491,7 +469,7 @@ func (s *ServerCommand) makeSSLConfig() (config api.SSLConfig, err error) {
 	return config, err
 }
 
-func (s *ServerCommand) createAdminUser(storage *service.DataStore) error {
+func (s *ServerCommand) createAdminUser(storage store.UserStore) error {
 	pwdHash, err := hash.Password(s.Auth.Admin.Password)
 	if err != nil {
 		return err
@@ -499,24 +477,19 @@ func (s *ServerCommand) createAdminUser(storage *service.DataStore) error {
 	user := &store.User{
 		ID:           "local_" + authToken.HashID(sha1.New(), s.Auth.Admin.Username), //nolint:gosec
 		Name:         "Admin",
-		Picture:      "",
 		Provider:     "local",
 		Username:     s.Auth.Admin.Username,
 		Password:     pwdHash,
 		Scope:        "/",
 		Locale:       s.Locale,
-		Rules:        nil,
-		Commands:     nil,
 		LockPassword: true,
-		Permissions: store.Permissions{
-			Admin: true,
-		},
-		Blocked: false,
+		Blocked:      false,
 	}
-	return storage.SaveUser(context.Background(), user)
+	_, err = storage.Save(context.Background(), user)
+	return err
 }
 
-func (s *ServerCommand) createAnonymousUser(storage *service.DataStore) error {
+func (s *ServerCommand) createAnonymousUser(storage store.UserStore) error {
 	pwdHash, err := hash.Password("")
 	if err != nil {
 		return err
@@ -524,28 +497,16 @@ func (s *ServerCommand) createAnonymousUser(storage *service.DataStore) error {
 	user := &store.User{
 		ID:           "local_" + authToken.HashID(sha1.New(), "anonymous"), //nolint:gosec
 		Name:         "Anonymous",
-		Picture:      "",
 		Provider:     "local",
 		Username:     "anonymous",
 		Password:     pwdHash,
 		Scope:        s.Auth.Anonymous.Scope,
 		Locale:       s.Locale,
-		Rules:        nil,
-		Commands:     nil,
 		LockPassword: true,
-		Permissions: store.Permissions{
-			Admin:    s.Auth.Anonymous.Permissions.Admin,
-			Execute:  s.Auth.Anonymous.Permissions.Execute,
-			Create:   s.Auth.Anonymous.Permissions.Create,
-			Rename:   s.Auth.Anonymous.Permissions.Rename,
-			Modify:   s.Auth.Anonymous.Permissions.Modify,
-			Delete:   s.Auth.Anonymous.Permissions.Delete,
-			Share:    s.Auth.Anonymous.Permissions.Share,
-			Download: s.Auth.Anonymous.Permissions.Download,
-		},
-		Blocked: !s.Auth.Anonymous.Enable,
+		Blocked:      !s.Auth.Anonymous.Enable,
 	}
-	return storage.SaveUser(context.Background(), user)
+	_, err = storage.Save(context.Background(), user)
+	return err
 }
 
 // Run all application objects
@@ -580,20 +541,29 @@ func (s *ServerCommand) getServerBasePath() string {
 
 // authRefreshCache used by authenticator to minimize repeatable token refreshes
 type authRefreshCache struct {
-	cache.LoadingCache
+	cache.Cache
 }
 
 func newAuthRefreshCache() *authRefreshCache {
-	expirableCache, _ := cache.NewExpirableCache(cache.TTL(5 * time.Minute)) //nolint:gomnd
-	return &authRefreshCache{LoadingCache: expirableCache}
+	memCache, err := ristretto.NewCache(&ristretto.Config{
+		NumCounters: 10000,
+		MaxCost:     1000,
+		BufferItems: 64,
+	})
+
+	if err != nil {
+		log.Fatalf("Failed to init cache: %s", err)
+	}
+
+	return &authRefreshCache{Cache: memCache}
 }
 
 // Get implements cache getter with key converted to string
 func (c *authRefreshCache) Get(key interface{}) (interface{}, bool) {
-	return c.LoadingCache.Peek(key.(string))
+	return c.Get(key)
 }
 
 // Set implements cache setter with key converted to string
 func (c *authRefreshCache) Set(key, value interface{}) {
-	_, _ = c.LoadingCache.Get(key.(string), func() (cache.Value, error) { return value, nil })
+	c.SetWithTTL(key, value, 1, 5*time.Second)
 }
