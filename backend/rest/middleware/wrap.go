@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +17,6 @@ func WrapHH(fn func(http.Handler) http.Handler) gin.HandlerFunc {
 		fn(handler).ServeHTTP(c.Writer, c.Request)
 		switch {
 		case skip:
-			fmt.Println("skipped")
 			c.Abort()
 		default:
 			c.Next()

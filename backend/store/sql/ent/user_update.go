@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
@@ -81,14 +82,6 @@ func (uu *UserUpdate) ClearName() *UserUpdate {
 // SetScope sets the "scope" field.
 func (uu *UserUpdate) SetScope(s string) *UserUpdate {
 	uu.mutation.SetScope(s)
-	return uu
-}
-
-// SetNillableScope sets the "scope" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableScope(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetScope(*s)
-	}
 	return uu
 }
 
@@ -325,14 +318,6 @@ func (uuo *UserUpdateOne) ClearName() *UserUpdateOne {
 // SetScope sets the "scope" field.
 func (uuo *UserUpdateOne) SetScope(s string) *UserUpdateOne {
 	uuo.mutation.SetScope(s)
-	return uuo
-}
-
-// SetNillableScope sets the "scope" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableScope(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetScope(*s)
-	}
 	return uuo
 }
 

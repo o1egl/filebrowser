@@ -20,7 +20,7 @@ func (User) Fields() []ent.Field {
 		field.String("username"),
 		field.String("password").Optional(),
 		field.String("name").Optional(),
-		field.String("scope").Default("/"),
+		field.String("scope"),
 		field.String("locale"),
 		field.Bool("lock_password"),
 		field.Bool("blocked"),

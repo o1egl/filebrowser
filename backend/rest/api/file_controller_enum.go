@@ -56,6 +56,10 @@ func ParseFileAction(name string) (FileAction, error) {
 	if x, ok := _FileActionValue[name]; ok {
 		return x, nil
 	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _FileActionValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
 	return FileAction(0), fmt.Errorf("%s is not a valid FileAction, try [%s]", name, strings.Join(_FileActionNames, ", "))
 }
 
@@ -198,6 +202,10 @@ var _OnConflictActionValue = map[string]OnConflictAction{
 // ParseOnConflictAction attempts to convert a string to a OnConflictAction
 func ParseOnConflictAction(name string) (OnConflictAction, error) {
 	if x, ok := _OnConflictActionValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _OnConflictActionValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
 	return OnConflictAction(0), fmt.Errorf("%s is not a valid OnConflictAction, try [%s]", name, strings.Join(_OnConflictActionNames, ", "))

@@ -17,9 +17,7 @@ type CommonOptionsCommander interface {
 
 // CommonOpts sets externally from main, shared across all commands
 type CommonOpts struct {
-	ServerURL    string
-	SharedSecret string
-	Revision     string
+	Revision string
 }
 
 // DeprecatedFlag contains information about deprecated option
@@ -32,8 +30,6 @@ type DeprecatedFlag struct {
 // SetCommon satisfies CommonOptionsCommander interface and sets common option fields
 // The method called by main for each command
 func (c *CommonOpts) SetCommon(commonOpts CommonOpts) {
-	c.ServerURL = commonOpts.ServerURL
-	c.SharedSecret = commonOpts.SharedSecret
 	c.Revision = commonOpts.Revision
 }
 

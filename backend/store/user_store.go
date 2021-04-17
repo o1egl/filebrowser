@@ -4,7 +4,8 @@ import "context"
 
 type UserStore interface {
 	Get(ctx context.Context, id string) (*User, error)
-	Save(ctx context.Context, user *User) (id string, err error)
+	GetByUsernameAndProvider(ctx context.Context, username, provider string) (*User, error)
+	Save(ctx context.Context, user *User) error
 }
 
 // User holds user-related info

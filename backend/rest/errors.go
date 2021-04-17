@@ -76,3 +76,11 @@ func SendErrorJSON(c *gin.Context, httpStatusCode int, err error, details string
 
 	c.AbortWithStatusJSON(httpStatusCode, gin.H{"error": err.Error(), "details": details, "code": errCode})
 }
+
+func SendNotFoundError(c *gin.Context, err error, details string) {
+	SendErrorJSON(c, http.StatusNotFound, err, details, ErrNotFound)
+}
+
+func SendInternalError(c *gin.Context, err error, details string) {
+	SendErrorJSON(c, http.StatusInternalServerError, err, details, ErrCodeInternal)
+}

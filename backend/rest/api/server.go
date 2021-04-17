@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -13,12 +12,12 @@ import (
 	ginCors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-pkgz/auth"
-	"github.com/go-pkgz/lcw"
 	"github.com/spf13/afero"
+
+	"github.com/filebrowser/filebrowser/v3/store"
 
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/rest/middleware"
-	"github.com/filebrowser/filebrowser/v3/rest/rpc"
 	"github.com/filebrowser/filebrowser/v3/token"
 )
 
@@ -43,8 +42,7 @@ type Server struct {
 	Root          afero.Fs
 	Authenticator *auth.Service
 	TokenService  *token.Service
-	Store         Store
-	Cache         LoadingCache
+	UserStore     store.UserStore
 	Host          string
 	Port          int
 	ServerURL     string
@@ -57,16 +55,6 @@ type Server struct {
 	httpsServer *http.Server
 	httpServer  *http.Server
 	lock        sync.Mutex
-}
-
-type Store interface {
-	middleware.UserStore
-}
-
-// LoadingCache defines interface for caching
-type LoadingCache interface {
-	Get(key lcw.Key, fn func() ([]byte, error)) (data []byte, err error) // load from cache if found or put to cache and return
-	Flush(req lcw.FlusherRequest)                                        // evict matched records
 }
 
 func (s *Server) Run() {
@@ -174,20 +162,33 @@ func (s *Server) newEngine() *gin.Engine {
 		AllowCredentials: true,
 		ExposeHeaders:    []string{"Authorization"},
 		MaxAge:           300,
-		AllowWebSockets:  true,
+		AllowWebSockets:  false,
 	}))
 	engine.HTMLRender = &tplEngine{}
 
-	authHandler, avatarHandler := s.Authenticator.Handlers()
+	authHandler, _ := s.Authenticator.Handlers()
 	authMiddleware := s.Authenticator.Middleware()
 
-	publicCtrl, _ := s.makeHandlerGroups()
+	staticCtrl, fileCtrl := s.makeControllers()
 
-	engine.NoRoute(publicCtrl.indexHandler)
+	engine.NoRoute(staticCtrl.indexHandler)
 	router := engine.Group(s.getServerBasePath())
-	router.GET("/static/*path", publicCtrl.staticHandler)
+	router.GET("/static/*path", staticCtrl.staticHandler)
 	router.Any("/auth/*path", middleware.NoCache, gin.WrapH(authHandler))
-	router.GET("/avatar/*path", gin.WrapH(avatarHandler))
+
+	v1 := router.Group("/api/v1")
+	{
+		protected := v1.Group("")
+		{
+			protected.Use(middleware.Timeout(ProtectedRoutesTimeout))
+			protected.Use(middleware.LimitHandler(tollbooth.NewLimiter(StaticRouterLimiter, nil)))
+			protected.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(s.UserStore), middleware.NoCache)
+
+			// file handlers
+			protected.GET("/files/*path", fileCtrl.ListHandler)
+		}
+	}
+
 	/*v1 := router.Group("/api/v1")
 	{
 		public := v1.Group("")
@@ -209,34 +210,21 @@ func (s *Server) newEngine() *gin.Engine {
 		}
 	}*/
 
-	const rpcPathPrefix = "/api"
-	apiRouter := router.Group(rpcPathPrefix)
-	{
-		apiRouter.Use(middleware.Timeout(ProtectedRoutesTimeout))
-		apiRouter.Use(middleware.LimitHandler(tollbooth.NewLimiter(ProtectedRouterLimiter, nil)))
-		apiRouter.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(s.Store), middleware.NoCache)
-		// mount rpc handlers
-		fileServer := rpc.NewFileServiceServer(rpcPathPrefix, s.Root)
-		apiRouter.POST(strings.TrimPrefix(fileServer.PathPrefix(), rpcPathPrefix)+"*method", gin.WrapH(fileServer))
-		userServer := rpc.NewUserServiceServer(rpcPathPrefix)
-		apiRouter.POST(strings.TrimPrefix(userServer.PathPrefix(), rpcPathPrefix)+"*method", gin.WrapH(userServer))
-	}
-
 	return engine
 }
 
-func (s *Server) makeHandlerGroups() (*publicHandlers, *fileController) {
-	publicHandlers := &publicHandlers{
+func (s *Server) makeControllers() (*staticController, *fileController) {
+	staticCtrl := &staticController{
 		BasePath:  s.getServerBasePath(),
 		Revision:  s.Revision,
 		Anonymous: s.Anonymous,
 	}
 
 	fileCtrl := &fileController{
-		//root: s.Root,
+		rootFS: s.Root,
 	}
 
-	return publicHandlers, fileCtrl
+	return staticCtrl, fileCtrl
 }
 
 // getServerBasePath returns base path for the server.

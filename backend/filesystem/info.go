@@ -1,8 +1,7 @@
-//go:generate go-enum --sql --marshal --lower --names --file $GOFILE
+//go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
 package filesystem
 
 import (
-	"mime"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,11 +24,7 @@ type Info struct {
 
 /*
 ENUM(
-blob
-video
-audio
-image
-text
+file
 dir
 special
 )
@@ -111,21 +106,21 @@ func ReadDir(fSys afero.Fs, dirPath string) ([]Info, error) {
 }
 
 func detectFileType(info os.FileInfo) Type {
-	mimetype := mime.TypeByExtension(filepath.Ext(info.Name()))
+	//mimetype := mime.TypeByExtension(filepath.Ext(info.Name()))
 	switch {
 	case info.IsDir():
 		return TypeDir
 	case IsSpecialFile(info):
 		return TypeSpecial
-	case strings.HasPrefix(mimetype, "video"):
+	/*case strings.HasPrefix(mimetype, "video"):
 		return TypeVideo
 	case strings.HasPrefix(mimetype, "audio"):
 		return TypeAudio
 	case strings.HasPrefix(mimetype, "image"):
 		return TypeImage
 	case strings.HasPrefix(mimetype, "text"):
-		return TypeText
+		return TypeText*/
 	default:
-		return TypeBlob
+		return TypeFile
 	}
 }

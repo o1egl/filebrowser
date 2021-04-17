@@ -13,14 +13,14 @@ import (
 	"github.com/filebrowser/filebrowser/v3/rest"
 )
 
-// publicHandlers provides router for all requests with no required auth
-type publicHandlers struct {
+// staticController provides router for all requests with no required auth
+type staticController struct {
 	BasePath  string
 	Revision  string
 	Anonymous bool
 }
 
-func (h *publicHandlers) indexHandler(c *gin.Context) {
+func (h *staticController) indexHandler(c *gin.Context) {
 	data := map[string]interface{}{
 		"Name":       "File Browser",
 		"BaseURL":    h.BasePath,
@@ -46,7 +46,7 @@ func (h *publicHandlers) indexHandler(c *gin.Context) {
 }
 
 // staticHandler returns static assets
-func (h *publicHandlers) staticHandler(c *gin.Context) {
+func (h *staticController) staticHandler(c *gin.Context) {
 	fPath := filepath.Join("web/dist", c.Param("path"))
 	if !strings.HasSuffix(fPath, ".js") {
 		c.FileFromFS(fPath, http.FS(assets.FS()))

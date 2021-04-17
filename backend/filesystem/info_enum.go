@@ -11,32 +11,20 @@ import (
 )
 
 const (
-	// TypeBlob is a Type of type Blob.
-	TypeBlob Type = iota
-	// TypeVideo is a Type of type Video.
-	TypeVideo
-	// TypeAudio is a Type of type Audio.
-	TypeAudio
-	// TypeImage is a Type of type Image.
-	TypeImage
-	// TypeText is a Type of type Text.
-	TypeText
+	// TypeFile is a Type of type File.
+	TypeFile Type = iota
 	// TypeDir is a Type of type Dir.
 	TypeDir
 	// TypeSpecial is a Type of type Special.
 	TypeSpecial
 )
 
-const _TypeName = "blobvideoaudioimagetextdirspecial"
+const _TypeName = "filedirspecial"
 
 var _TypeNames = []string{
 	_TypeName[0:4],
-	_TypeName[4:9],
-	_TypeName[9:14],
-	_TypeName[14:19],
-	_TypeName[19:23],
-	_TypeName[23:26],
-	_TypeName[26:33],
+	_TypeName[4:7],
+	_TypeName[7:14],
 }
 
 // TypeNames returns a list of possible string values of Type.
@@ -48,12 +36,8 @@ func TypeNames() []string {
 
 var _TypeMap = map[Type]string{
 	0: _TypeName[0:4],
-	1: _TypeName[4:9],
-	2: _TypeName[9:14],
-	3: _TypeName[14:19],
-	4: _TypeName[19:23],
-	5: _TypeName[23:26],
-	6: _TypeName[26:33],
+	1: _TypeName[4:7],
+	2: _TypeName[7:14],
 }
 
 // String implements the Stringer interface.
@@ -65,25 +49,21 @@ func (x Type) String() string {
 }
 
 var _TypeValue = map[string]Type{
-	_TypeName[0:4]:                    0,
-	strings.ToLower(_TypeName[0:4]):   0,
-	_TypeName[4:9]:                    1,
-	strings.ToLower(_TypeName[4:9]):   1,
-	_TypeName[9:14]:                   2,
-	strings.ToLower(_TypeName[9:14]):  2,
-	_TypeName[14:19]:                  3,
-	strings.ToLower(_TypeName[14:19]): 3,
-	_TypeName[19:23]:                  4,
-	strings.ToLower(_TypeName[19:23]): 4,
-	_TypeName[23:26]:                  5,
-	strings.ToLower(_TypeName[23:26]): 5,
-	_TypeName[26:33]:                  6,
-	strings.ToLower(_TypeName[26:33]): 6,
+	_TypeName[0:4]:                   0,
+	strings.ToLower(_TypeName[0:4]):  0,
+	_TypeName[4:7]:                   1,
+	strings.ToLower(_TypeName[4:7]):  1,
+	_TypeName[7:14]:                  2,
+	strings.ToLower(_TypeName[7:14]): 2,
 }
 
 // ParseType attempts to convert a string to a Type
 func ParseType(name string) (Type, error) {
 	if x, ok := _TypeValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _TypeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
 	return Type(0), fmt.Errorf("%s is not a valid Type, try [%s]", name, strings.Join(_TypeNames, ", "))

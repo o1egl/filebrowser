@@ -1,4 +1,4 @@
-//go:generate go-enum --sql --marshal --lower --names --file $GOFILE
+//go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
 package api
 
 import (

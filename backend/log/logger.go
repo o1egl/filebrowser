@@ -1,4 +1,4 @@
-//go:generate go-enum --sql --marshal --lower --names --file $GOFILE
+//go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
 //go:generate mockgen -destination mock/logger_mock.go . Logger
 package log
 
@@ -68,7 +68,7 @@ type Logger interface {
 	WithFields(keyValues Fields) Logger
 }
 
-type writeSyncer interface {
+type WriteSyncer interface {
 	io.Writer
 	Sync() error
 }
@@ -77,7 +77,7 @@ type writeSyncer interface {
 type Configuration struct {
 	LogLevel Level
 	Format   Format
-	Output   writeSyncer
+	Output   WriteSyncer
 }
 
 // NewLogger returns an instance of logger

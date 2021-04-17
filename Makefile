@@ -9,21 +9,6 @@ build: build-backend
 build-backend:
 	$Q cd backend && make build
 
-## proto: Compile proto files
-.PHONY: proto
-proto: $(protoc) $(protoc-gen-go) $(protoc-gen-validate) $(protoc-gen-twirp) $(gowrap) | ; $(info $(M) generate protos…)
-	$Q rm -rf ./backend/gen/proto
-	$Q mkdir -p ./backend/gen/proto
-	$Q for file in $$(find ./proto -name '*.proto' -not -path "*github.com*"); do \
-		$(protoc) -I ./proto -I ./tools/protoc/include \
-			--twirp_out=./backend/gen/proto --twirp_opt=paths=source_relative \
-			--go_out=./backend/gen/proto --go_opt=paths=source_relative \
-			--validate_out="lang=go:./backend/gen/proto" --validate_opt=paths=source_relative \
-			 $$file; \
-    done
-	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/file/v1 -i FileService -t twirp_validate -g -o ./gen/proto/file/v1/file_service.validate.go
-	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/user/v1 -i UserService -t twirp_validate -g -o ./gen/proto/user/v1/user_service.validate.go
-
 ## lint: Run all lints
 .PHONY: lint
 lint: lint-commits | ; $(info $(M) running linters…)

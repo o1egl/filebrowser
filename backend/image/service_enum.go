@@ -74,6 +74,10 @@ func ParseFormat(name string) (Format, error) {
 	if x, ok := _FormatValue[name]; ok {
 		return x, nil
 	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _FormatValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
 	return Format(0), fmt.Errorf("%s is not a valid Format, try [%s]", name, strings.Join(_FormatNames, ", "))
 }
 
@@ -218,6 +222,10 @@ func ParseQuality(name string) (Quality, error) {
 	if x, ok := _QualityValue[name]; ok {
 		return x, nil
 	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _QualityValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
 	return Quality(0), fmt.Errorf("%s is not a valid Quality, try [%s]", name, strings.Join(_QualityNames, ", "))
 }
 
@@ -354,6 +362,10 @@ var _ResizeModeValue = map[string]ResizeMode{
 // ParseResizeMode attempts to convert a string to a ResizeMode
 func ParseResizeMode(name string) (ResizeMode, error) {
 	if x, ok := _ResizeModeValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _ResizeModeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
 	return ResizeMode(0), fmt.Errorf("%s is not a valid ResizeMode, try [%s]", name, strings.Join(_ResizeModeNames, ", "))

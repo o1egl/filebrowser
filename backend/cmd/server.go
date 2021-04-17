@@ -7,21 +7,24 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
-	"github.com/filebrowser/filebrowser/v3/store/sql"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 	"github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/provider"
 	authToken "github.com/go-pkgz/auth/token"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
+
+	"github.com/filebrowser/filebrowser/v3/store/sql"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 
 	"github.com/filebrowser/filebrowser/v3/cache"
 	"github.com/filebrowser/filebrowser/v3/hash"
@@ -39,10 +42,12 @@ type ServerCommand struct {
 	SSL       SSLGroup       `group:"ssl" namespace:"ssl" env-namespace:"SSL"`
 	AccessLog AccessLogGroup `group:"access-log" namespace:"access-log" env-namespace:"ACCESS_LOG"`
 
-	Locale   string `long:"locale" env:"LOCALE" default:"en" description:"default locale"`
-	RootPath string `long:"root" env:"ROOT_PATH" default:"." description:"root folder"`
-	Host     string `long:"host" env:"HOST" default:"0.0.0.0" description:"host"`
-	Port     int    `long:"port" env:"PORT" default:"8080" description:"port"`
+	ServerURL string `long:"url" env:"SERVER_URL" description:"file browser url"`
+	Secret    string `long:"secret" env:"SECRET" description:"shared secret key"`
+	Locale    string `long:"locale" env:"LOCALE" default:"en" description:"default locale"`
+	RootPath  string `long:"root" env:"ROOT_PATH" default:"." description:"root folder"`
+	Host      string `long:"host" env:"HOST" default:"0.0.0.0" description:"host"`
+	Port      int    `long:"port" env:"PORT" default:"8080" description:"port"`
 
 	CommonOpts
 }
@@ -75,7 +80,6 @@ type AuthGroup struct {
 	User     struct {
 		Scope       string `long:"scope" env:"SCOPE" default:"/" description:"default user scope. must start with /"`
 		Permissions struct {
-			Execute  bool `long:"execute" env:"EXECUTE" description:"add execute permission"`
 			Create   bool `long:"create" env:"CREATE" description:"add create permission"`
 			Rename   bool `long:"rename" env:"RENAME" description:"add rename permission"`
 			Modify   bool `long:"modify" env:"MODIFY" description:"add modify permission"`
@@ -89,7 +93,6 @@ type AuthGroup struct {
 		Scope       string `long:"scope" env:"SCOPE" default:"/" description:"user scope. must start with /"`
 		Permissions struct {
 			Admin    bool `long:"admin" env:"ADMIN" description:"add admin permission"`
-			Execute  bool `long:"execute" env:"EXECUTE" description:"add execute permission"`
 			Create   bool `long:"create" env:"CREATE" description:"add create permission"`
 			Rename   bool `long:"rename" env:"RENAME" description:"add rename permission"`
 			Modify   bool `long:"modify" env:"MODIFY" description:"add modify permission"`
@@ -99,7 +102,6 @@ type AuthGroup struct {
 		} `group:"perm" namespace:"perm" env-namespace:"PERM"`
 	} `group:"anon" namespace:"anon" env-namespace:"ANON"`
 	Admin struct {
-		Username string `long:"username" env:"USERNAME" default:"admin" description:"admin username"`
 		Password string `long:"password" env:"PASSWORD" default:"admin" description:"encrypted admin password"`
 	} `group:"admin" namespace:"admin" env-namespace:"ADMIN"`
 }
@@ -133,15 +135,7 @@ type SSLGroup struct {
 
 // AccessLogGroup defines options group for access log
 type AccessLogGroup struct {
-	Enable bool   `long:"enable" env:"ENABLE" description:"enable access log"`
-	Out    string `long:"out" env:"OUT" description:"output" choice:"stdout" choice:"file" default:"stdout"`
-	File   struct {
-		Name       string `long:"name" env:"NAME" default:"./var/log/access.log" description:"path to access.log file"`
-		MaxSize    int    `long:"size" env:"SIZE" default:"500" description:"maximum size in megabytes"`
-		MaxBackups int    `long:"backups" env:"BACKUPS" default:"3" description:"maximum number of old log files"`
-		MaxAge     int    `long:"age" env:"AGE" default:"30" description:"maximum number of days to retain"`
-		Compress   bool   `long:"compress" env:"COMPRESS" default:"true" description:"compress rotated log files"`
-	} `group:"file" namespace:"file" env-namespace:"FILE"`
+	Enable bool `long:"enable" env:"ENABLE" description:"enable access log"`
 }
 
 // serverApp holds all active objects
@@ -187,15 +181,12 @@ func (s *ServerCommand) Execute(_ []string) error {
 // newServerApp prepares application and return it with all active parts
 // doesn't start anything
 func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
-	loadingCache, err := s.makeCache()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make cache")
-	}
-
-	userStore, err := s.makeDataStore(ctx)
+	entClient, err := s.makeEntClient(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to initiate data engine")
 	}
+
+	userStore := sql.NewUserStore(entClient)
 
 	/*if err := s.createAdminUser(dataStore); err != nil {
 		return nil, errors.Wrap(err, "failed to create admin user")
@@ -207,7 +198,7 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 
 	authRefreshCache := newAuthRefreshCache()
 	localAuthProvider := newLocalAuthProvider(userStore)
-	authenticator, err := s.makeAuthenticator(dataStore, avatarStore, authRefreshCache, localAuthProvider)
+	authenticator, err := s.makeAuthenticator(userStore, authRefreshCache, localAuthProvider)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make authenticator")
 	}
@@ -225,15 +216,14 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 	apiServer := &api.Server{
 		Root:          afero.NewBasePathFs(afero.NewOsFs(), absRootPath),
 		Authenticator: authenticator,
-		TokenService:  token.New(s.SharedSecret),
-		Store:         dataStore,
-		Cache:         loadingCache,
+		TokenService:  token.New(s.Secret),
+		UserStore:     userStore,
 		Host:          s.Host,
 		Port:          s.Port,
 		ServerURL:     s.ServerURL,
-		SharedSecret:  s.SharedSecret,
+		SharedSecret:  s.Secret,
 		Revision:      s.Revision,
-		AccessLog:     s.AccessLog,
+		AccessLog:     s.AccessLog.Enable,
 		Anonymous:     s.Auth.Anonymous.Enable,
 		SSLConfig:     sslConfig,
 	}
@@ -247,7 +237,6 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 
 func (s *ServerCommand) makeAuthenticator(
 	dataStore store.UserStore,
-	avatarStore avatar.Store,
 	authRefreshCache *authRefreshCache, //nolint:interfacer
 	localProvider provider.CredChecker,
 ) (*auth.Service, error) { //nolint:unparam
@@ -259,23 +248,31 @@ func (s *ServerCommand) makeAuthenticator(
 		CookieDuration: s.Auth.TTL.Cookie,
 		SecureCookies:  strings.HasPrefix(s.ServerURL, "https://"),
 		SecretReader: authToken.SecretFunc(func(aud string) (string, error) {
-			if s.SharedSecret == "" {
-				return "", errors.New("shared secret is not provided")
-			}
-			return s.SharedSecret, nil
+			return s.Secret, nil
 		}),
 		ClaimsUpd: s.newClaimsUpdater(context.Background(), dataStore),
+		BasicAuthChecker: func(user, passwd string) (ok bool, userInfo authToken.User, err error) {
+			u, err := dataStore.GetByUsernameAndProvider(context.Background(), user, "local")
+			if err != nil {
+				return false, authToken.User{}, err
+			}
+			if !hash.CheckPassword(passwd, u.Password) {
+				return false, authToken.User{}, errors.New("basic auth credentials check failed")
+			}
+			return true, authToken.User{
+				Name: u.Name,
+				ID:   u.ID,
+			}, nil
+		},
 		Validator: authToken.ValidatorFunc(func(token string, claims authToken.Claims) bool { // check on each auth call (in middleware)
 			if claims.User == nil {
 				return false
 			}
 			return !claims.User.BoolAttr("blocked")
 		}),
-		AvatarRoutePath: path.Join(s.getServerBasePath(), "/api/v1/avatar"),
-		AvatarStore:     avatarStore,
-		Logger:          log.NewLogrAdapter(log.DefaultLogger),
-		RefreshCache:    authRefreshCache,
-		UseGravatar:     true,
+		AvatarStore:  avatar.NewNoOp(),
+		Logger:       log.NewLogrAdapter(log.DefaultLogger),
+		RefreshCache: authRefreshCache,
 	})
 
 	s.addAuthProviders(authenticator, localProvider)
@@ -285,48 +282,30 @@ func (s *ServerCommand) makeAuthenticator(
 
 func (s *ServerCommand) newClaimsUpdater(ctx context.Context, userStore store.UserStore) authToken.ClaimsUpdater {
 	return authToken.ClaimsUpdFunc(func(c authToken.Claims) authToken.Claims {
-		/*if c.User == nil {
+		if c.User == nil {
 			return c
 		}
-		user, err := dataStore.FindUserByID(ctx, c.User.ID)
+		user, err := userStore.Get(ctx, c.User.ID)
 		switch {
+		// new login with external provider
 		case errors.Is(err, store.ErrNotFound):
 			user = &store.User{
 				ID:           c.User.ID,
 				Name:         c.User.Name,
-				Picture:      c.User.Picture,
 				Provider:     strings.Split(c.User.ID, "_")[0],
 				Username:     "",
 				Password:     "",
 				Scope:        s.Auth.User.Scope,
 				Locale:       s.Locale,
-				Rules:        nil,
 				LockPassword: false,
 				Blocked:      false,
 			}
-			if err := dataStore.SaveUser(ctx, user); err != nil {
+			if err := userStore.Save(ctx, user); err != nil {
 				log.WithContext(ctx).Errorf("failed to create user: %+v", err)
 				return c
 			}
-		case err != nil:
-			log.WithContext(ctx).Errorf("failed to find user: %+v", err)
-			return c
 		}
-		c.User.Name = user.Name
-		c.User.SetAdmin(user.Permissions.Admin)
-		c.User.SetBoolAttr("anonymous", user.Username == "anonymous")
-		c.User.SetBoolAttr("lockPassword", user.LockPassword)
-		c.User.SetBoolAttr("permAdmin", user.Permissions.Admin)
-		c.User.SetBoolAttr("permExecute", user.Permissions.CanExecute())
-		c.User.SetBoolAttr("permCreate", user.Permissions.CanCreate())
-		c.User.SetBoolAttr("permRename", user.Permissions.CanRename())
-		c.User.SetBoolAttr("permModify", user.Permissions.CanModify())
-		c.User.SetBoolAttr("permDelete", user.Permissions.CanDelete())
-		c.User.SetBoolAttr("permShare", user.Permissions.CanShare())
-		c.User.SetBoolAttr("permDownload", user.Permissions.CanDownload())
-		c.User.SetStrAttr("viewMode", "mosaic")
-		c.User.SetStrAttr("locale", user.Locale)
-		c.User.SetBoolAttr("blocked", user.Blocked)*/
+		c.User.SetBoolAttr("blocked", user.Blocked)
 
 		return c
 	})
@@ -375,9 +354,9 @@ func (s *ServerCommand) addAuthProviders(authenticator *auth.Service, localProvi
 	}
 }
 
-func newLocalAuthProvider(dataStore *service.DataStore) provider.CredChecker {
+func newLocalAuthProvider(userStore store.UserStore) provider.CredChecker {
 	return provider.CredCheckerFunc(func(username, password string) (ok bool, err error) {
-		user, err := dataStore.FindUserByUsername(context.TODO(), username)
+		user, err := userStore.Get(context.TODO(), username)
 		if errors.Is(err, store.ErrNotFound) {
 			return false, errors.New("user not found")
 		}
@@ -392,18 +371,13 @@ func newLocalAuthProvider(dataStore *service.DataStore) provider.CredChecker {
 	})
 }
 
-func (s *ServerCommand) makeDataStore(ctx context.Context) (userStore store.UserStore, err error) {
-	log.Debugf("Make data store, type=%s", s.Store.Type)
-	var (
-		client *ent.Client
-	)
-
+func (s *ServerCommand) makeEntClient(ctx context.Context) (client *ent.Client, err error) {
 	switch s.Store.Type {
 	case "sqlite":
 		if err = makeDirs(filepath.Dir(s.Store.SQLite.File)); err != nil {
 			return nil, errors.Wrap(err, "failed to create sqlite store")
 		}
-		client, err = ent.Open("sqlite", fmt.Sprintf("file:%s?cache=shared&mode=rwc", s.Store.SQLite.File))
+		client, err = ent.Open("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1", s.Store.SQLite.File))
 	case "postgres":
 		client, err = ent.Open("postgres", s.Store.Postgres.DSN)
 	case "mysql":
@@ -420,25 +394,7 @@ func (s *ServerCommand) makeDataStore(ctx context.Context) (userStore store.User
 		return nil, err
 	}
 
-	userStore = sql.NewUserStore(client)
-
-	return userStore, nil
-}
-
-func (s *ServerCommand) makeCache() (LoadingCache, error) {
-	log.Debugf("make cache, type=%s", s.Cache.Type)
-	switch s.Cache.Type {
-	case "mem":
-		backend, err := cache.NewLruCache(cache.MaxCacheSize(s.Cache.Max.Size), cache.MaxValSize(s.Cache.Max.Value),
-			cache.MaxKeys(s.Cache.Max.Items))
-		if err != nil {
-			return nil, errors.Wrap(err, "cache backend initialization")
-		}
-		return cache.NewScache(backend), nil
-	case "none": //nolint:goconst
-		return cache.NewScache(&cache.Nop{}), nil
-	}
-	return nil, errors.Errorf("unsupported cache type %s", s.Cache.Type)
+	return client, nil
 }
 
 func (s *ServerCommand) makeSSLConfig() (config api.SSLConfig, err error) {
@@ -475,18 +431,17 @@ func (s *ServerCommand) createAdminUser(storage store.UserStore) error {
 		return err
 	}
 	user := &store.User{
-		ID:           "local_" + authToken.HashID(sha1.New(), s.Auth.Admin.Username), //nolint:gosec
+		ID:           "local_" + authToken.HashID(sha1.New(), "admin"), //nolint:gosec
 		Name:         "Admin",
 		Provider:     "local",
-		Username:     s.Auth.Admin.Username,
+		Username:     "admin",
 		Password:     pwdHash,
 		Scope:        "/",
 		Locale:       s.Locale,
-		LockPassword: true,
+		LockPassword: false,
 		Blocked:      false,
 	}
-	_, err = storage.Save(context.Background(), user)
-	return err
+	return storage.Save(context.Background(), user)
 }
 
 func (s *ServerCommand) createAnonymousUser(storage store.UserStore) error {
@@ -505,8 +460,7 @@ func (s *ServerCommand) createAnonymousUser(storage store.UserStore) error {
 		LockPassword: true,
 		Blocked:      !s.Auth.Anonymous.Enable,
 	}
-	_, err = storage.Save(context.Background(), user)
-	return err
+	return storage.Save(context.Background(), user)
 }
 
 // Run all application objects

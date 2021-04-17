@@ -51,8 +51,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultScope holds the default value on creation for the "scope" field.
-	DefaultScope string
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() string
 )

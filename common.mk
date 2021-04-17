@@ -40,26 +40,6 @@ mockgen=$(TOOLS_BIN)/mockgen
 $(mockgen): $(TOOLS_GO_DEPS)
 	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/golang/mock/mockgen
 
-buf=$(TOOLS_BIN)/buf
-$(buf): $(TOOLS_GO_DEPS)
-	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/bufbuild/buf/cmd/buf
-
-protoc=$(TOOLS_BIN)/protoc
-$(protoc): $(TOOLS_DIR)/install_protoc.sh
-	$Q cd ${TOOLS_DIR} && ./install_protoc.sh && touch $@
-
-protoc-gen-go=$(TOOLS_BIN)/protoc-gen-go
-$(protoc-gen-go): $(TOOLS_GO_DEPS)
-	$Q cd ${TOOLS_DIR} && go build -o $@ google.golang.org/protobuf/cmd/protoc-gen-go
-
-protoc-gen-validate=$(TOOLS_BIN)/protoc-gen-validate
-$(protoc-gen-validate): $(TOOLS_GO_DEPS)
-	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/envoyproxy/protoc-gen-validate
-
-protoc-gen-twirp=$(TOOLS_BIN)/protoc-gen-twirp
-$(protoc-gen-twirp): $(TOOLS_GO_DEPS)
-	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/twitchtv/twirp/protoc-gen-twirp
-
 gowrap=$(TOOLS_BIN)/gowrap
 $(gowrap): $(TOOLS_GO_DEPS)
 	$Q cd ${TOOLS_DIR} && go build -o $@ github.com/hexdigest/gowrap/cmd/gowrap

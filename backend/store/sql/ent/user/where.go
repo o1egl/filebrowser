@@ -4,6 +4,7 @@ package user
 
 import (
 	"entgo.io/ent/dialect/sql"
+
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 )
 

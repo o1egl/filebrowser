@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,19 +10,14 @@ import (
 	"github.com/filebrowser/filebrowser/v3/store"
 )
 
-type UserStore interface {
-	FindUserByID(ctx context.Context, id string) (*store.User, error)
-}
-
-func User(userStore UserStore) gin.HandlerFunc {
+func User(userStore store.UserStore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userInfo, err := authToken.GetUserInfo(c.Request)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusUnauthorized, err, "unauthorized user", rest.ErrCodeUnauthorized)
 			return
 		}
-
-		user, err := userStore.FindUserByID(c.Request.Context(), userInfo.ID)
+		user, err := userStore.Get(c.Request.Context(), userInfo.ID)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusUnauthorized, err, "unauthorized user", rest.ErrCodeUnauthorized)
 			return

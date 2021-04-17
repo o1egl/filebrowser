@@ -1,56 +1,55 @@
-//go:generate go-enum --sql --marshal --lower --names --file $GOFILE
+//go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
 package api
 
 import (
+	"net/http"
+	"sort"
+
+	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
+
 	"github.com/filebrowser/filebrowser/v3/filesystem"
+	"github.com/filebrowser/filebrowser/v3/rest"
 )
 
 type fileController struct {
-	root string
+	rootFS afero.Fs
 }
 
 type Resource struct {
 	filesystem.Info
-	Content string            `json:"content"`
-	Items   []filesystem.Info `json:"items"`
+	Children []filesystem.Info `json:"children"`
 }
 
-/*func (fc *fileController) ListHandler(c *gin.Context) {
+func (fc *fileController) ListHandler(c *gin.Context) {
 	filename := c.Param("path")
 	sortBy := c.Param("sort_by")
 	sortOrder := c.Param("order")
 
 	user := rest.MustGetUser(c)
-	userFs := afero.NewBasePathFs(fc.root, user.Scope)
+	userFs := afero.NewBasePathFs(fc.rootFS, user.Scope)
 
 	info, err := filesystem.Stat(userFs, filename)
 	if err != nil {
 		switch {
 		case errors.Is(err, afero.ErrFileNotFound):
-			rest.SendErrorJSON(c, http.StatusBadRequest, err, "resource not found", rest.ErrNotFound)
+			rest.SendNotFoundError(c, err, "resource not found")
 		default:
-			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't open requested resource", rest.ErrCodeInternal)
+			rest.SendInternalError(c, err, "can't read requested resource")
 		}
 		return
 	}
 
 	resource := Resource{Info: info}
-	switch info.Type {
-	case filesystem.TypeDir:
+	if info.Type == filesystem.TypeDir {
 		infos, err := filesystem.ReadDir(userFs, filename)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't open requested resource", rest.ErrCodeInternal)
 			return
 		}
-		resource.Items = infos
-		sortResources(resource.Items, sortBy, sortOrder)
-	case filesystem.TypeText:
-		b, err := afero.ReadFile(userFs, filename)
-		if err != nil {
-			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't read file", rest.ErrCodeInternal)
-			return
-		}
-		resource.Content = string(b)
+		resource.Children = infos
+		sortResources(resource.Children, sortBy, sortOrder)
 	}
 	c.JSON(http.StatusOK, resource)
 }
@@ -77,7 +76,7 @@ func sortResources(resources []filesystem.Info, sortBy, order string) {
 	})
 }
 
-func (fc *fileController) ModifyHandler(c *gin.Context) {
+/*func (fc *fileController) ModifyHandler(c *gin.Context) {
 	filename := c.Param("path")
 	isDir := strings.HasSuffix(filename, "/")
 	override := c.Query("override") == "true" || c.Request.Method == http.MethodPut
@@ -144,9 +143,9 @@ func (fc *fileController) ModifyHandler(c *gin.Context) {
 		rest.SendErrorJSON(c, http.StatusInternalServerError, err, "failed to modify resource", rest.ErrCodeInternal)
 		return
 	}
-}
+}*/
 
-func checkFileExistence(fs afero.Fs, filename string, isDir, override bool) *rest.HttpError {
+/*func checkFileExistence(fs afero.Fs, filename string, isDir, override bool) *rest.HttpError {
 	fileInfo, err := filesystem.Stat(fs, filename)
 	if err != nil {
 		if os.IsNotExist(err) {

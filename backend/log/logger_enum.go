@@ -56,6 +56,10 @@ func ParseFormat(name string) (Format, error) {
 	if x, ok := _FormatValue[name]; ok {
 		return x, nil
 	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _FormatValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
 	return Format(0), fmt.Errorf("%s is not a valid Format, try [%s]", name, strings.Join(_FormatNames, ", "))
 }
 
@@ -216,6 +220,10 @@ var _LevelValue = map[string]Level{
 // ParseLevel attempts to convert a string to a Level
 func ParseLevel(name string) (Level, error) {
 	if x, ok := _LevelValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _LevelValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
 	return Level(0), fmt.Errorf("%s is not a valid Level, try [%s]", name, strings.Join(_LevelNames, ", "))

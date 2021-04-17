@@ -9,6 +9,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
@@ -62,14 +63,6 @@ func (uc *UserCreate) SetNillableName(s *string) *UserCreate {
 // SetScope sets the "scope" field.
 func (uc *UserCreate) SetScope(s string) *UserCreate {
 	uc.mutation.SetScope(s)
-	return uc
-}
-
-// SetNillableScope sets the "scope" field if the given value is not nil.
-func (uc *UserCreate) SetNillableScope(s *string) *UserCreate {
-	if s != nil {
-		uc.SetScope(*s)
-	}
 	return uc
 }
 
@@ -157,10 +150,6 @@ func (uc *UserCreate) SaveX(ctx context.Context) *User {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
-	if _, ok := uc.mutation.Scope(); !ok {
-		v := user.DefaultScope
-		uc.mutation.SetScope(v)
-	}
 	if _, ok := uc.mutation.ID(); !ok {
 		v := user.DefaultID()
 		uc.mutation.SetID(v)

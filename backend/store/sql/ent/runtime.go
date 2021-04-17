@@ -13,10 +13,6 @@ import (
 func init() {
 	userFields := schema.User{}.Fields()
 	_ = userFields
-	// userDescScope is the schema descriptor for scope field.
-	userDescScope := userFields[5].Descriptor()
-	// user.DefaultScope holds the default value on creation for the scope field.
-	user.DefaultScope = userDescScope.Default.(string)
 	// userDescID is the schema descriptor for id field.
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.

@@ -15,7 +15,7 @@ var (
 		{Name: "username", Type: field.TypeString},
 		{Name: "password", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString, Nullable: true},
-		{Name: "scope", Type: field.TypeString, Default: "/"},
+		{Name: "scope", Type: field.TypeString},
 		{Name: "locale", Type: field.TypeString},
 		{Name: "lock_password", Type: field.TypeBool},
 		{Name: "blocked", Type: field.TypeBool},
