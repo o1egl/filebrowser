@@ -33,6 +33,7 @@ type Resource struct {
 type FileMeta struct {
 	FilesCount int `json:"files_count"`
 	DirsCount  int `json:"dirs_count"`
+	TotalCount int `json:"total_count"`
 }
 
 /*
@@ -109,11 +110,16 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 		} else {
 			response.Meta.FilesCount++
 		}
+		response.Meta.TotalCount++
 	}
 
 	// apply offset/limit
-	offset := mathx.MaxInt(params.Offset, len(response.Children)-1)
-	limit := len(response.Children) - 1
+	offset := mathx.MinInt(params.Offset, len(response.Children))
+	limit := len(response.Children)
+	if params.Limit > 0 {
+		limit = mathx.MinInt(offset+params.Limit, len(response.Children))
+	}
+	response.Children = response.Children[offset:limit]
 
 	c.JSON(http.StatusOK, response)
 }
@@ -162,6 +168,9 @@ func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
 	if limitInput != "" {
 		if params.Limit, err = strconv.Atoi(limitInput); err != nil {
 			return nil, errors.Wrap(err, "incorrect limit param")
+		}
+		if params.Limit == 0 {
+			return nil, errors.New("offset must be greater than 0")
 		}
 	}
 

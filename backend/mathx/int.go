@@ -2,7 +2,10 @@ package mathx
 
 // MinInt returns minimum value of provided params
 func MinInt(is ...int) int {
-	res := 0
+	if len(is) == 0 {
+		return 0
+	}
+	res := is[0]
 	for _, i := range is {
 		if i < res {
 			res = i
@@ -13,7 +16,10 @@ func MinInt(is ...int) int {
 
 // MaxInt returns maximum value of provided params
 func MaxInt(is ...int) int {
-	res := 0
+	if len(is) == 0 {
+		return 0
+	}
+	res := is[0]
 	for _, i := range is {
 		if i > res {
 			res = i
