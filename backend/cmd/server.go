@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"context"
-	"crypto/sha1" //nolint:gosec
+	"context" //nolint:gosec
 	"fmt"
 	"net/url"
 	"os"
@@ -13,7 +12,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto"
-	"github.com/go-pkgz/auth"
+	pkgAuth "github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/provider"
 	authToken "github.com/go-pkgz/auth/token"
@@ -23,11 +22,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
+	"github.com/filebrowser/filebrowser/v3/auth"
+	"github.com/filebrowser/filebrowser/v3/hash"
+
 	"github.com/filebrowser/filebrowser/v3/store/sql"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 
 	"github.com/filebrowser/filebrowser/v3/cache"
-	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/rest/api"
 	"github.com/filebrowser/filebrowser/v3/store"
@@ -78,7 +79,7 @@ type AuthGroup struct {
 	Twitter  OAuthGroup `group:"twitter" namespace:"twitter" env-namespace:"TWITTER" description:"Twitter OAuth"`
 	Dev      bool       `long:"dev" env:"DEV" description:"enable dev (local) oauth2"`
 	User     struct {
-		Scope       string `long:"scope" env:"SCOPE" default:"/" description:"default user scope. must start with /"`
+		Home        string `long:"home" env:"HOME" default:"/" description:"default user home. must start with /"`
 		Permissions struct {
 			Create   bool `long:"create" env:"CREATE" description:"add create permission"`
 			Rename   bool `long:"rename" env:"RENAME" description:"add rename permission"`
@@ -90,7 +91,7 @@ type AuthGroup struct {
 	} `group:"user" namespace:"user" env-namespace:"USER"`
 	Anonymous struct {
 		Enable      bool   `long:"enable" env:"ENABLE" description:"enable anonymous user"`
-		Scope       string `long:"scope" env:"SCOPE" default:"/" description:"user scope. must start with /"`
+		Home        string `long:"home" env:"HOME" default:"/" description:"user home. must start with /"`
 		Permissions struct {
 			Admin    bool `long:"admin" env:"ADMIN" description:"add admin permission"`
 			Create   bool `long:"create" env:"CREATE" description:"add create permission"`
@@ -187,18 +188,23 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 	}
 
 	userStore := sql.NewUserStore(entClient)
+	authService := auth.NewService(userStore, s.Auth.User.Home, s.Locale)
 
-	/*if err := s.createAdminUser(dataStore); err != nil {
-		return nil, errors.Wrap(err, "failed to create admin user")
+	hashedPassword, err := hash.Password(s.Auth.Admin.Password)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := s.createAnonymousUser(dataStore); err != nil {
-		return nil, errors.Wrap(err, "failed to create anonymous user")
-	}*/
+	if err := authService.InitAdminUser(ctx, hashedPassword); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize admin user")
+	}
+
+	if err := authService.InitGuestUser(ctx); err != nil {
+		return nil, errors.Wrap(err, "failed to initialize guest user")
+	}
 
 	authRefreshCache := newAuthRefreshCache()
-	localAuthProvider := newLocalAuthProvider(userStore)
-	authenticator, err := s.makeAuthenticator(userStore, authRefreshCache, localAuthProvider)
+	authenticator, err := s.makeAuthenticator(authService, authRefreshCache)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to make authenticator")
 	}
@@ -236,11 +242,10 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 }
 
 func (s *ServerCommand) makeAuthenticator(
-	dataStore store.UserStore,
+	authService *auth.Service,
 	authRefreshCache *authRefreshCache, //nolint:interfacer
-	localProvider provider.CredChecker,
-) (*auth.Service, error) { //nolint:unparam
-	authenticator := auth.NewService(auth.Opts{
+) (*pkgAuth.Service, error) { //nolint:unparam
+	authenticator := pkgAuth.NewService(pkgAuth.Opts{
 		DisableXSRF:    true, // TODO remove it
 		URL:            strings.TrimSuffix(s.ServerURL, "/"),
 		Issuer:         "File Browser",
@@ -250,32 +255,15 @@ func (s *ServerCommand) makeAuthenticator(
 		SecretReader: authToken.SecretFunc(func(aud string) (string, error) {
 			return s.Secret, nil
 		}),
-		ClaimsUpd: s.newClaimsUpdater(context.Background(), dataStore),
-		BasicAuthChecker: func(user, passwd string) (ok bool, userInfo authToken.User, err error) {
-			u, err := dataStore.GetByUsernameAndProvider(context.Background(), user, "local")
-			if err != nil {
-				return false, authToken.User{}, err
-			}
-			if !hash.CheckPassword(passwd, u.Password) {
-				return false, authToken.User{}, errors.New("basic auth credentials check failed")
-			}
-			return true, authToken.User{
-				Name: u.Name,
-				ID:   u.ID,
-			}, nil
-		},
-		Validator: authToken.ValidatorFunc(func(token string, claims authToken.Claims) bool { // check on each auth call (in middleware)
-			if claims.User == nil {
-				return false
-			}
-			return !claims.User.BoolAttr("blocked")
-		}),
-		AvatarStore:  avatar.NewNoOp(),
-		Logger:       log.NewLogrAdapter(log.DefaultLogger),
-		RefreshCache: authRefreshCache,
+		ClaimsUpd:        authService,
+		BasicAuthChecker: authService.BasicAuthChecker,
+		Validator:        authService,
+		AvatarStore:      avatar.NewNoOp(),
+		Logger:           log.NewLogrAdapter(log.DefaultLogger),
+		RefreshCache:     authRefreshCache,
 	})
 
-	s.addAuthProviders(authenticator, localProvider)
+	s.addAuthProviders(authenticator, authService)
 
 	return authenticator, nil
 }
@@ -291,16 +279,16 @@ func (s *ServerCommand) newClaimsUpdater(ctx context.Context, userStore store.Us
 		case errors.Is(err, store.ErrNotFound):
 			user = &store.User{
 				ID:           c.User.ID,
-				Name:         c.User.Name,
 				Provider:     strings.Split(c.User.ID, "_")[0],
 				Username:     "",
 				Password:     "",
-				Scope:        s.Auth.User.Scope,
+				Home:         s.Auth.User.Home,
+				Name:         c.User.Name,
 				Locale:       s.Locale,
 				LockPassword: false,
 				Blocked:      false,
 			}
-			if err := userStore.Save(ctx, user); err != nil {
+			if err := userStore.Create(ctx, user); err != nil {
 				log.WithContext(ctx).Errorf("failed to create user: %+v", err)
 				return c
 			}
@@ -311,7 +299,7 @@ func (s *ServerCommand) newClaimsUpdater(ctx context.Context, userStore store.Us
 	})
 }
 
-func (s *ServerCommand) addAuthProviders(authenticator *auth.Service, localProvider provider.CredChecker) {
+func (s *ServerCommand) addAuthProviders(authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
 	providers := 0
 
 	providers++
@@ -352,23 +340,6 @@ func (s *ServerCommand) addAuthProviders(authenticator *auth.Service, localProvi
 	if providers == 0 {
 		log.Warnf("no auth providers defined")
 	}
-}
-
-func newLocalAuthProvider(userStore store.UserStore) provider.CredChecker {
-	return provider.CredCheckerFunc(func(username, password string) (ok bool, err error) {
-		user, err := userStore.Get(context.TODO(), username)
-		if errors.Is(err, store.ErrNotFound) {
-			return false, errors.New("user not found")
-		}
-		if err != nil {
-			return false, err
-		}
-
-		if !hash.CheckPassword(password, user.Password) {
-			return false, errors.New("incorrect user credentials")
-		}
-		return true, nil
-	})
 }
 
 func (s *ServerCommand) makeEntClient(ctx context.Context) (client *ent.Client, err error) {
@@ -423,44 +394,6 @@ func (s *ServerCommand) makeSSLConfig() (config api.SSLConfig, err error) {
 		}
 	}
 	return config, err
-}
-
-func (s *ServerCommand) createAdminUser(storage store.UserStore) error {
-	pwdHash, err := hash.Password(s.Auth.Admin.Password)
-	if err != nil {
-		return err
-	}
-	user := &store.User{
-		ID:           "local_" + authToken.HashID(sha1.New(), "admin"), //nolint:gosec
-		Name:         "Admin",
-		Provider:     "local",
-		Username:     "admin",
-		Password:     pwdHash,
-		Scope:        "/",
-		Locale:       s.Locale,
-		LockPassword: false,
-		Blocked:      false,
-	}
-	return storage.Save(context.Background(), user)
-}
-
-func (s *ServerCommand) createAnonymousUser(storage store.UserStore) error {
-	pwdHash, err := hash.Password("")
-	if err != nil {
-		return err
-	}
-	user := &store.User{
-		ID:           "local_" + authToken.HashID(sha1.New(), "anonymous"), //nolint:gosec
-		Name:         "Anonymous",
-		Provider:     "local",
-		Username:     "anonymous",
-		Password:     pwdHash,
-		Scope:        s.Auth.Anonymous.Scope,
-		Locale:       s.Locale,
-		LockPassword: true,
-		Blocked:      !s.Auth.Anonymous.Enable,
-	}
-	return storage.Save(context.Background(), user)
 }
 
 // Run all application objects

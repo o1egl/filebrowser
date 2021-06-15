@@ -4,6 +4,7 @@ package user
 
 import (
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 )
@@ -112,17 +113,17 @@ func Password(v string) predicate.User {
 	})
 }
 
+// Home applies equality check predicate on the "home" field. It's identical to HomeEQ.
+func Home(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldHome), v))
+	})
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		s.Where(sql.EQ(s.C(FieldName), v))
-	})
-}
-
-// Scope applies equality check predicate on the "scope" field. It's identical to ScopeEQ.
-func Scope(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldScope), v))
 	})
 }
 
@@ -494,6 +495,117 @@ func PasswordContainsFold(v string) predicate.User {
 	})
 }
 
+// HomeEQ applies the EQ predicate on the "home" field.
+func HomeEQ(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldHome), v))
+	})
+}
+
+// HomeNEQ applies the NEQ predicate on the "home" field.
+func HomeNEQ(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldHome), v))
+	})
+}
+
+// HomeIn applies the In predicate on the "home" field.
+func HomeIn(vs ...string) predicate.User {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldHome), v...))
+	})
+}
+
+// HomeNotIn applies the NotIn predicate on the "home" field.
+func HomeNotIn(vs ...string) predicate.User {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.User(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldHome), v...))
+	})
+}
+
+// HomeGT applies the GT predicate on the "home" field.
+func HomeGT(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldHome), v))
+	})
+}
+
+// HomeGTE applies the GTE predicate on the "home" field.
+func HomeGTE(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldHome), v))
+	})
+}
+
+// HomeLT applies the LT predicate on the "home" field.
+func HomeLT(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldHome), v))
+	})
+}
+
+// HomeLTE applies the LTE predicate on the "home" field.
+func HomeLTE(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldHome), v))
+	})
+}
+
+// HomeContains applies the Contains predicate on the "home" field.
+func HomeContains(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldHome), v))
+	})
+}
+
+// HomeHasPrefix applies the HasPrefix predicate on the "home" field.
+func HomeHasPrefix(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldHome), v))
+	})
+}
+
+// HomeHasSuffix applies the HasSuffix predicate on the "home" field.
+func HomeHasSuffix(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldHome), v))
+	})
+}
+
+// HomeEqualFold applies the EqualFold predicate on the "home" field.
+func HomeEqualFold(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldHome), v))
+	})
+}
+
+// HomeContainsFold applies the ContainsFold predicate on the "home" field.
+func HomeContainsFold(v string) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldHome), v))
+	})
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -591,20 +703,6 @@ func NameHasSuffix(v string) predicate.User {
 	})
 }
 
-// NameIsNil applies the IsNil predicate on the "name" field.
-func NameIsNil() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldName)))
-	})
-}
-
-// NameNotNil applies the NotNil predicate on the "name" field.
-func NameNotNil() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldName)))
-	})
-}
-
 // NameEqualFold applies the EqualFold predicate on the "name" field.
 func NameEqualFold(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
@@ -616,117 +714,6 @@ func NameEqualFold(v string) predicate.User {
 func NameContainsFold(v string) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldName), v))
-	})
-}
-
-// ScopeEQ applies the EQ predicate on the "scope" field.
-func ScopeEQ(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldScope), v))
-	})
-}
-
-// ScopeNEQ applies the NEQ predicate on the "scope" field.
-func ScopeNEQ(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldScope), v))
-	})
-}
-
-// ScopeIn applies the In predicate on the "scope" field.
-func ScopeIn(vs ...string) predicate.User {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.User(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldScope), v...))
-	})
-}
-
-// ScopeNotIn applies the NotIn predicate on the "scope" field.
-func ScopeNotIn(vs ...string) predicate.User {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.User(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldScope), v...))
-	})
-}
-
-// ScopeGT applies the GT predicate on the "scope" field.
-func ScopeGT(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldScope), v))
-	})
-}
-
-// ScopeGTE applies the GTE predicate on the "scope" field.
-func ScopeGTE(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldScope), v))
-	})
-}
-
-// ScopeLT applies the LT predicate on the "scope" field.
-func ScopeLT(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldScope), v))
-	})
-}
-
-// ScopeLTE applies the LTE predicate on the "scope" field.
-func ScopeLTE(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldScope), v))
-	})
-}
-
-// ScopeContains applies the Contains predicate on the "scope" field.
-func ScopeContains(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.Contains(s.C(FieldScope), v))
-	})
-}
-
-// ScopeHasPrefix applies the HasPrefix predicate on the "scope" field.
-func ScopeHasPrefix(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.HasPrefix(s.C(FieldScope), v))
-	})
-}
-
-// ScopeHasSuffix applies the HasSuffix predicate on the "scope" field.
-func ScopeHasSuffix(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.HasSuffix(s.C(FieldScope), v))
-	})
-}
-
-// ScopeEqualFold applies the EqualFold predicate on the "scope" field.
-func ScopeEqualFold(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.EqualFold(s.C(FieldScope), v))
-	})
-}
-
-// ScopeContainsFold applies the ContainsFold predicate on the "scope" field.
-func ScopeContainsFold(v string) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		s.Where(sql.ContainsFold(s.C(FieldScope), v))
 	})
 }
 
@@ -866,6 +853,62 @@ func BlockedEQ(v bool) predicate.User {
 func BlockedNEQ(v bool) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		s.Where(sql.NEQ(s.C(FieldBlocked), v))
+	})
+}
+
+// HasMounts applies the HasEdge predicate on the "mounts" edge.
+func HasMounts() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MountsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, MountsTable, MountsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasMountsWith applies the HasEdge predicate on the "mounts" edge with a given conditions (other predicates).
+func HasMountsWith(preds ...predicate.Mount) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(MountsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, MountsTable, MountsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasGroups applies the HasEdge predicate on the "groups" edge.
+func HasGroups() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(GroupsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, GroupsTable, GroupsPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGroupsWith applies the HasEdge predicate on the "groups" edge with a given conditions (other predicates).
+func HasGroupsWith(preds ...predicate.Group) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(GroupsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, GroupsTable, GroupsPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
 	})
 }
 

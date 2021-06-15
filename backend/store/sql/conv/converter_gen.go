@@ -30,8 +30,8 @@ func (c *UserConverterImpl) entUserToStoreUser(source ent.User) store.User {
 	storeUser.Provider = source.Provider
 	storeUser.Username = source.Username
 	storeUser.Password = source.Password
+	storeUser.Home = source.Home
 	storeUser.Name = source.Name
-	storeUser.Scope = source.Scope
 	storeUser.Locale = source.Locale
 	storeUser.LockPassword = source.LockPassword
 	storeUser.Blocked = source.Blocked

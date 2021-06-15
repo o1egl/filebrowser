@@ -6,7 +6,7 @@ import (
 	"github.com/filebrowser/filebrowser/v3/store"
 	"github.com/filebrowser/filebrowser/v3/store/sql/conv"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
-	user "github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
 type UserStore struct {
@@ -32,11 +32,8 @@ func (u *UserStore) Get(ctx context.Context, id string) (*store.User, error) {
 	return u.converter.Convert(usr), nil
 }
 
-func (u *UserStore) GetByUsernameAndProvider(ctx context.Context, username, provider string) (*store.User, error) {
-	usr, err := u.client.User.Query().Where(user.And(
-		user.UsernameEqualFold(username),
-		user.ProviderEQ(provider),
-	)).Only(ctx)
+func (u *UserStore) GetByUsername(ctx context.Context, username string) (*store.User, error) {
+	usr, err := u.client.User.Query().Where(user.UsernameEqualFold(username)).Only(ctx)
 	switch {
 	case ent.IsNotFound(err):
 		return nil, store.ErrNotFound
@@ -46,18 +43,38 @@ func (u *UserStore) GetByUsernameAndProvider(ctx context.Context, username, prov
 	return u.converter.Convert(usr), nil
 }
 
-func (u *UserStore) Save(ctx context.Context, user *store.User) error {
-	_, err := u.client.User.Create().
+func (u *UserStore) Create(ctx context.Context, user *store.User) error {
+	userBuilder := u.client.User.Create().
 		SetID(user.ID).
 		SetProvider(user.Provider).
 		SetUsername(user.Username).
-		SetPassword(user.Password).
 		SetName(user.Name).
-		SetScope(user.Scope).
+		SetHome(user.Home).
 		SetLocale(user.Locale).
 		SetLockPassword(user.LockPassword).
-		SetBlocked(user.Blocked).
-		Save(ctx)
+		SetBlocked(user.Blocked)
 
+	if user.Password != "" {
+		userBuilder = userBuilder.SetPassword(user.Password)
+	}
+
+	_, err := userBuilder.Save(ctx)
+	return err
+}
+
+func (u *UserStore) Update(ctx context.Context, user *store.User) error {
+	userBuilder := u.client.User.UpdateOneID(user.ID).
+		SetUsername(user.Username).
+		SetName(user.Name).
+		SetHome(user.Home).
+		SetLocale(user.Locale).
+		SetLockPassword(user.LockPassword).
+		SetBlocked(user.Blocked)
+
+	if user.Password != "" {
+		userBuilder = userBuilder.SetPassword(user.Password)
+	}
+
+	_, err := userBuilder.Save(ctx)
 	return err
 }

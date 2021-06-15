@@ -18,8 +18,8 @@ type Info struct {
 	ModTime   time.Time   `json:"modified"`
 	Mode      os.FileMode `json:"mode"`
 	Type      Type        `json:"type"`
-	IsSymlink bool        `json:"isSymlink"`
-	IsDir     bool        `json:"isDir"`
+	IsSymlink bool        `json:"is_symlink"`
+	IsDir     bool        `json:"is_dir"`
 }
 
 /*

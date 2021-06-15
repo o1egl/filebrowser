@@ -9,6 +9,32 @@ import (
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 )
 
+// The GroupFunc type is an adapter to allow the use of ordinary
+// function as Group mutator.
+type GroupFunc func(context.Context, *ent.GroupMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f GroupFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.GroupMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GroupMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The MountFunc type is an adapter to allow the use of ordinary
+// function as Mount mutator.
+type MountFunc func(context.Context, *ent.MountMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f MountFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.MountMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.MountMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)

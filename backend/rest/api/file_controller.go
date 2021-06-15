@@ -3,14 +3,21 @@ package api
 
 import (
 	"net/http"
-	"sort"
+	"strconv"
 
+	"github.com/filebrowser/filebrowser/v3/mathx"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 
 	"github.com/filebrowser/filebrowser/v3/filesystem"
 	"github.com/filebrowser/filebrowser/v3/rest"
+)
+
+const (
+	defaultGroupBy = GroupByType
+	defaultSortBy  = SortByName
+	defaultOrderBy = OrderByAsc
 )
 
 type fileController struct {
@@ -20,17 +27,59 @@ type fileController struct {
 type Resource struct {
 	filesystem.Info
 	Children []filesystem.Info `json:"children"`
+	Meta     FileMeta          `json:"meta"`
+}
+
+type FileMeta struct {
+	FilesCount int `json:"files_count"`
+	DirsCount  int `json:"dirs_count"`
+}
+
+/*
+ENUM(
+none
+type
+)
+*/
+type GroupBy int
+
+/*
+ENUM(
+name
+size
+modified
+)
+*/
+type SortBy int
+
+/*
+ENUM(
+asc
+desc
+)
+*/
+type OrderBy int
+
+type ListHandlerParams struct {
+	Filename string
+	GroupBy  GroupBy
+	SortBy   SortBy
+	OrderBy  OrderBy
+	Offset   int
+	Limit    int
 }
 
 func (fc *fileController) ListHandler(c *gin.Context) {
-	filename := c.Param("path")
-	sortBy := c.Param("sort_by")
-	sortOrder := c.Param("order")
+	params, err := parseListHandlerParams(c)
+	if err != nil {
+		rest.SendBadRequestError(c, err, "failed to parse input params")
+		return
+	}
 
 	user := rest.MustGetUser(c)
-	userFs := afero.NewBasePathFs(fc.rootFS, user.Scope)
+	userFs := afero.NewBasePathFs(fc.rootFS, user.Home)
 
-	info, err := filesystem.Stat(userFs, filename)
+	info, err := filesystem.Stat(userFs, params.Filename)
 	if err != nil {
 		switch {
 		case errors.Is(err, afero.ErrFileNotFound):
@@ -41,39 +90,82 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 		return
 	}
 
-	resource := Resource{Info: info}
+	response := Resource{
+		Info: info,
+	}
 	if info.Type == filesystem.TypeDir {
-		infos, err := filesystem.ReadDir(userFs, filename)
+		children, err := filesystem.ReadDir(userFs, params.Filename)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't open requested resource", rest.ErrCodeInternal)
 			return
 		}
-		resource.Children = infos
-		sortResources(resource.Children, sortBy, sortOrder)
+		response.Children = sortResources(children, params.GroupBy, params.SortBy, params.OrderBy)
 	}
-	c.JSON(http.StatusOK, resource)
+
+	// Add metadata
+	for _, res := range response.Children {
+		if res.IsDir {
+			response.Meta.DirsCount++
+		} else {
+			response.Meta.FilesCount++
+		}
+	}
+
+	// apply offset/limit
+	offset := mathx.MaxInt(params.Offset, len(response.Children)-1)
+	limit := len(response.Children) - 1
+
+	c.JSON(http.StatusOK, response)
 }
 
-func sortResources(resources []filesystem.Info, sortBy, order string) {
-	sort.Slice(resources, func(i, j int) bool {
-		var result bool
+func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
+	filename := c.Param("path")
+	groupByInput := c.Query("group_by")
+	sortByInput := c.Query("sort_by")
+	orderByInput := c.Query("order_by")
+	offsetInput := c.Query("offset")
+	limitInput := c.Query("limit")
 
-		switch sortBy {
-		case "size":
-			result = resources[i].Size < resources[j].Size
-		case "modified":
-			result = resources[i].ModTime.Unix() < resources[j].ModTime.Unix()
-		case "name":
-			fallthrough
-		default:
-			result = resources[i].Name < resources[j].Name
-		}
+	params := &ListHandlerParams{
+		Filename: filename,
+		GroupBy:  defaultGroupBy,
+		SortBy:   defaultSortBy,
+		OrderBy:  defaultOrderBy,
+		Offset:   0,
+		Limit:    -1,
+	}
 
-		if order == "asc" {
-			return !result
+	var err error
+	if groupByInput != "" {
+		if params.GroupBy, err = ParseGroupBy(groupByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect group_by param")
 		}
-		return result
-	})
+	}
+	if sortByInput != "" {
+		if params.SortBy, err = ParseSortBy(sortByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect sort_by param")
+		}
+	}
+	if orderByInput != "" {
+		if params.OrderBy, err = ParseOrderBy(orderByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect order_by param")
+		}
+	}
+	if offsetInput != "" {
+		if params.Offset, err = strconv.Atoi(offsetInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect offset param")
+		}
+		if params.Offset < 0 {
+			return nil, errors.New("offset must be negative")
+		}
+	}
+	if limitInput != "" {
+		if params.Limit, err = strconv.Atoi(limitInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect limit param")
+		}
+	}
+
+	return params, nil
 }
 
 /*func (fc *fileController) ModifyHandler(c *gin.Context) {

@@ -22,16 +22,48 @@ type User struct {
 	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"password,omitempty"`
+	// Home holds the value of the "home" field.
+	Home string `json:"home,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
-	// Scope holds the value of the "scope" field.
-	Scope string `json:"scope,omitempty"`
 	// Locale holds the value of the "locale" field.
 	Locale string `json:"locale,omitempty"`
 	// LockPassword holds the value of the "lock_password" field.
 	LockPassword bool `json:"lock_password,omitempty"`
 	// Blocked holds the value of the "blocked" field.
 	Blocked bool `json:"blocked,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges UserEdges `json:"edges"`
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Mounts holds the value of the mounts edge.
+	Mounts []*Mount `json:"mounts,omitempty"`
+	// Groups holds the value of the groups edge.
+	Groups []*Group `json:"groups,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [2]bool
+}
+
+// MountsOrErr returns the Mounts value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) MountsOrErr() ([]*Mount, error) {
+	if e.loadedTypes[0] {
+		return e.Mounts, nil
+	}
+	return nil, &NotLoadedError{edge: "mounts"}
+}
+
+// GroupsOrErr returns the Groups value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) GroupsOrErr() ([]*Group, error) {
+	if e.loadedTypes[1] {
+		return e.Groups, nil
+	}
+	return nil, &NotLoadedError{edge: "groups"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -40,9 +72,9 @@ func (*User) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case user.FieldLockPassword, user.FieldBlocked:
-			values[i] = &sql.NullBool{}
-		case user.FieldID, user.FieldProvider, user.FieldUsername, user.FieldPassword, user.FieldName, user.FieldScope, user.FieldLocale:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullBool)
+		case user.FieldID, user.FieldProvider, user.FieldUsername, user.FieldPassword, user.FieldHome, user.FieldName, user.FieldLocale:
+			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
 		}
@@ -82,17 +114,17 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				u.Password = value.String
 			}
+		case user.FieldHome:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field home", values[i])
+			} else if value.Valid {
+				u.Home = value.String
+			}
 		case user.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
 				u.Name = value.String
-			}
-		case user.FieldScope:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field scope", values[i])
-			} else if value.Valid {
-				u.Scope = value.String
 			}
 		case user.FieldLocale:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -115,6 +147,16 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 		}
 	}
 	return nil
+}
+
+// QueryMounts queries the "mounts" edge of the User entity.
+func (u *User) QueryMounts() *MountQuery {
+	return (&UserClient{config: u.config}).QueryMounts(u)
+}
+
+// QueryGroups queries the "groups" edge of the User entity.
+func (u *User) QueryGroups() *GroupQuery {
+	return (&UserClient{config: u.config}).QueryGroups(u)
 }
 
 // Update returns a builder for updating this User.
@@ -146,10 +188,10 @@ func (u *User) String() string {
 	builder.WriteString(u.Username)
 	builder.WriteString(", password=")
 	builder.WriteString(u.Password)
+	builder.WriteString(", home=")
+	builder.WriteString(u.Home)
 	builder.WriteString(", name=")
 	builder.WriteString(u.Name)
-	builder.WriteString(", scope=")
-	builder.WriteString(u.Scope)
 	builder.WriteString(", locale=")
 	builder.WriteString(u.Locale)
 	builder.WriteString(", lock_password=")

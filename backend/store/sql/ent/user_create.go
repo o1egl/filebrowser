@@ -10,6 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
@@ -46,23 +48,15 @@ func (uc *UserCreate) SetNillablePassword(s *string) *UserCreate {
 	return uc
 }
 
+// SetHome sets the "home" field.
+func (uc *UserCreate) SetHome(s string) *UserCreate {
+	uc.mutation.SetHome(s)
+	return uc
+}
+
 // SetName sets the "name" field.
 func (uc *UserCreate) SetName(s string) *UserCreate {
 	uc.mutation.SetName(s)
-	return uc
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (uc *UserCreate) SetNillableName(s *string) *UserCreate {
-	if s != nil {
-		uc.SetName(*s)
-	}
-	return uc
-}
-
-// SetScope sets the "scope" field.
-func (uc *UserCreate) SetScope(s string) *UserCreate {
-	uc.mutation.SetScope(s)
 	return uc
 }
 
@@ -90,12 +84,34 @@ func (uc *UserCreate) SetID(s string) *UserCreate {
 	return uc
 }
 
-// SetNillableID sets the "id" field if the given value is not nil.
-func (uc *UserCreate) SetNillableID(s *string) *UserCreate {
-	if s != nil {
-		uc.SetID(*s)
-	}
+// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
+func (uc *UserCreate) AddMountIDs(ids ...int) *UserCreate {
+	uc.mutation.AddMountIDs(ids...)
 	return uc
+}
+
+// AddMounts adds the "mounts" edges to the Mount entity.
+func (uc *UserCreate) AddMounts(m ...*Mount) *UserCreate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uc.AddMountIDs(ids...)
+}
+
+// AddGroupIDs adds the "groups" edge to the Group entity by IDs.
+func (uc *UserCreate) AddGroupIDs(ids ...int) *UserCreate {
+	uc.mutation.AddGroupIDs(ids...)
+	return uc
+}
+
+// AddGroups adds the "groups" edges to the Group entity.
+func (uc *UserCreate) AddGroups(g ...*Group) *UserCreate {
+	ids := make([]int, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
+	}
+	return uc.AddGroupIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -109,7 +125,6 @@ func (uc *UserCreate) Save(ctx context.Context) (*User, error) {
 		err  error
 		node *User
 	)
-	uc.defaults()
 	if len(uc.hooks) == 0 {
 		if err = uc.check(); err != nil {
 			return nil, err
@@ -148,14 +163,6 @@ func (uc *UserCreate) SaveX(ctx context.Context) *User {
 	return v
 }
 
-// defaults sets the default values of the builder before save.
-func (uc *UserCreate) defaults() {
-	if _, ok := uc.mutation.ID(); !ok {
-		v := user.DefaultID()
-		uc.mutation.SetID(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Provider(); !ok {
@@ -164,8 +171,11 @@ func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Username(); !ok {
 		return &ValidationError{Name: "username", err: errors.New("ent: missing required field \"username\"")}
 	}
-	if _, ok := uc.mutation.Scope(); !ok {
-		return &ValidationError{Name: "scope", err: errors.New("ent: missing required field \"scope\"")}
+	if _, ok := uc.mutation.Home(); !ok {
+		return &ValidationError{Name: "home", err: errors.New("ent: missing required field \"home\"")}
+	}
+	if _, ok := uc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
 	}
 	if _, ok := uc.mutation.Locale(); !ok {
 		return &ValidationError{Name: "locale", err: errors.New("ent: missing required field \"locale\"")}
@@ -229,6 +239,14 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
+	if value, ok := uc.mutation.Home(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldHome,
+		})
+		_node.Home = value
+	}
 	if value, ok := uc.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -236,14 +254,6 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Column: user.FieldName,
 		})
 		_node.Name = value
-	}
-	if value, ok := uc.mutation.Scope(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: user.FieldScope,
-		})
-		_node.Scope = value
 	}
 	if value, ok := uc.mutation.Locale(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -269,6 +279,44 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		})
 		_node.Blocked = value
 	}
+	if nodes := uc.mutation.MountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.GroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -286,7 +334,6 @@ func (ucb *UserCreateBulk) Save(ctx context.Context) ([]*User, error) {
 	for i := range ucb.builders {
 		func(i int, root context.Context) {
 			builder := ucb.builders[i]
-			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserMutation)
 				if !ok {

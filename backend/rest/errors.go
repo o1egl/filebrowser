@@ -84,3 +84,7 @@ func SendNotFoundError(c *gin.Context, err error, details string) {
 func SendInternalError(c *gin.Context, err error, details string) {
 	SendErrorJSON(c, http.StatusInternalServerError, err, details, ErrCodeInternal)
 }
+
+func SendBadRequestError(c *gin.Context, err error, details string) {
+	SendErrorJSON(c, http.StatusBadRequest, err, details, ErrBadRequest)
+}

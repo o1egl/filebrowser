@@ -8,14 +8,39 @@ import (
 )
 
 var (
+	// GroupsColumns holds the columns for the "groups" table.
+	GroupsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+	}
+	// GroupsTable holds the schema information for the "groups" table.
+	GroupsTable = &schema.Table{
+		Name:        "groups",
+		Columns:     GroupsColumns,
+		PrimaryKey:  []*schema.Column{GroupsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
+	// MountsColumns holds the columns for the "mounts" table.
+	MountsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "path", Type: field.TypeString},
+	}
+	// MountsTable holds the schema information for the "mounts" table.
+	MountsTable = &schema.Table{
+		Name:        "mounts",
+		Columns:     MountsColumns,
+		PrimaryKey:  []*schema.Column{MountsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeString, Unique: true},
 		{Name: "provider", Type: field.TypeString},
-		{Name: "username", Type: field.TypeString},
+		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "password", Type: field.TypeString, Nullable: true},
-		{Name: "name", Type: field.TypeString, Nullable: true},
-		{Name: "scope", Type: field.TypeString},
+		{Name: "home", Type: field.TypeString},
+		{Name: "name", Type: field.TypeString},
 		{Name: "locale", Type: field.TypeString},
 		{Name: "lock_password", Type: field.TypeBool},
 		{Name: "blocked", Type: field.TypeBool},
@@ -28,17 +53,103 @@ var (
 		ForeignKeys: []*schema.ForeignKey{},
 		Indexes: []*schema.Index{
 			{
-				Name:    "user_provider_username",
-				Unique:  true,
-				Columns: []*schema.Column{UsersColumns[1], UsersColumns[2]},
+				Name:    "user_provider",
+				Unique:  false,
+				Columns: []*schema.Column{UsersColumns[1]},
+			},
+		},
+	}
+	// GroupMountsColumns holds the columns for the "group_mounts" table.
+	GroupMountsColumns = []*schema.Column{
+		{Name: "group_id", Type: field.TypeInt},
+		{Name: "mount_id", Type: field.TypeInt},
+	}
+	// GroupMountsTable holds the schema information for the "group_mounts" table.
+	GroupMountsTable = &schema.Table{
+		Name:       "group_mounts",
+		Columns:    GroupMountsColumns,
+		PrimaryKey: []*schema.Column{GroupMountsColumns[0], GroupMountsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "group_mounts_group_id",
+				Columns:    []*schema.Column{GroupMountsColumns[0]},
+				RefColumns: []*schema.Column{GroupsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "group_mounts_mount_id",
+				Columns:    []*schema.Column{GroupMountsColumns[1]},
+				RefColumns: []*schema.Column{MountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// UserMountsColumns holds the columns for the "user_mounts" table.
+	UserMountsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "mount_id", Type: field.TypeInt},
+	}
+	// UserMountsTable holds the schema information for the "user_mounts" table.
+	UserMountsTable = &schema.Table{
+		Name:       "user_mounts",
+		Columns:    UserMountsColumns,
+		PrimaryKey: []*schema.Column{UserMountsColumns[0], UserMountsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_mounts_user_id",
+				Columns:    []*schema.Column{UserMountsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_mounts_mount_id",
+				Columns:    []*schema.Column{UserMountsColumns[1]},
+				RefColumns: []*schema.Column{MountsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
+	// UserGroupsColumns holds the columns for the "user_groups" table.
+	UserGroupsColumns = []*schema.Column{
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "group_id", Type: field.TypeInt},
+	}
+	// UserGroupsTable holds the schema information for the "user_groups" table.
+	UserGroupsTable = &schema.Table{
+		Name:       "user_groups",
+		Columns:    UserGroupsColumns,
+		PrimaryKey: []*schema.Column{UserGroupsColumns[0], UserGroupsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_groups_user_id",
+				Columns:    []*schema.Column{UserGroupsColumns[0]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_groups_group_id",
+				Columns:    []*schema.Column{UserGroupsColumns[1]},
+				RefColumns: []*schema.Column{GroupsColumns[0]},
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		GroupsTable,
+		MountsTable,
 		UsersTable,
+		GroupMountsTable,
+		UserMountsTable,
+		UserGroupsTable,
 	}
 )
 
 func init() {
+	GroupMountsTable.ForeignKeys[0].RefTable = GroupsTable
+	GroupMountsTable.ForeignKeys[1].RefTable = MountsTable
+	UserMountsTable.ForeignKeys[0].RefTable = UsersTable
+	UserMountsTable.ForeignKeys[1].RefTable = MountsTable
+	UserGroupsTable.ForeignKeys[0].RefTable = UsersTable
+	UserGroupsTable.ForeignKeys[1].RefTable = GroupsTable
 }

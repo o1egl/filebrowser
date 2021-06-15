@@ -10,6 +10,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
@@ -59,29 +61,15 @@ func (uu *UserUpdate) ClearPassword() *UserUpdate {
 	return uu
 }
 
+// SetHome sets the "home" field.
+func (uu *UserUpdate) SetHome(s string) *UserUpdate {
+	uu.mutation.SetHome(s)
+	return uu
+}
+
 // SetName sets the "name" field.
 func (uu *UserUpdate) SetName(s string) *UserUpdate {
 	uu.mutation.SetName(s)
-	return uu
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableName(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetName(*s)
-	}
-	return uu
-}
-
-// ClearName clears the value of the "name" field.
-func (uu *UserUpdate) ClearName() *UserUpdate {
-	uu.mutation.ClearName()
-	return uu
-}
-
-// SetScope sets the "scope" field.
-func (uu *UserUpdate) SetScope(s string) *UserUpdate {
-	uu.mutation.SetScope(s)
 	return uu
 }
 
@@ -103,9 +91,81 @@ func (uu *UserUpdate) SetBlocked(b bool) *UserUpdate {
 	return uu
 }
 
+// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
+func (uu *UserUpdate) AddMountIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddMountIDs(ids...)
+	return uu
+}
+
+// AddMounts adds the "mounts" edges to the Mount entity.
+func (uu *UserUpdate) AddMounts(m ...*Mount) *UserUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uu.AddMountIDs(ids...)
+}
+
+// AddGroupIDs adds the "groups" edge to the Group entity by IDs.
+func (uu *UserUpdate) AddGroupIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddGroupIDs(ids...)
+	return uu
+}
+
+// AddGroups adds the "groups" edges to the Group entity.
+func (uu *UserUpdate) AddGroups(g ...*Group) *UserUpdate {
+	ids := make([]int, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
+	}
+	return uu.AddGroupIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearMounts clears all "mounts" edges to the Mount entity.
+func (uu *UserUpdate) ClearMounts() *UserUpdate {
+	uu.mutation.ClearMounts()
+	return uu
+}
+
+// RemoveMountIDs removes the "mounts" edge to Mount entities by IDs.
+func (uu *UserUpdate) RemoveMountIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveMountIDs(ids...)
+	return uu
+}
+
+// RemoveMounts removes "mounts" edges to Mount entities.
+func (uu *UserUpdate) RemoveMounts(m ...*Mount) *UserUpdate {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uu.RemoveMountIDs(ids...)
+}
+
+// ClearGroups clears all "groups" edges to the Group entity.
+func (uu *UserUpdate) ClearGroups() *UserUpdate {
+	uu.mutation.ClearGroups()
+	return uu
+}
+
+// RemoveGroupIDs removes the "groups" edge to Group entities by IDs.
+func (uu *UserUpdate) RemoveGroupIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveGroupIDs(ids...)
+	return uu
+}
+
+// RemoveGroups removes "groups" edges to Group entities.
+func (uu *UserUpdate) RemoveGroups(g ...*Group) *UserUpdate {
+	ids := make([]int, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
+	}
+	return uu.RemoveGroupIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -204,24 +264,18 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: user.FieldPassword,
 		})
 	}
+	if value, ok := uu.mutation.Home(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldHome,
+		})
+	}
 	if value, ok := uu.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: user.FieldName,
-		})
-	}
-	if uu.mutation.NameCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: user.FieldName,
-		})
-	}
-	if value, ok := uu.mutation.Scope(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: user.FieldScope,
 		})
 	}
 	if value, ok := uu.mutation.Locale(); ok {
@@ -245,6 +299,114 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: user.FieldBlocked,
 		})
 	}
+	if uu.mutation.MountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedMountsIDs(); len(nodes) > 0 && !uu.mutation.MountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.MountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.GroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !uu.mutation.GroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.GroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -259,6 +421,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // UserUpdateOne is the builder for updating a single User entity.
 type UserUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *UserMutation
 }
@@ -295,29 +458,15 @@ func (uuo *UserUpdateOne) ClearPassword() *UserUpdateOne {
 	return uuo
 }
 
+// SetHome sets the "home" field.
+func (uuo *UserUpdateOne) SetHome(s string) *UserUpdateOne {
+	uuo.mutation.SetHome(s)
+	return uuo
+}
+
 // SetName sets the "name" field.
 func (uuo *UserUpdateOne) SetName(s string) *UserUpdateOne {
 	uuo.mutation.SetName(s)
-	return uuo
-}
-
-// SetNillableName sets the "name" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableName(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetName(*s)
-	}
-	return uuo
-}
-
-// ClearName clears the value of the "name" field.
-func (uuo *UserUpdateOne) ClearName() *UserUpdateOne {
-	uuo.mutation.ClearName()
-	return uuo
-}
-
-// SetScope sets the "scope" field.
-func (uuo *UserUpdateOne) SetScope(s string) *UserUpdateOne {
-	uuo.mutation.SetScope(s)
 	return uuo
 }
 
@@ -339,9 +488,88 @@ func (uuo *UserUpdateOne) SetBlocked(b bool) *UserUpdateOne {
 	return uuo
 }
 
+// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
+func (uuo *UserUpdateOne) AddMountIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddMountIDs(ids...)
+	return uuo
+}
+
+// AddMounts adds the "mounts" edges to the Mount entity.
+func (uuo *UserUpdateOne) AddMounts(m ...*Mount) *UserUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uuo.AddMountIDs(ids...)
+}
+
+// AddGroupIDs adds the "groups" edge to the Group entity by IDs.
+func (uuo *UserUpdateOne) AddGroupIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddGroupIDs(ids...)
+	return uuo
+}
+
+// AddGroups adds the "groups" edges to the Group entity.
+func (uuo *UserUpdateOne) AddGroups(g ...*Group) *UserUpdateOne {
+	ids := make([]int, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
+	}
+	return uuo.AddGroupIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearMounts clears all "mounts" edges to the Mount entity.
+func (uuo *UserUpdateOne) ClearMounts() *UserUpdateOne {
+	uuo.mutation.ClearMounts()
+	return uuo
+}
+
+// RemoveMountIDs removes the "mounts" edge to Mount entities by IDs.
+func (uuo *UserUpdateOne) RemoveMountIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveMountIDs(ids...)
+	return uuo
+}
+
+// RemoveMounts removes "mounts" edges to Mount entities.
+func (uuo *UserUpdateOne) RemoveMounts(m ...*Mount) *UserUpdateOne {
+	ids := make([]int, len(m))
+	for i := range m {
+		ids[i] = m[i].ID
+	}
+	return uuo.RemoveMountIDs(ids...)
+}
+
+// ClearGroups clears all "groups" edges to the Group entity.
+func (uuo *UserUpdateOne) ClearGroups() *UserUpdateOne {
+	uuo.mutation.ClearGroups()
+	return uuo
+}
+
+// RemoveGroupIDs removes the "groups" edge to Group entities by IDs.
+func (uuo *UserUpdateOne) RemoveGroupIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveGroupIDs(ids...)
+	return uuo
+}
+
+// RemoveGroups removes "groups" edges to Group entities.
+func (uuo *UserUpdateOne) RemoveGroups(g ...*Group) *UserUpdateOne {
+	ids := make([]int, len(g))
+	for i := range g {
+		ids[i] = g[i].ID
+	}
+	return uuo.RemoveGroupIDs(ids...)
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne {
+	uuo.fields = append([]string{field}, fields...)
+	return uuo
 }
 
 // Save executes the query and returns the updated User entity.
@@ -411,6 +639,18 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing User.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := uuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, user.FieldID)
+		for _, f := range fields {
+			if !user.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != user.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
 	if ps := uuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -445,24 +685,18 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Column: user.FieldPassword,
 		})
 	}
+	if value, ok := uuo.mutation.Home(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: user.FieldHome,
+		})
+	}
 	if value, ok := uuo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: user.FieldName,
-		})
-	}
-	if uuo.mutation.NameCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: user.FieldName,
-		})
-	}
-	if value, ok := uuo.mutation.Scope(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: user.FieldScope,
 		})
 	}
 	if value, ok := uuo.mutation.Locale(); ok {
@@ -485,6 +719,114 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Value:  value,
 			Column: user.FieldBlocked,
 		})
+	}
+	if uuo.mutation.MountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedMountsIDs(); len(nodes) > 0 && !uuo.mutation.MountsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.MountsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.MountsTable,
+			Columns: user.MountsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: mount.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.GroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !uuo.mutation.GroupsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.GroupsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   user.GroupsTable,
+			Columns: user.GroupsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: group.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

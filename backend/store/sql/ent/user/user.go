@@ -13,18 +13,32 @@ const (
 	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldHome holds the string denoting the home field in the database.
+	FieldHome = "home"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
-	// FieldScope holds the string denoting the scope field in the database.
-	FieldScope = "scope"
 	// FieldLocale holds the string denoting the locale field in the database.
 	FieldLocale = "locale"
 	// FieldLockPassword holds the string denoting the lock_password field in the database.
 	FieldLockPassword = "lock_password"
 	// FieldBlocked holds the string denoting the blocked field in the database.
 	FieldBlocked = "blocked"
+	// EdgeMounts holds the string denoting the mounts edge name in mutations.
+	EdgeMounts = "mounts"
+	// EdgeGroups holds the string denoting the groups edge name in mutations.
+	EdgeGroups = "groups"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// MountsTable is the table the holds the mounts relation/edge. The primary key declared below.
+	MountsTable = "user_mounts"
+	// MountsInverseTable is the table name for the Mount entity.
+	// It exists in this package in order to avoid circular dependency with the "mount" package.
+	MountsInverseTable = "mounts"
+	// GroupsTable is the table the holds the groups relation/edge. The primary key declared below.
+	GroupsTable = "user_groups"
+	// GroupsInverseTable is the table name for the Group entity.
+	// It exists in this package in order to avoid circular dependency with the "group" package.
+	GroupsInverseTable = "groups"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -33,12 +47,21 @@ var Columns = []string{
 	FieldProvider,
 	FieldUsername,
 	FieldPassword,
+	FieldHome,
 	FieldName,
-	FieldScope,
 	FieldLocale,
 	FieldLockPassword,
 	FieldBlocked,
 }
+
+var (
+	// MountsPrimaryKey and MountsColumn2 are the table columns denoting the
+	// primary key for the mounts relation (M2M).
+	MountsPrimaryKey = []string{"user_id", "mount_id"}
+	// GroupsPrimaryKey and GroupsColumn2 are the table columns denoting the
+	// primary key for the groups relation (M2M).
+	GroupsPrimaryKey = []string{"user_id", "group_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -49,8 +72,3 @@ func ValidColumn(column string) bool {
 	}
 	return false
 }
-
-var (
-	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() string
-)

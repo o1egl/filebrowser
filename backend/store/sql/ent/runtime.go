@@ -3,18 +3,18 @@
 package ent
 
 import (
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/schema"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	userFields := schema.User{}.Fields()
-	_ = userFields
-	// userDescID is the schema descriptor for id field.
-	userDescID := userFields[0].Descriptor()
-	// user.DefaultID holds the default value on creation for the id field.
-	user.DefaultID = userDescID.Default.(func() string)
+	mountFields := schema.Mount{}.Fields()
+	_ = mountFields
+	// mountDescPath is the schema descriptor for path field.
+	mountDescPath := mountFields[1].Descriptor()
+	// mount.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	mount.PathValidator = mountDescPath.Validators[0].(func(string) error)
 }
