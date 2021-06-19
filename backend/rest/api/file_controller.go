@@ -24,13 +24,13 @@ type fileController struct {
 	rootFS afero.Fs
 }
 
-type Resource struct {
+type FileListResponse struct {
 	filesystem.Info
 	Children []filesystem.Info `json:"children"`
-	Meta     FileMeta          `json:"meta"`
+	Metadata FileListMetadata  `json:"metadata"`
 }
 
-type FileMeta struct {
+type FileListMetadata struct {
 	FilesCount int `json:"files_count"`
 	DirsCount  int `json:"dirs_count"`
 	TotalCount int `json:"total_count"`
@@ -62,15 +62,15 @@ desc
 type OrderBy int
 
 type ListHandlerParams struct {
-	Filename string
-	GroupBy  GroupBy
-	SortBy   SortBy
-	OrderBy  OrderBy
-	Offset   int
-	Limit    int
+	Filename string  `json:"path"`
+	GroupBy  GroupBy `form:"group_by"`
+	SortBy   SortBy  `form:"sort_by" `
+	OrderBy  OrderBy `form:"order_by" `
+	Offset   int     `form:"offset" `
+	Limit    int     `form:"limit"`
 }
 
-func (fc *fileController) ListHandler(c *gin.Context) {
+func (fc *fileController) HomeListHandler(c *gin.Context) {
 	params, err := parseListHandlerParams(c)
 	if err != nil {
 		rest.SendBadRequestError(c, err, "failed to parse input params")
@@ -91,7 +91,7 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 		return
 	}
 
-	response := Resource{
+	response := FileListResponse{
 		Info: info,
 	}
 	if info.Type == filesystem.TypeDir {
@@ -106,11 +106,11 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 	// Add metadata
 	for _, res := range response.Children {
 		if res.IsDir {
-			response.Meta.DirsCount++
+			response.Metadata.DirsCount++
 		} else {
-			response.Meta.FilesCount++
+			response.Metadata.FilesCount++
 		}
-		response.Meta.TotalCount++
+		response.Metadata.TotalCount++
 	}
 
 	// apply offset/limit
@@ -175,6 +175,18 @@ func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
 	}
 
 	return params, nil
+}
+
+func (fc *fileController) DeleteHandler(c *gin.Context) {
+	filename := c.Param("path")
+
+	user := rest.MustGetUser(c)
+	userFs := afero.NewBasePathFs(fc.rootFS, user.Home)
+	if err := userFs.RemoveAll(filename); err != nil {
+		rest.SendInternalError(c, err, "failed to delete file")
+		return
+	}
+	c.Status(http.StatusOK)
 }
 
 /*func (fc *fileController) ModifyHandler(c *gin.Context) {
