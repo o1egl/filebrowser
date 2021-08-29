@@ -14,10 +14,10 @@ type Tx struct {
 	config
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
-	// Mount is the client for interacting with the Mount builders.
-	Mount *MountClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// Volume is the client for interacting with the Volume builders.
+	Volume *VolumeClient
 
 	// lazily loaded.
 	client     *Client
@@ -154,8 +154,8 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Group = NewGroupClient(tx.config)
-	tx.Mount = NewMountClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.Volume = NewVolumeClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

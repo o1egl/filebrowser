@@ -9,11 +9,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -23,9 +22,9 @@ type UserUpdate struct {
 	mutation *UserMutation
 }
 
-// Where adds a new predicate for the UserUpdate builder.
+// Where appends a list predicates to the UserUpdate builder.
 func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
-	uu.mutation.predicates = append(uu.mutation.predicates, ps...)
+	uu.mutation.Where(ps...)
 	return uu
 }
 
@@ -91,19 +90,19 @@ func (uu *UserUpdate) SetBlocked(b bool) *UserUpdate {
 	return uu
 }
 
-// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
-func (uu *UserUpdate) AddMountIDs(ids ...int) *UserUpdate {
-	uu.mutation.AddMountIDs(ids...)
+// AddVolumeIDs adds the "volumes" edge to the Volume entity by IDs.
+func (uu *UserUpdate) AddVolumeIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddVolumeIDs(ids...)
 	return uu
 }
 
-// AddMounts adds the "mounts" edges to the Mount entity.
-func (uu *UserUpdate) AddMounts(m ...*Mount) *UserUpdate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// AddVolumes adds the "volumes" edges to the Volume entity.
+func (uu *UserUpdate) AddVolumes(v ...*Volume) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.AddMountIDs(ids...)
+	return uu.AddVolumeIDs(ids...)
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
@@ -126,25 +125,25 @@ func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
 }
 
-// ClearMounts clears all "mounts" edges to the Mount entity.
-func (uu *UserUpdate) ClearMounts() *UserUpdate {
-	uu.mutation.ClearMounts()
+// ClearVolumes clears all "volumes" edges to the Volume entity.
+func (uu *UserUpdate) ClearVolumes() *UserUpdate {
+	uu.mutation.ClearVolumes()
 	return uu
 }
 
-// RemoveMountIDs removes the "mounts" edge to Mount entities by IDs.
-func (uu *UserUpdate) RemoveMountIDs(ids ...int) *UserUpdate {
-	uu.mutation.RemoveMountIDs(ids...)
+// RemoveVolumeIDs removes the "volumes" edge to Volume entities by IDs.
+func (uu *UserUpdate) RemoveVolumeIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveVolumeIDs(ids...)
 	return uu
 }
 
-// RemoveMounts removes "mounts" edges to Mount entities.
-func (uu *UserUpdate) RemoveMounts(m ...*Mount) *UserUpdate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveVolumes removes "volumes" edges to Volume entities.
+func (uu *UserUpdate) RemoveVolumes(v ...*Volume) *UserUpdate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.RemoveMountIDs(ids...)
+	return uu.RemoveVolumeIDs(ids...)
 }
 
 // ClearGroups clears all "groups" edges to the Group entity.
@@ -188,6 +187,9 @@ func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(uu.hooks) - 1; i >= 0; i-- {
+			if uu.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = uu.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, uu.mutation); err != nil {
@@ -299,33 +301,33 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: user.FieldBlocked,
 		})
 	}
-	if uu.mutation.MountsCleared() {
+	if uu.mutation.VolumesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedMountsIDs(); len(nodes) > 0 && !uu.mutation.MountsCleared() {
+	if nodes := uu.mutation.RemovedVolumesIDs(); len(nodes) > 0 && !uu.mutation.VolumesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
@@ -334,17 +336,17 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.MountsIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.VolumesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
@@ -410,8 +412,8 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -488,19 +490,19 @@ func (uuo *UserUpdateOne) SetBlocked(b bool) *UserUpdateOne {
 	return uuo
 }
 
-// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
-func (uuo *UserUpdateOne) AddMountIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.AddMountIDs(ids...)
+// AddVolumeIDs adds the "volumes" edge to the Volume entity by IDs.
+func (uuo *UserUpdateOne) AddVolumeIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddVolumeIDs(ids...)
 	return uuo
 }
 
-// AddMounts adds the "mounts" edges to the Mount entity.
-func (uuo *UserUpdateOne) AddMounts(m ...*Mount) *UserUpdateOne {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// AddVolumes adds the "volumes" edges to the Volume entity.
+func (uuo *UserUpdateOne) AddVolumes(v ...*Volume) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.AddMountIDs(ids...)
+	return uuo.AddVolumeIDs(ids...)
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
@@ -523,25 +525,25 @@ func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
 }
 
-// ClearMounts clears all "mounts" edges to the Mount entity.
-func (uuo *UserUpdateOne) ClearMounts() *UserUpdateOne {
-	uuo.mutation.ClearMounts()
+// ClearVolumes clears all "volumes" edges to the Volume entity.
+func (uuo *UserUpdateOne) ClearVolumes() *UserUpdateOne {
+	uuo.mutation.ClearVolumes()
 	return uuo
 }
 
-// RemoveMountIDs removes the "mounts" edge to Mount entities by IDs.
-func (uuo *UserUpdateOne) RemoveMountIDs(ids ...int) *UserUpdateOne {
-	uuo.mutation.RemoveMountIDs(ids...)
+// RemoveVolumeIDs removes the "volumes" edge to Volume entities by IDs.
+func (uuo *UserUpdateOne) RemoveVolumeIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveVolumeIDs(ids...)
 	return uuo
 }
 
-// RemoveMounts removes "mounts" edges to Mount entities.
-func (uuo *UserUpdateOne) RemoveMounts(m ...*Mount) *UserUpdateOne {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// RemoveVolumes removes "volumes" edges to Volume entities.
+func (uuo *UserUpdateOne) RemoveVolumes(v ...*Volume) *UserUpdateOne {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.RemoveMountIDs(ids...)
+	return uuo.RemoveVolumeIDs(ids...)
 }
 
 // ClearGroups clears all "groups" edges to the Group entity.
@@ -592,6 +594,9 @@ func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
 			return node, err
 		})
 		for i := len(uuo.hooks) - 1; i >= 0; i-- {
+			if uuo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = uuo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, uuo.mutation); err != nil {
@@ -720,33 +725,33 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Column: user.FieldBlocked,
 		})
 	}
-	if uuo.mutation.MountsCleared() {
+	if uuo.mutation.VolumesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedMountsIDs(); len(nodes) > 0 && !uuo.mutation.MountsCleared() {
+	if nodes := uuo.mutation.RemovedVolumesIDs(); len(nodes) > 0 && !uuo.mutation.VolumesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
@@ -755,17 +760,17 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.MountsIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.VolumesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
@@ -834,8 +839,8 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if err = sqlgraph.UpdateNode(ctx, uuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

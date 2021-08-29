@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/filebrowser/filebrowser/v3/mathx"
+	"github.com/filebrowser/filebrowser/v3/store"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
@@ -15,6 +16,8 @@ import (
 )
 
 const (
+	HomeVolumeName = "home"
+
 	defaultGroupBy = GroupByType
 	defaultSortBy  = SortByName
 	defaultOrderBy = OrderByAsc
@@ -62,6 +65,7 @@ desc
 type OrderBy int
 
 type ListHandlerParams struct {
+	Volume   string  `json:"volume"`
 	Filename string  `json:"path"`
 	GroupBy  GroupBy `form:"group_by"`
 	SortBy   SortBy  `form:"sort_by" `
@@ -70,7 +74,7 @@ type ListHandlerParams struct {
 	Limit    int     `form:"limit"`
 }
 
-func (fc *fileController) HomeListHandler(c *gin.Context) {
+func (fc *fileController) ListHandler(c *gin.Context) {
 	params, err := parseListHandlerParams(c)
 	if err != nil {
 		rest.SendBadRequestError(c, err, "failed to parse input params")
@@ -78,9 +82,21 @@ func (fc *fileController) HomeListHandler(c *gin.Context) {
 	}
 
 	user := rest.MustGetUser(c)
+
 	userFs := afero.NewBasePathFs(fc.rootFS, user.Home)
 
-	info, err := filesystem.Stat(userFs, params.Filename)
+	fc.listHandler(c, userFs, params)
+}
+
+func (fc *fileController) getVolumeFS(user *store.User, volume string) (afero.Fs, error) {
+	if volume == HomeVolumeName {
+		return afero.NewBasePathFs(fc.rootFS, user.Home), nil
+	}
+
+}
+
+func (fc *fileController) listHandler(c *gin.Context, fSys afero.Fs, params *ListHandlerParams) {
+	info, err := filesystem.Stat(fSys, params.Filename)
 	if err != nil {
 		switch {
 		case errors.Is(err, afero.ErrFileNotFound):
@@ -95,7 +111,7 @@ func (fc *fileController) HomeListHandler(c *gin.Context) {
 		Info: info,
 	}
 	if info.Type == filesystem.TypeDir {
-		children, err := filesystem.ReadDir(userFs, params.Filename)
+		children, err := filesystem.ReadDir(fSys, params.Filename)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't open requested resource", rest.ErrCodeInternal)
 			return
@@ -125,6 +141,7 @@ func (fc *fileController) HomeListHandler(c *gin.Context) {
 }
 
 func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
+	volume := c.Param("volume")
 	filename := c.Param("path")
 	groupByInput := c.Query("group_by")
 	sortByInput := c.Query("sort_by")
@@ -133,6 +150,7 @@ func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
 	limitInput := c.Query("limit")
 
 	params := &ListHandlerParams{
+		Volume:   volume,
 		Filename: filename,
 		GroupBy:  defaultGroupBy,
 		SortBy:   defaultSortBy,

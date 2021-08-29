@@ -9,15 +9,15 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Mount holds the schema definition for the Mount entity.
-type Mount struct {
+// Volume holds the schema definition for the Volume entity.
+type Volume struct {
 	ent.Schema
 }
 
-// Fields of the Mount.
-func (Mount) Fields() []ent.Field {
+// Fields of the Volume.
+func (Volume) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("name").Unique(),
+		field.String("label").Unique(),
 		field.String("path").Validate(func(s string) error {
 			if !strings.HasPrefix(s, "/") {
 				return errors.New("path must start from /")
@@ -27,10 +27,10 @@ func (Mount) Fields() []ent.Field {
 	}
 }
 
-// Edges of the mount.
-func (Mount) Edges() []ent.Edge {
+// Edges of the volume.
+func (Volume) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("users", User.Type).Ref("mounts"),
-		edge.From("groups", Group.Type).Ref("mounts"),
+		edge.From("users", User.Type).Ref("volumes"),
+		edge.From("groups", Group.Type).Ref("volumes"),
 	}
 }

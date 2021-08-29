@@ -9,7 +9,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 )
@@ -21,9 +20,9 @@ type GroupDelete struct {
 	mutation *GroupMutation
 }
 
-// Where adds a new predicate to the GroupDelete builder.
+// Where appends a list predicates to the GroupDelete builder.
 func (gd *GroupDelete) Where(ps ...predicate.Group) *GroupDelete {
-	gd.mutation.predicates = append(gd.mutation.predicates, ps...)
+	gd.mutation.Where(ps...)
 	return gd
 }
 
@@ -47,6 +46,9 @@ func (gd *GroupDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(gd.hooks) - 1; i >= 0; i-- {
+			if gd.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = gd.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, gd.mutation); err != nil {

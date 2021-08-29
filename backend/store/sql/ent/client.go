@@ -10,8 +10,8 @@ import (
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/migrate"
 
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -25,10 +25,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Group is the client for interacting with the Group builders.
 	Group *GroupClient
-	// Mount is the client for interacting with the Mount builders.
-	Mount *MountClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// Volume is the client for interacting with the Volume builders.
+	Volume *VolumeClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -43,8 +43,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Group = NewGroupClient(c.config)
-	c.Mount = NewMountClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.Volume = NewVolumeClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -79,8 +79,8 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:    ctx,
 		config: cfg,
 		Group:  NewGroupClient(cfg),
-		Mount:  NewMountClient(cfg),
 		User:   NewUserClient(cfg),
+		Volume: NewVolumeClient(cfg),
 	}, nil
 }
 
@@ -100,8 +100,8 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		config: cfg,
 		Group:  NewGroupClient(cfg),
-		Mount:  NewMountClient(cfg),
 		User:   NewUserClient(cfg),
+		Volume: NewVolumeClient(cfg),
 	}, nil
 }
 
@@ -132,8 +132,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Group.Use(hooks...)
-	c.Mount.Use(hooks...)
 	c.User.Use(hooks...)
+	c.Volume.Use(hooks...)
 }
 
 // GroupClient is a client for the Group schema.
@@ -237,15 +237,15 @@ func (c *GroupClient) QueryUsers(gr *Group) *UserQuery {
 	return query
 }
 
-// QueryMounts queries the mounts edge of a Group.
-func (c *GroupClient) QueryMounts(gr *Group) *MountQuery {
-	query := &MountQuery{config: c.config}
+// QueryVolumes queries the volumes edge of a Group.
+func (c *GroupClient) QueryVolumes(gr *Group) *VolumeQuery {
+	query := &VolumeQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := gr.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(group.Table, group.FieldID, id),
-			sqlgraph.To(mount.Table, mount.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, group.MountsTable, group.MountsPrimaryKey...),
+			sqlgraph.To(volume.Table, volume.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, group.VolumesTable, group.VolumesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(gr.driver.Dialect(), step)
 		return fromV, nil
@@ -256,128 +256,6 @@ func (c *GroupClient) QueryMounts(gr *Group) *MountQuery {
 // Hooks returns the client hooks.
 func (c *GroupClient) Hooks() []Hook {
 	return c.hooks.Group
-}
-
-// MountClient is a client for the Mount schema.
-type MountClient struct {
-	config
-}
-
-// NewMountClient returns a client for the Mount from the given config.
-func NewMountClient(c config) *MountClient {
-	return &MountClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `mount.Hooks(f(g(h())))`.
-func (c *MountClient) Use(hooks ...Hook) {
-	c.hooks.Mount = append(c.hooks.Mount, hooks...)
-}
-
-// Create returns a create builder for Mount.
-func (c *MountClient) Create() *MountCreate {
-	mutation := newMountMutation(c.config, OpCreate)
-	return &MountCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Mount entities.
-func (c *MountClient) CreateBulk(builders ...*MountCreate) *MountCreateBulk {
-	return &MountCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Mount.
-func (c *MountClient) Update() *MountUpdate {
-	mutation := newMountMutation(c.config, OpUpdate)
-	return &MountUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *MountClient) UpdateOne(m *Mount) *MountUpdateOne {
-	mutation := newMountMutation(c.config, OpUpdateOne, withMount(m))
-	return &MountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *MountClient) UpdateOneID(id int) *MountUpdateOne {
-	mutation := newMountMutation(c.config, OpUpdateOne, withMountID(id))
-	return &MountUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Mount.
-func (c *MountClient) Delete() *MountDelete {
-	mutation := newMountMutation(c.config, OpDelete)
-	return &MountDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *MountClient) DeleteOne(m *Mount) *MountDeleteOne {
-	return c.DeleteOneID(m.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *MountClient) DeleteOneID(id int) *MountDeleteOne {
-	builder := c.Delete().Where(mount.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &MountDeleteOne{builder}
-}
-
-// Query returns a query builder for Mount.
-func (c *MountClient) Query() *MountQuery {
-	return &MountQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a Mount entity by its id.
-func (c *MountClient) Get(ctx context.Context, id int) (*Mount, error) {
-	return c.Query().Where(mount.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *MountClient) GetX(ctx context.Context, id int) *Mount {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryUsers queries the users edge of a Mount.
-func (c *MountClient) QueryUsers(m *Mount) *UserQuery {
-	query := &UserQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mount.Table, mount.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, mount.UsersTable, mount.UsersPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryGroups queries the groups edge of a Mount.
-func (c *MountClient) QueryGroups(m *Mount) *GroupQuery {
-	query := &GroupQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(mount.Table, mount.FieldID, id),
-			sqlgraph.To(group.Table, group.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, mount.GroupsTable, mount.GroupsPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *MountClient) Hooks() []Hook {
-	return c.hooks.Mount
 }
 
 // UserClient is a client for the User schema.
@@ -465,15 +343,15 @@ func (c *UserClient) GetX(ctx context.Context, id string) *User {
 	return obj
 }
 
-// QueryMounts queries the mounts edge of a User.
-func (c *UserClient) QueryMounts(u *User) *MountQuery {
-	query := &MountQuery{config: c.config}
+// QueryVolumes queries the volumes edge of a User.
+func (c *UserClient) QueryVolumes(u *User) *VolumeQuery {
+	query := &VolumeQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(mount.Table, mount.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, user.MountsTable, user.MountsPrimaryKey...),
+			sqlgraph.To(volume.Table, volume.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.VolumesTable, user.VolumesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -500,4 +378,126 @@ func (c *UserClient) QueryGroups(u *User) *GroupQuery {
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
+}
+
+// VolumeClient is a client for the Volume schema.
+type VolumeClient struct {
+	config
+}
+
+// NewVolumeClient returns a client for the Volume from the given config.
+func NewVolumeClient(c config) *VolumeClient {
+	return &VolumeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `volume.Hooks(f(g(h())))`.
+func (c *VolumeClient) Use(hooks ...Hook) {
+	c.hooks.Volume = append(c.hooks.Volume, hooks...)
+}
+
+// Create returns a create builder for Volume.
+func (c *VolumeClient) Create() *VolumeCreate {
+	mutation := newVolumeMutation(c.config, OpCreate)
+	return &VolumeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Volume entities.
+func (c *VolumeClient) CreateBulk(builders ...*VolumeCreate) *VolumeCreateBulk {
+	return &VolumeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Volume.
+func (c *VolumeClient) Update() *VolumeUpdate {
+	mutation := newVolumeMutation(c.config, OpUpdate)
+	return &VolumeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *VolumeClient) UpdateOne(v *Volume) *VolumeUpdateOne {
+	mutation := newVolumeMutation(c.config, OpUpdateOne, withVolume(v))
+	return &VolumeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *VolumeClient) UpdateOneID(id int) *VolumeUpdateOne {
+	mutation := newVolumeMutation(c.config, OpUpdateOne, withVolumeID(id))
+	return &VolumeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Volume.
+func (c *VolumeClient) Delete() *VolumeDelete {
+	mutation := newVolumeMutation(c.config, OpDelete)
+	return &VolumeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *VolumeClient) DeleteOne(v *Volume) *VolumeDeleteOne {
+	return c.DeleteOneID(v.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *VolumeClient) DeleteOneID(id int) *VolumeDeleteOne {
+	builder := c.Delete().Where(volume.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &VolumeDeleteOne{builder}
+}
+
+// Query returns a query builder for Volume.
+func (c *VolumeClient) Query() *VolumeQuery {
+	return &VolumeQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a Volume entity by its id.
+func (c *VolumeClient) Get(ctx context.Context, id int) (*Volume, error) {
+	return c.Query().Where(volume.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *VolumeClient) GetX(ctx context.Context, id int) *Volume {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUsers queries the users edge of a Volume.
+func (c *VolumeClient) QueryUsers(v *Volume) *UserQuery {
+	query := &UserQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(volume.Table, volume.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, volume.UsersTable, volume.UsersPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryGroups queries the groups edge of a Volume.
+func (c *VolumeClient) QueryGroups(v *Volume) *GroupQuery {
+	query := &GroupQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(volume.Table, volume.FieldID, id),
+			sqlgraph.To(group.Table, group.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, volume.GroupsTable, volume.GroupsPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *VolumeClient) Hooks() []Hook {
+	return c.hooks.Volume
 }

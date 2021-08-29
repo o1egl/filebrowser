@@ -9,10 +9,9 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
 // UserCreate is the builder for creating a User entity.
@@ -84,19 +83,19 @@ func (uc *UserCreate) SetID(s string) *UserCreate {
 	return uc
 }
 
-// AddMountIDs adds the "mounts" edge to the Mount entity by IDs.
-func (uc *UserCreate) AddMountIDs(ids ...int) *UserCreate {
-	uc.mutation.AddMountIDs(ids...)
+// AddVolumeIDs adds the "volumes" edge to the Volume entity by IDs.
+func (uc *UserCreate) AddVolumeIDs(ids ...int) *UserCreate {
+	uc.mutation.AddVolumeIDs(ids...)
 	return uc
 }
 
-// AddMounts adds the "mounts" edges to the Mount entity.
-func (uc *UserCreate) AddMounts(m ...*Mount) *UserCreate {
-	ids := make([]int, len(m))
-	for i := range m {
-		ids[i] = m[i].ID
+// AddVolumes adds the "volumes" edges to the Volume entity.
+func (uc *UserCreate) AddVolumes(v ...*Volume) *UserCreate {
+	ids := make([]int, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uc.AddMountIDs(ids...)
+	return uc.AddVolumeIDs(ids...)
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
@@ -140,11 +139,17 @@ func (uc *UserCreate) Save(ctx context.Context) (*User, error) {
 				return nil, err
 			}
 			uc.mutation = mutation
-			node, err = uc.sqlSave(ctx)
+			if node, err = uc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(uc.hooks) - 1; i >= 0; i-- {
+			if uc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = uc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, uc.mutation); err != nil {
@@ -163,28 +168,41 @@ func (uc *UserCreate) SaveX(ctx context.Context) *User {
 	return v
 }
 
+// Exec executes the query.
+func (uc *UserCreate) Exec(ctx context.Context) error {
+	_, err := uc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (uc *UserCreate) ExecX(ctx context.Context) {
+	if err := uc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
 	if _, ok := uc.mutation.Provider(); !ok {
-		return &ValidationError{Name: "provider", err: errors.New("ent: missing required field \"provider\"")}
+		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "provider"`)}
 	}
 	if _, ok := uc.mutation.Username(); !ok {
-		return &ValidationError{Name: "username", err: errors.New("ent: missing required field \"username\"")}
+		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "username"`)}
 	}
 	if _, ok := uc.mutation.Home(); !ok {
-		return &ValidationError{Name: "home", err: errors.New("ent: missing required field \"home\"")}
+		return &ValidationError{Name: "home", err: errors.New(`ent: missing required field "home"`)}
 	}
 	if _, ok := uc.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "name"`)}
 	}
 	if _, ok := uc.mutation.Locale(); !ok {
-		return &ValidationError{Name: "locale", err: errors.New("ent: missing required field \"locale\"")}
+		return &ValidationError{Name: "locale", err: errors.New(`ent: missing required field "locale"`)}
 	}
 	if _, ok := uc.mutation.LockPassword(); !ok {
-		return &ValidationError{Name: "lock_password", err: errors.New("ent: missing required field \"lock_password\"")}
+		return &ValidationError{Name: "lock_password", err: errors.New(`ent: missing required field "lock_password"`)}
 	}
 	if _, ok := uc.mutation.Blocked(); !ok {
-		return &ValidationError{Name: "blocked", err: errors.New("ent: missing required field \"blocked\"")}
+		return &ValidationError{Name: "blocked", err: errors.New(`ent: missing required field "blocked"`)}
 	}
 	return nil
 }
@@ -192,10 +210,13 @@ func (uc *UserCreate) check() error {
 func (uc *UserCreate) sqlSave(ctx context.Context) (*User, error) {
 	_node, _spec := uc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, uc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
+	}
+	if _spec.ID.Value != nil {
+		_node.ID = _spec.ID.Value.(string)
 	}
 	return _node, nil
 }
@@ -279,17 +300,17 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		})
 		_node.Blocked = value
 	}
-	if nodes := uc.mutation.MountsIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.VolumesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: false,
-			Table:   user.MountsTable,
-			Columns: user.MountsPrimaryKey,
+			Table:   user.VolumesTable,
+			Columns: user.VolumesPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: mount.FieldID,
+					Column: volume.FieldID,
 				},
 			},
 		}
@@ -348,17 +369,19 @@ func (ucb *UserCreateBulk) Save(ctx context.Context) ([]*User, error) {
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ucb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, ucb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, ucb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
+				mutation.id = &nodes[i].ID
+				mutation.done = true
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -382,4 +405,17 @@ func (ucb *UserCreateBulk) SaveX(ctx context.Context) []*User {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (ucb *UserCreateBulk) Exec(ctx context.Context) error {
+	_, err := ucb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (ucb *UserCreateBulk) ExecX(ctx context.Context) {
+	if err := ucb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

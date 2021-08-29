@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
@@ -39,8 +38,8 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// Mounts holds the value of the mounts edge.
-	Mounts []*Mount `json:"mounts,omitempty"`
+	// Volumes holds the value of the volumes edge.
+	Volumes []*Volume `json:"volumes,omitempty"`
 	// Groups holds the value of the groups edge.
 	Groups []*Group `json:"groups,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -48,13 +47,13 @@ type UserEdges struct {
 	loadedTypes [2]bool
 }
 
-// MountsOrErr returns the Mounts value or an error if the edge
+// VolumesOrErr returns the Volumes value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) MountsOrErr() ([]*Mount, error) {
+func (e UserEdges) VolumesOrErr() ([]*Volume, error) {
 	if e.loadedTypes[0] {
-		return e.Mounts, nil
+		return e.Volumes, nil
 	}
-	return nil, &NotLoadedError{edge: "mounts"}
+	return nil, &NotLoadedError{edge: "volumes"}
 }
 
 // GroupsOrErr returns the Groups value or an error if the edge
@@ -149,9 +148,9 @@ func (u *User) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
-// QueryMounts queries the "mounts" edge of the User entity.
-func (u *User) QueryMounts() *MountQuery {
-	return (&UserClient{config: u.config}).QueryMounts(u)
+// QueryVolumes queries the "volumes" edge of the User entity.
+func (u *User) QueryVolumes() *VolumeQuery {
+	return (&UserClient{config: u.config}).QueryVolumes(u)
 }
 
 // QueryGroups queries the "groups" edge of the User entity.

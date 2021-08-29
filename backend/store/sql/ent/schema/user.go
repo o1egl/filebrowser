@@ -36,7 +36,7 @@ func (User) Indexes() []ent.Index {
 // Edges of the user.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("mounts", Mount.Type),
+		edge.To("volumes", Volume.Type),
 		edge.To("groups", Group.Type),
 	}
 }

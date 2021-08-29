@@ -12,11 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
 // UserQuery is the builder for querying User entities.
@@ -29,8 +28,8 @@ type UserQuery struct {
 	fields     []string
 	predicates []predicate.User
 	// eager-loading edges.
-	withMounts *MountQuery
-	withGroups *GroupQuery
+	withVolumes *VolumeQuery
+	withGroups  *GroupQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -67,9 +66,9 @@ func (uq *UserQuery) Order(o ...OrderFunc) *UserQuery {
 	return uq
 }
 
-// QueryMounts chains the current query on the "mounts" edge.
-func (uq *UserQuery) QueryMounts() *MountQuery {
-	query := &MountQuery{config: uq.config}
+// QueryVolumes chains the current query on the "volumes" edge.
+func (uq *UserQuery) QueryVolumes() *VolumeQuery {
+	query := &VolumeQuery{config: uq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -80,8 +79,8 @@ func (uq *UserQuery) QueryMounts() *MountQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(mount.Table, mount.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, user.MountsTable, user.MountsPrimaryKey...),
+			sqlgraph.To(volume.Table, volume.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, user.VolumesTable, user.VolumesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -287,27 +286,27 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		limit:      uq.limit,
-		offset:     uq.offset,
-		order:      append([]OrderFunc{}, uq.order...),
-		predicates: append([]predicate.User{}, uq.predicates...),
-		withMounts: uq.withMounts.Clone(),
-		withGroups: uq.withGroups.Clone(),
+		config:      uq.config,
+		limit:       uq.limit,
+		offset:      uq.offset,
+		order:       append([]OrderFunc{}, uq.order...),
+		predicates:  append([]predicate.User{}, uq.predicates...),
+		withVolumes: uq.withVolumes.Clone(),
+		withGroups:  uq.withGroups.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
 }
 
-// WithMounts tells the query-builder to eager-load the nodes that are connected to
-// the "mounts" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithMounts(opts ...func(*MountQuery)) *UserQuery {
-	query := &MountQuery{config: uq.config}
+// WithVolumes tells the query-builder to eager-load the nodes that are connected to
+// the "volumes" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithVolumes(opts ...func(*VolumeQuery)) *UserQuery {
+	query := &VolumeQuery{config: uq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withMounts = query
+	uq.withVolumes = query
 	return uq
 }
 
@@ -362,8 +361,8 @@ func (uq *UserQuery) GroupBy(field string, fields ...string) *UserGroupBy {
 //		Select(user.FieldProvider).
 //		Scan(ctx, &v)
 //
-func (uq *UserQuery) Select(field string, fields ...string) *UserSelect {
-	uq.fields = append([]string{field}, fields...)
+func (uq *UserQuery) Select(fields ...string) *UserSelect {
+	uq.fields = append(uq.fields, fields...)
 	return &UserSelect{UserQuery: uq}
 }
 
@@ -388,7 +387,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
 		loadedTypes = [2]bool{
-			uq.withMounts != nil,
+			uq.withVolumes != nil,
 			uq.withGroups != nil,
 		}
 	)
@@ -412,13 +411,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		return nodes, nil
 	}
 
-	if query := uq.withMounts; query != nil {
+	if query := uq.withVolumes; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
 		ids := make(map[string]*User, len(nodes))
 		for _, node := range nodes {
 			ids[node.ID] = node
 			fks = append(fks, node.ID)
-			node.Edges.Mounts = []*Mount{}
+			node.Edges.Volumes = []*Volume{}
 		}
 		var (
 			edgeids []int
@@ -427,14 +426,14 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		_spec := &sqlgraph.EdgeQuerySpec{
 			Edge: &sqlgraph.EdgeSpec{
 				Inverse: false,
-				Table:   user.MountsTable,
-				Columns: user.MountsPrimaryKey,
+				Table:   user.VolumesTable,
+				Columns: user.VolumesPrimaryKey,
 			},
 			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(user.MountsPrimaryKey[0], fks...))
+				s.Where(sql.InValues(user.VolumesPrimaryKey[0], fks...))
 			},
 			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullString{}, &sql.NullInt64{}}
+				return [2]interface{}{new(sql.NullString), new(sql.NullInt64)}
 			},
 			Assign: func(out, in interface{}) error {
 				eout, ok := out.(*sql.NullString)
@@ -459,9 +458,9 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 			},
 		}
 		if err := sqlgraph.QueryEdges(ctx, uq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "mounts": %w`, err)
+			return nil, fmt.Errorf(`query edges "volumes": %w`, err)
 		}
-		query.Where(mount.IDIn(edgeids...))
+		query.Where(volume.IDIn(edgeids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
@@ -469,10 +468,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 		for _, n := range neighbors {
 			nodes, ok := edges[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "mounts" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected "volumes" node returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Mounts = append(nodes[i].Edges.Mounts, n)
+				nodes[i].Edges.Volumes = append(nodes[i].Edges.Volumes, n)
 			}
 		}
 	}
@@ -499,7 +498,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context) ([]*User, error) {
 				s.Where(sql.InValues(user.GroupsPrimaryKey[0], fks...))
 			},
 			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullString{}, &sql.NullInt64{}}
+				return [2]interface{}{new(sql.NullString), new(sql.NullInt64)}
 			},
 			Assign: func(out, in interface{}) error {
 				eout, ok := out.(*sql.NullString)
@@ -609,10 +608,14 @@ func (uq *UserQuery) querySpec() *sqlgraph.QuerySpec {
 func (uq *UserQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(uq.driver.Dialect())
 	t1 := builder.Table(user.Table)
-	selector := builder.Select(t1.Columns(user.Columns...)...).From(t1)
+	columns := uq.fields
+	if len(columns) == 0 {
+		columns = user.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if uq.sql != nil {
 		selector = uq.sql
-		selector.Select(selector.Columns(user.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range uq.predicates {
 		p(selector)
@@ -880,13 +883,24 @@ func (ugb *UserGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 }
 
 func (ugb *UserGroupBy) sqlQuery() *sql.Selector {
-	selector := ugb.sql
-	columns := make([]string, 0, len(ugb.fields)+len(ugb.fns))
-	columns = append(columns, ugb.fields...)
+	selector := ugb.sql.Select()
+	aggregation := make([]string, 0, len(ugb.fns))
 	for _, fn := range ugb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(ugb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(ugb.fields)+len(ugb.fns))
+		for _, f := range ugb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(ugb.fields...)...)
 }
 
 // UserSelect is the builder for selecting fields of User entities.
@@ -1102,16 +1116,10 @@ func (us *UserSelect) BoolX(ctx context.Context) bool {
 
 func (us *UserSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := us.sqlQuery().Query()
+	query, args := us.sql.Query()
 	if err := us.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (us *UserSelect) sqlQuery() sql.Querier {
-	selector := us.sql
-	selector.Select(selector.Columns(us.fields...)...)
-	return selector
 }

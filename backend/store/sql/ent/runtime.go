@@ -3,18 +3,18 @@
 package ent
 
 import (
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/schema"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	mountFields := schema.Mount{}.Fields()
-	_ = mountFields
-	// mountDescPath is the schema descriptor for path field.
-	mountDescPath := mountFields[1].Descriptor()
-	// mount.PathValidator is a validator for the "path" field. It is called by the builders before save.
-	mount.PathValidator = mountDescPath.Validators[0].(func(string) error)
+	volumeFields := schema.Volume{}.Fields()
+	_ = volumeFields
+	// volumeDescPath is the schema descriptor for path field.
+	volumeDescPath := volumeFields[1].Descriptor()
+	// volume.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	volume.PathValidator = volumeDescPath.Validators[0].(func(string) error)
 }

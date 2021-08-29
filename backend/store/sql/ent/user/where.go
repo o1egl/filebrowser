@@ -5,7 +5,6 @@ package user
 import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 )
 
@@ -856,25 +855,25 @@ func BlockedNEQ(v bool) predicate.User {
 	})
 }
 
-// HasMounts applies the HasEdge predicate on the "mounts" edge.
-func HasMounts() predicate.User {
+// HasVolumes applies the HasEdge predicate on the "volumes" edge.
+func HasVolumes() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MountsTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, MountsTable, MountsPrimaryKey...),
+			sqlgraph.To(VolumesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, VolumesTable, VolumesPrimaryKey...),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasMountsWith applies the HasEdge predicate on the "mounts" edge with a given conditions (other predicates).
-func HasMountsWith(preds ...predicate.Mount) predicate.User {
+// HasVolumesWith applies the HasEdge predicate on the "volumes" edge with a given conditions (other predicates).
+func HasVolumesWith(preds ...predicate.Volume) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(MountsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, MountsTable, MountsPrimaryKey...),
+			sqlgraph.To(VolumesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, VolumesTable, VolumesPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

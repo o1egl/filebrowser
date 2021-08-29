@@ -12,11 +12,10 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
 // GroupQuery is the builder for querying Group entities.
@@ -29,8 +28,8 @@ type GroupQuery struct {
 	fields     []string
 	predicates []predicate.Group
 	// eager-loading edges.
-	withUsers  *UserQuery
-	withMounts *MountQuery
+	withUsers   *UserQuery
+	withVolumes *VolumeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -89,9 +88,9 @@ func (gq *GroupQuery) QueryUsers() *UserQuery {
 	return query
 }
 
-// QueryMounts chains the current query on the "mounts" edge.
-func (gq *GroupQuery) QueryMounts() *MountQuery {
-	query := &MountQuery{config: gq.config}
+// QueryVolumes chains the current query on the "volumes" edge.
+func (gq *GroupQuery) QueryVolumes() *VolumeQuery {
+	query := &VolumeQuery{config: gq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := gq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -102,8 +101,8 @@ func (gq *GroupQuery) QueryMounts() *MountQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(group.Table, group.FieldID, selector),
-			sqlgraph.To(mount.Table, mount.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, group.MountsTable, group.MountsPrimaryKey...),
+			sqlgraph.To(volume.Table, volume.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, group.VolumesTable, group.VolumesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(gq.driver.Dialect(), step)
 		return fromU, nil
@@ -287,13 +286,13 @@ func (gq *GroupQuery) Clone() *GroupQuery {
 		return nil
 	}
 	return &GroupQuery{
-		config:     gq.config,
-		limit:      gq.limit,
-		offset:     gq.offset,
-		order:      append([]OrderFunc{}, gq.order...),
-		predicates: append([]predicate.Group{}, gq.predicates...),
-		withUsers:  gq.withUsers.Clone(),
-		withMounts: gq.withMounts.Clone(),
+		config:      gq.config,
+		limit:       gq.limit,
+		offset:      gq.offset,
+		order:       append([]OrderFunc{}, gq.order...),
+		predicates:  append([]predicate.Group{}, gq.predicates...),
+		withUsers:   gq.withUsers.Clone(),
+		withVolumes: gq.withVolumes.Clone(),
 		// clone intermediate query.
 		sql:  gq.sql.Clone(),
 		path: gq.path,
@@ -311,14 +310,14 @@ func (gq *GroupQuery) WithUsers(opts ...func(*UserQuery)) *GroupQuery {
 	return gq
 }
 
-// WithMounts tells the query-builder to eager-load the nodes that are connected to
-// the "mounts" edge. The optional arguments are used to configure the query builder of the edge.
-func (gq *GroupQuery) WithMounts(opts ...func(*MountQuery)) *GroupQuery {
-	query := &MountQuery{config: gq.config}
+// WithVolumes tells the query-builder to eager-load the nodes that are connected to
+// the "volumes" edge. The optional arguments are used to configure the query builder of the edge.
+func (gq *GroupQuery) WithVolumes(opts ...func(*VolumeQuery)) *GroupQuery {
+	query := &VolumeQuery{config: gq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
-	gq.withMounts = query
+	gq.withVolumes = query
 	return gq
 }
 
@@ -362,8 +361,8 @@ func (gq *GroupQuery) GroupBy(field string, fields ...string) *GroupGroupBy {
 //		Select(group.FieldName).
 //		Scan(ctx, &v)
 //
-func (gq *GroupQuery) Select(field string, fields ...string) *GroupSelect {
-	gq.fields = append([]string{field}, fields...)
+func (gq *GroupQuery) Select(fields ...string) *GroupSelect {
+	gq.fields = append(gq.fields, fields...)
 	return &GroupSelect{GroupQuery: gq}
 }
 
@@ -389,7 +388,7 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 		_spec       = gq.querySpec()
 		loadedTypes = [2]bool{
 			gq.withUsers != nil,
-			gq.withMounts != nil,
+			gq.withVolumes != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -434,7 +433,7 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 				s.Where(sql.InValues(group.UsersPrimaryKey[1], fks...))
 			},
 			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullInt64{}, &sql.NullString{}}
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullString)}
 			},
 			Assign: func(out, in interface{}) error {
 				eout, ok := out.(*sql.NullInt64)
@@ -477,13 +476,13 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 		}
 	}
 
-	if query := gq.withMounts; query != nil {
+	if query := gq.withVolumes; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
 		ids := make(map[int]*Group, len(nodes))
 		for _, node := range nodes {
 			ids[node.ID] = node
 			fks = append(fks, node.ID)
-			node.Edges.Mounts = []*Mount{}
+			node.Edges.Volumes = []*Volume{}
 		}
 		var (
 			edgeids []int
@@ -492,14 +491,14 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 		_spec := &sqlgraph.EdgeQuerySpec{
 			Edge: &sqlgraph.EdgeSpec{
 				Inverse: false,
-				Table:   group.MountsTable,
-				Columns: group.MountsPrimaryKey,
+				Table:   group.VolumesTable,
+				Columns: group.VolumesPrimaryKey,
 			},
 			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(group.MountsPrimaryKey[0], fks...))
+				s.Where(sql.InValues(group.VolumesPrimaryKey[0], fks...))
 			},
 			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
 			},
 			Assign: func(out, in interface{}) error {
 				eout, ok := out.(*sql.NullInt64)
@@ -524,9 +523,9 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 			},
 		}
 		if err := sqlgraph.QueryEdges(ctx, gq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "mounts": %w`, err)
+			return nil, fmt.Errorf(`query edges "volumes": %w`, err)
 		}
-		query.Where(mount.IDIn(edgeids...))
+		query.Where(volume.IDIn(edgeids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
@@ -534,10 +533,10 @@ func (gq *GroupQuery) sqlAll(ctx context.Context) ([]*Group, error) {
 		for _, n := range neighbors {
 			nodes, ok := edges[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "mounts" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected "volumes" node returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Mounts = append(nodes[i].Edges.Mounts, n)
+				nodes[i].Edges.Volumes = append(nodes[i].Edges.Volumes, n)
 			}
 		}
 	}
@@ -609,10 +608,14 @@ func (gq *GroupQuery) querySpec() *sqlgraph.QuerySpec {
 func (gq *GroupQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(gq.driver.Dialect())
 	t1 := builder.Table(group.Table)
-	selector := builder.Select(t1.Columns(group.Columns...)...).From(t1)
+	columns := gq.fields
+	if len(columns) == 0 {
+		columns = group.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if gq.sql != nil {
 		selector = gq.sql
-		selector.Select(selector.Columns(group.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range gq.predicates {
 		p(selector)
@@ -880,13 +883,24 @@ func (ggb *GroupGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 }
 
 func (ggb *GroupGroupBy) sqlQuery() *sql.Selector {
-	selector := ggb.sql
-	columns := make([]string, 0, len(ggb.fields)+len(ggb.fns))
-	columns = append(columns, ggb.fields...)
+	selector := ggb.sql.Select()
+	aggregation := make([]string, 0, len(ggb.fns))
 	for _, fn := range ggb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(ggb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(ggb.fields)+len(ggb.fns))
+		for _, f := range ggb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(ggb.fields...)...)
 }
 
 // GroupSelect is the builder for selecting fields of Group entities.
@@ -1102,16 +1116,10 @@ func (gs *GroupSelect) BoolX(ctx context.Context) bool {
 
 func (gs *GroupSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := gs.sqlQuery().Query()
+	query, args := gs.sql.Query()
 	if err := gs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (gs *GroupSelect) sqlQuery() sql.Querier {
-	selector := gs.sql
-	selector.Select(selector.Columns(gs.fields...)...)
-	return selector
 }

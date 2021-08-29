@@ -9,8 +9,8 @@ import (
 // Group is the predicate function for group builders.
 type Group func(*sql.Selector)
 
-// Mount is the predicate function for mount builders.
-type Mount func(*sql.Selector)
-
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
+
+// Volume is the predicate function for volume builders.
+type Volume func(*sql.Selector)

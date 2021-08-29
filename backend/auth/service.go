@@ -15,6 +15,15 @@ import (
 	"github.com/filebrowser/filebrowser/v3/store"
 )
 
+type User struct {
+	ID       string `json:"id"`
+	Provider string `json:"provider"`
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Locale   string `json:"locale"`
+	Blocked  bool   `json:"blocked"`
+}
+
 type Service struct {
 	userStore     store.UserStore
 	defaultHome   string

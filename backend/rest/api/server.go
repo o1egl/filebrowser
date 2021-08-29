@@ -185,8 +185,8 @@ func (s *Server) newEngine() *gin.Engine {
 			protected.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(s.UserStore), middleware.NoCache)
 
 			// file handlers
-			protected.GET("/files/home/*path", fileCtrl.HomeListHandler)
-			protected.DELETE("/files/home/*path", fileCtrl.DeleteHandler)
+			protected.GET("/files/:volume/*path", fileCtrl.ListHandler)
+			protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
 			//protected.GET("/files/volumes/:id/*path", fileCtrl.VolumeListHandler)
 		}
 	}

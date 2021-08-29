@@ -8,9 +8,9 @@ import (
 	"sync"
 
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 
 	"entgo.io/ent"
 )
@@ -24,28 +24,28 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeGroup = "Group"
-	TypeMount = "Mount"
-	TypeUser  = "User"
+	TypeGroup  = "Group"
+	TypeUser   = "User"
+	TypeVolume = "Volume"
 )
 
 // GroupMutation represents an operation that mutates the Group nodes in the graph.
 type GroupMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	clearedFields map[string]struct{}
-	users         map[string]struct{}
-	removedusers  map[string]struct{}
-	clearedusers  bool
-	mounts        map[int]struct{}
-	removedmounts map[int]struct{}
-	clearedmounts bool
-	done          bool
-	oldValue      func(context.Context) (*Group, error)
-	predicates    []predicate.Group
+	op             Op
+	typ            string
+	id             *int
+	name           *string
+	clearedFields  map[string]struct{}
+	users          map[string]struct{}
+	removedusers   map[string]struct{}
+	clearedusers   bool
+	volumes        map[int]struct{}
+	removedvolumes map[int]struct{}
+	clearedvolumes bool
+	done           bool
+	oldValue       func(context.Context) (*Group, error)
+	predicates     []predicate.Group
 }
 
 var _ ent.Mutation = (*GroupMutation)(nil)
@@ -118,8 +118,8 @@ func (m GroupMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *GroupMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -189,6 +189,7 @@ func (m *GroupMutation) RemoveUserIDs(ids ...string) {
 		m.removedusers = make(map[string]struct{})
 	}
 	for i := range ids {
+		delete(m.users, ids[i])
 		m.removedusers[ids[i]] = struct{}{}
 	}
 }
@@ -216,57 +217,63 @@ func (m *GroupMutation) ResetUsers() {
 	m.removedusers = nil
 }
 
-// AddMountIDs adds the "mounts" edge to the Mount entity by ids.
-func (m *GroupMutation) AddMountIDs(ids ...int) {
-	if m.mounts == nil {
-		m.mounts = make(map[int]struct{})
+// AddVolumeIDs adds the "volumes" edge to the Volume entity by ids.
+func (m *GroupMutation) AddVolumeIDs(ids ...int) {
+	if m.volumes == nil {
+		m.volumes = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.mounts[ids[i]] = struct{}{}
+		m.volumes[ids[i]] = struct{}{}
 	}
 }
 
-// ClearMounts clears the "mounts" edge to the Mount entity.
-func (m *GroupMutation) ClearMounts() {
-	m.clearedmounts = true
+// ClearVolumes clears the "volumes" edge to the Volume entity.
+func (m *GroupMutation) ClearVolumes() {
+	m.clearedvolumes = true
 }
 
-// MountsCleared reports if the "mounts" edge to the Mount entity was cleared.
-func (m *GroupMutation) MountsCleared() bool {
-	return m.clearedmounts
+// VolumesCleared reports if the "volumes" edge to the Volume entity was cleared.
+func (m *GroupMutation) VolumesCleared() bool {
+	return m.clearedvolumes
 }
 
-// RemoveMountIDs removes the "mounts" edge to the Mount entity by IDs.
-func (m *GroupMutation) RemoveMountIDs(ids ...int) {
-	if m.removedmounts == nil {
-		m.removedmounts = make(map[int]struct{})
+// RemoveVolumeIDs removes the "volumes" edge to the Volume entity by IDs.
+func (m *GroupMutation) RemoveVolumeIDs(ids ...int) {
+	if m.removedvolumes == nil {
+		m.removedvolumes = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.removedmounts[ids[i]] = struct{}{}
+		delete(m.volumes, ids[i])
+		m.removedvolumes[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedMounts returns the removed IDs of the "mounts" edge to the Mount entity.
-func (m *GroupMutation) RemovedMountsIDs() (ids []int) {
-	for id := range m.removedmounts {
+// RemovedVolumes returns the removed IDs of the "volumes" edge to the Volume entity.
+func (m *GroupMutation) RemovedVolumesIDs() (ids []int) {
+	for id := range m.removedvolumes {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// MountsIDs returns the "mounts" edge IDs in the mutation.
-func (m *GroupMutation) MountsIDs() (ids []int) {
-	for id := range m.mounts {
+// VolumesIDs returns the "volumes" edge IDs in the mutation.
+func (m *GroupMutation) VolumesIDs() (ids []int) {
+	for id := range m.volumes {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetMounts resets all changes to the "mounts" edge.
-func (m *GroupMutation) ResetMounts() {
-	m.mounts = nil
-	m.clearedmounts = false
-	m.removedmounts = nil
+// ResetVolumes resets all changes to the "volumes" edge.
+func (m *GroupMutation) ResetVolumes() {
+	m.volumes = nil
+	m.clearedvolumes = false
+	m.removedvolumes = nil
+}
+
+// Where appends a list predicates to the GroupMutation builder.
+func (m *GroupMutation) Where(ps ...predicate.Group) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -386,8 +393,8 @@ func (m *GroupMutation) AddedEdges() []string {
 	if m.users != nil {
 		edges = append(edges, group.EdgeUsers)
 	}
-	if m.mounts != nil {
-		edges = append(edges, group.EdgeMounts)
+	if m.volumes != nil {
+		edges = append(edges, group.EdgeVolumes)
 	}
 	return edges
 }
@@ -402,9 +409,9 @@ func (m *GroupMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case group.EdgeMounts:
-		ids := make([]ent.Value, 0, len(m.mounts))
-		for id := range m.mounts {
+	case group.EdgeVolumes:
+		ids := make([]ent.Value, 0, len(m.volumes))
+		for id := range m.volumes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -418,8 +425,8 @@ func (m *GroupMutation) RemovedEdges() []string {
 	if m.removedusers != nil {
 		edges = append(edges, group.EdgeUsers)
 	}
-	if m.removedmounts != nil {
-		edges = append(edges, group.EdgeMounts)
+	if m.removedvolumes != nil {
+		edges = append(edges, group.EdgeVolumes)
 	}
 	return edges
 }
@@ -434,9 +441,9 @@ func (m *GroupMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case group.EdgeMounts:
-		ids := make([]ent.Value, 0, len(m.removedmounts))
-		for id := range m.removedmounts {
+	case group.EdgeVolumes:
+		ids := make([]ent.Value, 0, len(m.removedvolumes))
+		for id := range m.removedvolumes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -450,8 +457,8 @@ func (m *GroupMutation) ClearedEdges() []string {
 	if m.clearedusers {
 		edges = append(edges, group.EdgeUsers)
 	}
-	if m.clearedmounts {
-		edges = append(edges, group.EdgeMounts)
+	if m.clearedvolumes {
+		edges = append(edges, group.EdgeVolumes)
 	}
 	return edges
 }
@@ -462,8 +469,8 @@ func (m *GroupMutation) EdgeCleared(name string) bool {
 	switch name {
 	case group.EdgeUsers:
 		return m.clearedusers
-	case group.EdgeMounts:
-		return m.clearedmounts
+	case group.EdgeVolumes:
+		return m.clearedvolumes
 	}
 	return false
 }
@@ -483,552 +490,37 @@ func (m *GroupMutation) ResetEdge(name string) error {
 	case group.EdgeUsers:
 		m.ResetUsers()
 		return nil
-	case group.EdgeMounts:
-		m.ResetMounts()
+	case group.EdgeVolumes:
+		m.ResetVolumes()
 		return nil
 	}
 	return fmt.Errorf("unknown Group edge %s", name)
 }
 
-// MountMutation represents an operation that mutates the Mount nodes in the graph.
-type MountMutation struct {
-	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	_path         *string
-	clearedFields map[string]struct{}
-	users         map[string]struct{}
-	removedusers  map[string]struct{}
-	clearedusers  bool
-	groups        map[int]struct{}
-	removedgroups map[int]struct{}
-	clearedgroups bool
-	done          bool
-	oldValue      func(context.Context) (*Mount, error)
-	predicates    []predicate.Mount
-}
-
-var _ ent.Mutation = (*MountMutation)(nil)
-
-// mountOption allows management of the mutation configuration using functional options.
-type mountOption func(*MountMutation)
-
-// newMountMutation creates new mutation for the Mount entity.
-func newMountMutation(c config, op Op, opts ...mountOption) *MountMutation {
-	m := &MountMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeMount,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withMountID sets the ID field of the mutation.
-func withMountID(id int) mountOption {
-	return func(m *MountMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *Mount
-		)
-		m.oldValue = func(ctx context.Context) (*Mount, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().Mount.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withMount sets the old Mount of the mutation.
-func withMount(node *Mount) mountOption {
-	return func(m *MountMutation) {
-		m.oldValue = func(context.Context) (*Mount, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m MountMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m MountMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
-func (m *MountMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// SetName sets the "name" field.
-func (m *MountMutation) SetName(s string) {
-	m.name = &s
-}
-
-// Name returns the value of the "name" field in the mutation.
-func (m *MountMutation) Name() (r string, exists bool) {
-	v := m.name
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldName returns the old "name" field's value of the Mount entity.
-// If the Mount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MountMutation) OldName(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldName is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldName requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldName: %w", err)
-	}
-	return oldValue.Name, nil
-}
-
-// ResetName resets all changes to the "name" field.
-func (m *MountMutation) ResetName() {
-	m.name = nil
-}
-
-// SetPath sets the "path" field.
-func (m *MountMutation) SetPath(s string) {
-	m._path = &s
-}
-
-// Path returns the value of the "path" field in the mutation.
-func (m *MountMutation) Path() (r string, exists bool) {
-	v := m._path
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldPath returns the old "path" field's value of the Mount entity.
-// If the Mount object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *MountMutation) OldPath(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldPath is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldPath requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPath: %w", err)
-	}
-	return oldValue.Path, nil
-}
-
-// ResetPath resets all changes to the "path" field.
-func (m *MountMutation) ResetPath() {
-	m._path = nil
-}
-
-// AddUserIDs adds the "users" edge to the User entity by ids.
-func (m *MountMutation) AddUserIDs(ids ...string) {
-	if m.users == nil {
-		m.users = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.users[ids[i]] = struct{}{}
-	}
-}
-
-// ClearUsers clears the "users" edge to the User entity.
-func (m *MountMutation) ClearUsers() {
-	m.clearedusers = true
-}
-
-// UsersCleared reports if the "users" edge to the User entity was cleared.
-func (m *MountMutation) UsersCleared() bool {
-	return m.clearedusers
-}
-
-// RemoveUserIDs removes the "users" edge to the User entity by IDs.
-func (m *MountMutation) RemoveUserIDs(ids ...string) {
-	if m.removedusers == nil {
-		m.removedusers = make(map[string]struct{})
-	}
-	for i := range ids {
-		m.removedusers[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedUsers returns the removed IDs of the "users" edge to the User entity.
-func (m *MountMutation) RemovedUsersIDs() (ids []string) {
-	for id := range m.removedusers {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// UsersIDs returns the "users" edge IDs in the mutation.
-func (m *MountMutation) UsersIDs() (ids []string) {
-	for id := range m.users {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetUsers resets all changes to the "users" edge.
-func (m *MountMutation) ResetUsers() {
-	m.users = nil
-	m.clearedusers = false
-	m.removedusers = nil
-}
-
-// AddGroupIDs adds the "groups" edge to the Group entity by ids.
-func (m *MountMutation) AddGroupIDs(ids ...int) {
-	if m.groups == nil {
-		m.groups = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.groups[ids[i]] = struct{}{}
-	}
-}
-
-// ClearGroups clears the "groups" edge to the Group entity.
-func (m *MountMutation) ClearGroups() {
-	m.clearedgroups = true
-}
-
-// GroupsCleared reports if the "groups" edge to the Group entity was cleared.
-func (m *MountMutation) GroupsCleared() bool {
-	return m.clearedgroups
-}
-
-// RemoveGroupIDs removes the "groups" edge to the Group entity by IDs.
-func (m *MountMutation) RemoveGroupIDs(ids ...int) {
-	if m.removedgroups == nil {
-		m.removedgroups = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.removedgroups[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedGroups returns the removed IDs of the "groups" edge to the Group entity.
-func (m *MountMutation) RemovedGroupsIDs() (ids []int) {
-	for id := range m.removedgroups {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// GroupsIDs returns the "groups" edge IDs in the mutation.
-func (m *MountMutation) GroupsIDs() (ids []int) {
-	for id := range m.groups {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetGroups resets all changes to the "groups" edge.
-func (m *MountMutation) ResetGroups() {
-	m.groups = nil
-	m.clearedgroups = false
-	m.removedgroups = nil
-}
-
-// Op returns the operation name.
-func (m *MountMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (Mount).
-func (m *MountMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *MountMutation) Fields() []string {
-	fields := make([]string, 0, 2)
-	if m.name != nil {
-		fields = append(fields, mount.FieldName)
-	}
-	if m._path != nil {
-		fields = append(fields, mount.FieldPath)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *MountMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case mount.FieldName:
-		return m.Name()
-	case mount.FieldPath:
-		return m.Path()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *MountMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case mount.FieldName:
-		return m.OldName(ctx)
-	case mount.FieldPath:
-		return m.OldPath(ctx)
-	}
-	return nil, fmt.Errorf("unknown Mount field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *MountMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case mount.FieldName:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetName(v)
-		return nil
-	case mount.FieldPath:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPath(v)
-		return nil
-	}
-	return fmt.Errorf("unknown Mount field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *MountMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *MountMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *MountMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Mount numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *MountMutation) ClearedFields() []string {
-	return nil
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *MountMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *MountMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown Mount nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *MountMutation) ResetField(name string) error {
-	switch name {
-	case mount.FieldName:
-		m.ResetName()
-		return nil
-	case mount.FieldPath:
-		m.ResetPath()
-		return nil
-	}
-	return fmt.Errorf("unknown Mount field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *MountMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.users != nil {
-		edges = append(edges, mount.EdgeUsers)
-	}
-	if m.groups != nil {
-		edges = append(edges, mount.EdgeGroups)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *MountMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case mount.EdgeUsers:
-		ids := make([]ent.Value, 0, len(m.users))
-		for id := range m.users {
-			ids = append(ids, id)
-		}
-		return ids
-	case mount.EdgeGroups:
-		ids := make([]ent.Value, 0, len(m.groups))
-		for id := range m.groups {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *MountMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.removedusers != nil {
-		edges = append(edges, mount.EdgeUsers)
-	}
-	if m.removedgroups != nil {
-		edges = append(edges, mount.EdgeGroups)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *MountMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case mount.EdgeUsers:
-		ids := make([]ent.Value, 0, len(m.removedusers))
-		for id := range m.removedusers {
-			ids = append(ids, id)
-		}
-		return ids
-	case mount.EdgeGroups:
-		ids := make([]ent.Value, 0, len(m.removedgroups))
-		for id := range m.removedgroups {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *MountMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
-	if m.clearedusers {
-		edges = append(edges, mount.EdgeUsers)
-	}
-	if m.clearedgroups {
-		edges = append(edges, mount.EdgeGroups)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *MountMutation) EdgeCleared(name string) bool {
-	switch name {
-	case mount.EdgeUsers:
-		return m.clearedusers
-	case mount.EdgeGroups:
-		return m.clearedgroups
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *MountMutation) ClearEdge(name string) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown Mount unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *MountMutation) ResetEdge(name string) error {
-	switch name {
-	case mount.EdgeUsers:
-		m.ResetUsers()
-		return nil
-	case mount.EdgeGroups:
-		m.ResetGroups()
-		return nil
-	}
-	return fmt.Errorf("unknown Mount edge %s", name)
-}
-
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *string
-	provider      *string
-	username      *string
-	password      *string
-	home          *string
-	name          *string
-	locale        *string
-	lock_password *bool
-	blocked       *bool
-	clearedFields map[string]struct{}
-	mounts        map[int]struct{}
-	removedmounts map[int]struct{}
-	clearedmounts bool
-	groups        map[int]struct{}
-	removedgroups map[int]struct{}
-	clearedgroups bool
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op             Op
+	typ            string
+	id             *string
+	provider       *string
+	username       *string
+	password       *string
+	home           *string
+	name           *string
+	locale         *string
+	lock_password  *bool
+	blocked        *bool
+	clearedFields  map[string]struct{}
+	volumes        map[int]struct{}
+	removedvolumes map[int]struct{}
+	clearedvolumes bool
+	groups         map[int]struct{}
+	removedgroups  map[int]struct{}
+	clearedgroups  bool
+	done           bool
+	oldValue       func(context.Context) (*User, error)
+	predicates     []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -1107,8 +599,8 @@ func (m *UserMutation) SetID(id string) {
 	m.id = &id
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UserMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
@@ -1417,57 +909,58 @@ func (m *UserMutation) ResetBlocked() {
 	m.blocked = nil
 }
 
-// AddMountIDs adds the "mounts" edge to the Mount entity by ids.
-func (m *UserMutation) AddMountIDs(ids ...int) {
-	if m.mounts == nil {
-		m.mounts = make(map[int]struct{})
+// AddVolumeIDs adds the "volumes" edge to the Volume entity by ids.
+func (m *UserMutation) AddVolumeIDs(ids ...int) {
+	if m.volumes == nil {
+		m.volumes = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.mounts[ids[i]] = struct{}{}
+		m.volumes[ids[i]] = struct{}{}
 	}
 }
 
-// ClearMounts clears the "mounts" edge to the Mount entity.
-func (m *UserMutation) ClearMounts() {
-	m.clearedmounts = true
+// ClearVolumes clears the "volumes" edge to the Volume entity.
+func (m *UserMutation) ClearVolumes() {
+	m.clearedvolumes = true
 }
 
-// MountsCleared reports if the "mounts" edge to the Mount entity was cleared.
-func (m *UserMutation) MountsCleared() bool {
-	return m.clearedmounts
+// VolumesCleared reports if the "volumes" edge to the Volume entity was cleared.
+func (m *UserMutation) VolumesCleared() bool {
+	return m.clearedvolumes
 }
 
-// RemoveMountIDs removes the "mounts" edge to the Mount entity by IDs.
-func (m *UserMutation) RemoveMountIDs(ids ...int) {
-	if m.removedmounts == nil {
-		m.removedmounts = make(map[int]struct{})
+// RemoveVolumeIDs removes the "volumes" edge to the Volume entity by IDs.
+func (m *UserMutation) RemoveVolumeIDs(ids ...int) {
+	if m.removedvolumes == nil {
+		m.removedvolumes = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.removedmounts[ids[i]] = struct{}{}
+		delete(m.volumes, ids[i])
+		m.removedvolumes[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedMounts returns the removed IDs of the "mounts" edge to the Mount entity.
-func (m *UserMutation) RemovedMountsIDs() (ids []int) {
-	for id := range m.removedmounts {
+// RemovedVolumes returns the removed IDs of the "volumes" edge to the Volume entity.
+func (m *UserMutation) RemovedVolumesIDs() (ids []int) {
+	for id := range m.removedvolumes {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// MountsIDs returns the "mounts" edge IDs in the mutation.
-func (m *UserMutation) MountsIDs() (ids []int) {
-	for id := range m.mounts {
+// VolumesIDs returns the "volumes" edge IDs in the mutation.
+func (m *UserMutation) VolumesIDs() (ids []int) {
+	for id := range m.volumes {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetMounts resets all changes to the "mounts" edge.
-func (m *UserMutation) ResetMounts() {
-	m.mounts = nil
-	m.clearedmounts = false
-	m.removedmounts = nil
+// ResetVolumes resets all changes to the "volumes" edge.
+func (m *UserMutation) ResetVolumes() {
+	m.volumes = nil
+	m.clearedvolumes = false
+	m.removedvolumes = nil
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by ids.
@@ -1496,6 +989,7 @@ func (m *UserMutation) RemoveGroupIDs(ids ...int) {
 		m.removedgroups = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.groups, ids[i])
 		m.removedgroups[ids[i]] = struct{}{}
 	}
 }
@@ -1521,6 +1015,11 @@ func (m *UserMutation) ResetGroups() {
 	m.groups = nil
 	m.clearedgroups = false
 	m.removedgroups = nil
+}
+
+// Where appends a list predicates to the UserMutation builder.
+func (m *UserMutation) Where(ps ...predicate.User) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -1765,8 +1264,8 @@ func (m *UserMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.mounts != nil {
-		edges = append(edges, user.EdgeMounts)
+	if m.volumes != nil {
+		edges = append(edges, user.EdgeVolumes)
 	}
 	if m.groups != nil {
 		edges = append(edges, user.EdgeGroups)
@@ -1778,9 +1277,9 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeMounts:
-		ids := make([]ent.Value, 0, len(m.mounts))
-		for id := range m.mounts {
+	case user.EdgeVolumes:
+		ids := make([]ent.Value, 0, len(m.volumes))
+		for id := range m.volumes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1797,8 +1296,8 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedmounts != nil {
-		edges = append(edges, user.EdgeMounts)
+	if m.removedvolumes != nil {
+		edges = append(edges, user.EdgeVolumes)
 	}
 	if m.removedgroups != nil {
 		edges = append(edges, user.EdgeGroups)
@@ -1810,9 +1309,9 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeMounts:
-		ids := make([]ent.Value, 0, len(m.removedmounts))
-		for id := range m.removedmounts {
+	case user.EdgeVolumes:
+		ids := make([]ent.Value, 0, len(m.removedvolumes))
+		for id := range m.removedvolumes {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1829,8 +1328,8 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedmounts {
-		edges = append(edges, user.EdgeMounts)
+	if m.clearedvolumes {
+		edges = append(edges, user.EdgeVolumes)
 	}
 	if m.clearedgroups {
 		edges = append(edges, user.EdgeGroups)
@@ -1842,8 +1341,8 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeMounts:
-		return m.clearedmounts
+	case user.EdgeVolumes:
+		return m.clearedvolumes
 	case user.EdgeGroups:
 		return m.clearedgroups
 	}
@@ -1862,12 +1361,534 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeMounts:
-		m.ResetMounts()
+	case user.EdgeVolumes:
+		m.ResetVolumes()
 		return nil
 	case user.EdgeGroups:
 		m.ResetGroups()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
+}
+
+// VolumeMutation represents an operation that mutates the Volume nodes in the graph.
+type VolumeMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	label         *string
+	_path         *string
+	clearedFields map[string]struct{}
+	users         map[string]struct{}
+	removedusers  map[string]struct{}
+	clearedusers  bool
+	groups        map[int]struct{}
+	removedgroups map[int]struct{}
+	clearedgroups bool
+	done          bool
+	oldValue      func(context.Context) (*Volume, error)
+	predicates    []predicate.Volume
+}
+
+var _ ent.Mutation = (*VolumeMutation)(nil)
+
+// volumeOption allows management of the mutation configuration using functional options.
+type volumeOption func(*VolumeMutation)
+
+// newVolumeMutation creates new mutation for the Volume entity.
+func newVolumeMutation(c config, op Op, opts ...volumeOption) *VolumeMutation {
+	m := &VolumeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeVolume,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withVolumeID sets the ID field of the mutation.
+func withVolumeID(id int) volumeOption {
+	return func(m *VolumeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Volume
+		)
+		m.oldValue = func(ctx context.Context) (*Volume, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Volume.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withVolume sets the old Volume of the mutation.
+func withVolume(node *Volume) volumeOption {
+	return func(m *VolumeMutation) {
+		m.oldValue = func(context.Context) (*Volume, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m VolumeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m VolumeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *VolumeMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetLabel sets the "label" field.
+func (m *VolumeMutation) SetLabel(s string) {
+	m.label = &s
+}
+
+// Label returns the value of the "label" field in the mutation.
+func (m *VolumeMutation) Label() (r string, exists bool) {
+	v := m.label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLabel returns the old "label" field's value of the Volume entity.
+// If the Volume object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VolumeMutation) OldLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLabel: %w", err)
+	}
+	return oldValue.Label, nil
+}
+
+// ResetLabel resets all changes to the "label" field.
+func (m *VolumeMutation) ResetLabel() {
+	m.label = nil
+}
+
+// SetPath sets the "path" field.
+func (m *VolumeMutation) SetPath(s string) {
+	m._path = &s
+}
+
+// Path returns the value of the "path" field in the mutation.
+func (m *VolumeMutation) Path() (r string, exists bool) {
+	v := m._path
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPath returns the old "path" field's value of the Volume entity.
+// If the Volume object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VolumeMutation) OldPath(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldPath is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldPath requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPath: %w", err)
+	}
+	return oldValue.Path, nil
+}
+
+// ResetPath resets all changes to the "path" field.
+func (m *VolumeMutation) ResetPath() {
+	m._path = nil
+}
+
+// AddUserIDs adds the "users" edge to the User entity by ids.
+func (m *VolumeMutation) AddUserIDs(ids ...string) {
+	if m.users == nil {
+		m.users = make(map[string]struct{})
+	}
+	for i := range ids {
+		m.users[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUsers clears the "users" edge to the User entity.
+func (m *VolumeMutation) ClearUsers() {
+	m.clearedusers = true
+}
+
+// UsersCleared reports if the "users" edge to the User entity was cleared.
+func (m *VolumeMutation) UsersCleared() bool {
+	return m.clearedusers
+}
+
+// RemoveUserIDs removes the "users" edge to the User entity by IDs.
+func (m *VolumeMutation) RemoveUserIDs(ids ...string) {
+	if m.removedusers == nil {
+		m.removedusers = make(map[string]struct{})
+	}
+	for i := range ids {
+		delete(m.users, ids[i])
+		m.removedusers[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUsers returns the removed IDs of the "users" edge to the User entity.
+func (m *VolumeMutation) RemovedUsersIDs() (ids []string) {
+	for id := range m.removedusers {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UsersIDs returns the "users" edge IDs in the mutation.
+func (m *VolumeMutation) UsersIDs() (ids []string) {
+	for id := range m.users {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUsers resets all changes to the "users" edge.
+func (m *VolumeMutation) ResetUsers() {
+	m.users = nil
+	m.clearedusers = false
+	m.removedusers = nil
+}
+
+// AddGroupIDs adds the "groups" edge to the Group entity by ids.
+func (m *VolumeMutation) AddGroupIDs(ids ...int) {
+	if m.groups == nil {
+		m.groups = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.groups[ids[i]] = struct{}{}
+	}
+}
+
+// ClearGroups clears the "groups" edge to the Group entity.
+func (m *VolumeMutation) ClearGroups() {
+	m.clearedgroups = true
+}
+
+// GroupsCleared reports if the "groups" edge to the Group entity was cleared.
+func (m *VolumeMutation) GroupsCleared() bool {
+	return m.clearedgroups
+}
+
+// RemoveGroupIDs removes the "groups" edge to the Group entity by IDs.
+func (m *VolumeMutation) RemoveGroupIDs(ids ...int) {
+	if m.removedgroups == nil {
+		m.removedgroups = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.groups, ids[i])
+		m.removedgroups[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedGroups returns the removed IDs of the "groups" edge to the Group entity.
+func (m *VolumeMutation) RemovedGroupsIDs() (ids []int) {
+	for id := range m.removedgroups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// GroupsIDs returns the "groups" edge IDs in the mutation.
+func (m *VolumeMutation) GroupsIDs() (ids []int) {
+	for id := range m.groups {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetGroups resets all changes to the "groups" edge.
+func (m *VolumeMutation) ResetGroups() {
+	m.groups = nil
+	m.clearedgroups = false
+	m.removedgroups = nil
+}
+
+// Where appends a list predicates to the VolumeMutation builder.
+func (m *VolumeMutation) Where(ps ...predicate.Volume) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *VolumeMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (Volume).
+func (m *VolumeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *VolumeMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.label != nil {
+		fields = append(fields, volume.FieldLabel)
+	}
+	if m._path != nil {
+		fields = append(fields, volume.FieldPath)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *VolumeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case volume.FieldLabel:
+		return m.Label()
+	case volume.FieldPath:
+		return m.Path()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *VolumeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case volume.FieldLabel:
+		return m.OldLabel(ctx)
+	case volume.FieldPath:
+		return m.OldPath(ctx)
+	}
+	return nil, fmt.Errorf("unknown Volume field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VolumeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case volume.FieldLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLabel(v)
+		return nil
+	case volume.FieldPath:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPath(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Volume field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *VolumeMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *VolumeMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VolumeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Volume numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *VolumeMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *VolumeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *VolumeMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Volume nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *VolumeMutation) ResetField(name string) error {
+	switch name {
+	case volume.FieldLabel:
+		m.ResetLabel()
+		return nil
+	case volume.FieldPath:
+		m.ResetPath()
+		return nil
+	}
+	return fmt.Errorf("unknown Volume field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *VolumeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.users != nil {
+		edges = append(edges, volume.EdgeUsers)
+	}
+	if m.groups != nil {
+		edges = append(edges, volume.EdgeGroups)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *VolumeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case volume.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.users))
+		for id := range m.users {
+			ids = append(ids, id)
+		}
+		return ids
+	case volume.EdgeGroups:
+		ids := make([]ent.Value, 0, len(m.groups))
+		for id := range m.groups {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *VolumeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedusers != nil {
+		edges = append(edges, volume.EdgeUsers)
+	}
+	if m.removedgroups != nil {
+		edges = append(edges, volume.EdgeGroups)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *VolumeMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case volume.EdgeUsers:
+		ids := make([]ent.Value, 0, len(m.removedusers))
+		for id := range m.removedusers {
+			ids = append(ids, id)
+		}
+		return ids
+	case volume.EdgeGroups:
+		ids := make([]ent.Value, 0, len(m.removedgroups))
+		for id := range m.removedgroups {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *VolumeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedusers {
+		edges = append(edges, volume.EdgeUsers)
+	}
+	if m.clearedgroups {
+		edges = append(edges, volume.EdgeGroups)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *VolumeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case volume.EdgeUsers:
+		return m.clearedusers
+	case volume.EdgeGroups:
+		return m.clearedgroups
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *VolumeMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Volume unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *VolumeMutation) ResetEdge(name string) error {
+	switch name {
+	case volume.EdgeUsers:
+		m.ResetUsers()
+		return nil
+	case volume.EdgeGroups:
+		m.ResetGroups()
+		return nil
+	}
+	return fmt.Errorf("unknown Volume edge %s", name)
 }

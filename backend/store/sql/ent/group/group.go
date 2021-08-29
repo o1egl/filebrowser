@@ -11,20 +11,20 @@ const (
 	FieldName = "name"
 	// EdgeUsers holds the string denoting the users edge name in mutations.
 	EdgeUsers = "users"
-	// EdgeMounts holds the string denoting the mounts edge name in mutations.
-	EdgeMounts = "mounts"
+	// EdgeVolumes holds the string denoting the volumes edge name in mutations.
+	EdgeVolumes = "volumes"
 	// Table holds the table name of the group in the database.
 	Table = "groups"
-	// UsersTable is the table the holds the users relation/edge. The primary key declared below.
+	// UsersTable is the table that holds the users relation/edge. The primary key declared below.
 	UsersTable = "user_groups"
 	// UsersInverseTable is the table name for the User entity.
 	// It exists in this package in order to avoid circular dependency with the "user" package.
 	UsersInverseTable = "users"
-	// MountsTable is the table the holds the mounts relation/edge. The primary key declared below.
-	MountsTable = "group_mounts"
-	// MountsInverseTable is the table name for the Mount entity.
-	// It exists in this package in order to avoid circular dependency with the "mount" package.
-	MountsInverseTable = "mounts"
+	// VolumesTable is the table that holds the volumes relation/edge. The primary key declared below.
+	VolumesTable = "group_volumes"
+	// VolumesInverseTable is the table name for the Volume entity.
+	// It exists in this package in order to avoid circular dependency with the "volume" package.
+	VolumesInverseTable = "volumes"
 )
 
 // Columns holds all SQL columns for group fields.
@@ -37,9 +37,9 @@ var (
 	// UsersPrimaryKey and UsersColumn2 are the table columns denoting the
 	// primary key for the users relation (M2M).
 	UsersPrimaryKey = []string{"user_id", "group_id"}
-	// MountsPrimaryKey and MountsColumn2 are the table columns denoting the
-	// primary key for the mounts relation (M2M).
-	MountsPrimaryKey = []string{"group_id", "mount_id"}
+	// VolumesPrimaryKey and VolumesColumn2 are the table columns denoting the
+	// primary key for the volumes relation (M2M).
+	VolumesPrimaryKey = []string{"group_id", "volume_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

@@ -22,6 +22,6 @@ func (Group) Fields() []ent.Field {
 func (Group) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("users", User.Type).Ref("groups"),
-		edge.To("mounts", Mount.Type),
+		edge.To("volumes", Volume.Type),
 	}
 }

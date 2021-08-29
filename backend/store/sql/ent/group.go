@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
 )
 
@@ -27,8 +26,8 @@ type Group struct {
 type GroupEdges struct {
 	// Users holds the value of the users edge.
 	Users []*User `json:"users,omitempty"`
-	// Mounts holds the value of the mounts edge.
-	Mounts []*Mount `json:"mounts,omitempty"`
+	// Volumes holds the value of the volumes edge.
+	Volumes []*Volume `json:"volumes,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -43,13 +42,13 @@ func (e GroupEdges) UsersOrErr() ([]*User, error) {
 	return nil, &NotLoadedError{edge: "users"}
 }
 
-// MountsOrErr returns the Mounts value or an error if the edge
+// VolumesOrErr returns the Volumes value or an error if the edge
 // was not loaded in eager-loading.
-func (e GroupEdges) MountsOrErr() ([]*Mount, error) {
+func (e GroupEdges) VolumesOrErr() ([]*Volume, error) {
 	if e.loadedTypes[1] {
-		return e.Mounts, nil
+		return e.Volumes, nil
 	}
-	return nil, &NotLoadedError{edge: "mounts"}
+	return nil, &NotLoadedError{edge: "volumes"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -98,9 +97,9 @@ func (gr *Group) QueryUsers() *UserQuery {
 	return (&GroupClient{config: gr.config}).QueryUsers(gr)
 }
 
-// QueryMounts queries the "mounts" edge of the Group entity.
-func (gr *Group) QueryMounts() *MountQuery {
-	return (&GroupClient{config: gr.config}).QueryMounts(gr)
+// QueryVolumes queries the "volumes" edge of the Group entity.
+func (gr *Group) QueryVolumes() *VolumeQuery {
+	return (&GroupClient{config: gr.config}).QueryVolumes(gr)
 }
 
 // Update returns a builder for updating this Group.

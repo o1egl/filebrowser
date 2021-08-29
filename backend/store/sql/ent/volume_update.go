@@ -9,144 +9,146 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/group"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/predicate"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
-// MountUpdate is the builder for updating Mount entities.
-type MountUpdate struct {
+// VolumeUpdate is the builder for updating Volume entities.
+type VolumeUpdate struct {
 	config
 	hooks    []Hook
-	mutation *MountMutation
+	mutation *VolumeMutation
 }
 
-// Where adds a new predicate for the MountUpdate builder.
-func (mu *MountUpdate) Where(ps ...predicate.Mount) *MountUpdate {
-	mu.mutation.predicates = append(mu.mutation.predicates, ps...)
-	return mu
+// Where appends a list predicates to the VolumeUpdate builder.
+func (vu *VolumeUpdate) Where(ps ...predicate.Volume) *VolumeUpdate {
+	vu.mutation.Where(ps...)
+	return vu
 }
 
-// SetName sets the "name" field.
-func (mu *MountUpdate) SetName(s string) *MountUpdate {
-	mu.mutation.SetName(s)
-	return mu
+// SetLabel sets the "label" field.
+func (vu *VolumeUpdate) SetLabel(s string) *VolumeUpdate {
+	vu.mutation.SetLabel(s)
+	return vu
 }
 
 // SetPath sets the "path" field.
-func (mu *MountUpdate) SetPath(s string) *MountUpdate {
-	mu.mutation.SetPath(s)
-	return mu
+func (vu *VolumeUpdate) SetPath(s string) *VolumeUpdate {
+	vu.mutation.SetPath(s)
+	return vu
 }
 
 // AddUserIDs adds the "users" edge to the User entity by IDs.
-func (mu *MountUpdate) AddUserIDs(ids ...string) *MountUpdate {
-	mu.mutation.AddUserIDs(ids...)
-	return mu
+func (vu *VolumeUpdate) AddUserIDs(ids ...string) *VolumeUpdate {
+	vu.mutation.AddUserIDs(ids...)
+	return vu
 }
 
 // AddUsers adds the "users" edges to the User entity.
-func (mu *MountUpdate) AddUsers(u ...*User) *MountUpdate {
+func (vu *VolumeUpdate) AddUsers(u ...*User) *VolumeUpdate {
 	ids := make([]string, len(u))
 	for i := range u {
 		ids[i] = u[i].ID
 	}
-	return mu.AddUserIDs(ids...)
+	return vu.AddUserIDs(ids...)
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
-func (mu *MountUpdate) AddGroupIDs(ids ...int) *MountUpdate {
-	mu.mutation.AddGroupIDs(ids...)
-	return mu
+func (vu *VolumeUpdate) AddGroupIDs(ids ...int) *VolumeUpdate {
+	vu.mutation.AddGroupIDs(ids...)
+	return vu
 }
 
 // AddGroups adds the "groups" edges to the Group entity.
-func (mu *MountUpdate) AddGroups(g ...*Group) *MountUpdate {
+func (vu *VolumeUpdate) AddGroups(g ...*Group) *VolumeUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return mu.AddGroupIDs(ids...)
+	return vu.AddGroupIDs(ids...)
 }
 
-// Mutation returns the MountMutation object of the builder.
-func (mu *MountUpdate) Mutation() *MountMutation {
-	return mu.mutation
+// Mutation returns the VolumeMutation object of the builder.
+func (vu *VolumeUpdate) Mutation() *VolumeMutation {
+	return vu.mutation
 }
 
 // ClearUsers clears all "users" edges to the User entity.
-func (mu *MountUpdate) ClearUsers() *MountUpdate {
-	mu.mutation.ClearUsers()
-	return mu
+func (vu *VolumeUpdate) ClearUsers() *VolumeUpdate {
+	vu.mutation.ClearUsers()
+	return vu
 }
 
 // RemoveUserIDs removes the "users" edge to User entities by IDs.
-func (mu *MountUpdate) RemoveUserIDs(ids ...string) *MountUpdate {
-	mu.mutation.RemoveUserIDs(ids...)
-	return mu
+func (vu *VolumeUpdate) RemoveUserIDs(ids ...string) *VolumeUpdate {
+	vu.mutation.RemoveUserIDs(ids...)
+	return vu
 }
 
 // RemoveUsers removes "users" edges to User entities.
-func (mu *MountUpdate) RemoveUsers(u ...*User) *MountUpdate {
+func (vu *VolumeUpdate) RemoveUsers(u ...*User) *VolumeUpdate {
 	ids := make([]string, len(u))
 	for i := range u {
 		ids[i] = u[i].ID
 	}
-	return mu.RemoveUserIDs(ids...)
+	return vu.RemoveUserIDs(ids...)
 }
 
 // ClearGroups clears all "groups" edges to the Group entity.
-func (mu *MountUpdate) ClearGroups() *MountUpdate {
-	mu.mutation.ClearGroups()
-	return mu
+func (vu *VolumeUpdate) ClearGroups() *VolumeUpdate {
+	vu.mutation.ClearGroups()
+	return vu
 }
 
 // RemoveGroupIDs removes the "groups" edge to Group entities by IDs.
-func (mu *MountUpdate) RemoveGroupIDs(ids ...int) *MountUpdate {
-	mu.mutation.RemoveGroupIDs(ids...)
-	return mu
+func (vu *VolumeUpdate) RemoveGroupIDs(ids ...int) *VolumeUpdate {
+	vu.mutation.RemoveGroupIDs(ids...)
+	return vu
 }
 
 // RemoveGroups removes "groups" edges to Group entities.
-func (mu *MountUpdate) RemoveGroups(g ...*Group) *MountUpdate {
+func (vu *VolumeUpdate) RemoveGroups(g ...*Group) *VolumeUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return mu.RemoveGroupIDs(ids...)
+	return vu.RemoveGroupIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (mu *MountUpdate) Save(ctx context.Context) (int, error) {
+func (vu *VolumeUpdate) Save(ctx context.Context) (int, error) {
 	var (
 		err      error
 		affected int
 	)
-	if len(mu.hooks) == 0 {
-		if err = mu.check(); err != nil {
+	if len(vu.hooks) == 0 {
+		if err = vu.check(); err != nil {
 			return 0, err
 		}
-		affected, err = mu.sqlSave(ctx)
+		affected, err = vu.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MountMutation)
+			mutation, ok := m.(*VolumeMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
-			if err = mu.check(); err != nil {
+			if err = vu.check(); err != nil {
 				return 0, err
 			}
-			mu.mutation = mutation
-			affected, err = mu.sqlSave(ctx)
+			vu.mutation = mutation
+			affected, err = vu.sqlSave(ctx)
 			mutation.done = true
 			return affected, err
 		})
-		for i := len(mu.hooks) - 1; i >= 0; i-- {
-			mut = mu.hooks[i](mut)
+		for i := len(vu.hooks) - 1; i >= 0; i-- {
+			if vu.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
+			mut = vu.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, mu.mutation); err != nil {
+		if _, err := mut.Mutate(ctx, vu.mutation); err != nil {
 			return 0, err
 		}
 	}
@@ -154,8 +156,8 @@ func (mu *MountUpdate) Save(ctx context.Context) (int, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (mu *MountUpdate) SaveX(ctx context.Context) int {
-	affected, err := mu.Save(ctx)
+func (vu *VolumeUpdate) SaveX(ctx context.Context) int {
+	affected, err := vu.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -163,66 +165,66 @@ func (mu *MountUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (mu *MountUpdate) Exec(ctx context.Context) error {
-	_, err := mu.Save(ctx)
+func (vu *VolumeUpdate) Exec(ctx context.Context) error {
+	_, err := vu.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (mu *MountUpdate) ExecX(ctx context.Context) {
-	if err := mu.Exec(ctx); err != nil {
+func (vu *VolumeUpdate) ExecX(ctx context.Context) {
+	if err := vu.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (mu *MountUpdate) check() error {
-	if v, ok := mu.mutation.Path(); ok {
-		if err := mount.PathValidator(v); err != nil {
+func (vu *VolumeUpdate) check() error {
+	if v, ok := vu.mutation.Path(); ok {
+		if err := volume.PathValidator(v); err != nil {
 			return &ValidationError{Name: "path", err: fmt.Errorf("ent: validator failed for field \"path\": %w", err)}
 		}
 	}
 	return nil
 }
 
-func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (vu *VolumeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
-			Table:   mount.Table,
-			Columns: mount.Columns,
+			Table:   volume.Table,
+			Columns: volume.Columns,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeInt,
-				Column: mount.FieldID,
+				Column: volume.FieldID,
 			},
 		},
 	}
-	if ps := mu.mutation.predicates; len(ps) > 0 {
+	if ps := vu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := mu.mutation.Name(); ok {
+	if value, ok := vu.mutation.Label(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: mount.FieldName,
+			Column: volume.FieldLabel,
 		})
 	}
-	if value, ok := mu.mutation.Path(); ok {
+	if value, ok := vu.mutation.Path(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: mount.FieldPath,
+			Column: volume.FieldPath,
 		})
 	}
-	if mu.mutation.UsersCleared() {
+	if vu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -233,12 +235,12 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.RemovedUsersIDs(); len(nodes) > 0 && !mu.mutation.UsersCleared() {
+	if nodes := vu.mutation.RemovedUsersIDs(); len(nodes) > 0 && !vu.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -252,12 +254,12 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := vu.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -271,12 +273,12 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if mu.mutation.GroupsCleared() {
+	if vu.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -287,12 +289,12 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !mu.mutation.GroupsCleared() {
+	if nodes := vu.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !vu.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -306,12 +308,12 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.GroupsIDs(); len(nodes) > 0 {
+	if nodes := vu.mutation.GroupsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -325,150 +327,153 @@ func (mu *MountUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
+	if n, err = sqlgraph.UpdateNodes(ctx, vu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{mount.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+			err = &NotFoundError{volume.Label}
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
 	return n, nil
 }
 
-// MountUpdateOne is the builder for updating a single Mount entity.
-type MountUpdateOne struct {
+// VolumeUpdateOne is the builder for updating a single Volume entity.
+type VolumeUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *MountMutation
+	mutation *VolumeMutation
 }
 
-// SetName sets the "name" field.
-func (muo *MountUpdateOne) SetName(s string) *MountUpdateOne {
-	muo.mutation.SetName(s)
-	return muo
+// SetLabel sets the "label" field.
+func (vuo *VolumeUpdateOne) SetLabel(s string) *VolumeUpdateOne {
+	vuo.mutation.SetLabel(s)
+	return vuo
 }
 
 // SetPath sets the "path" field.
-func (muo *MountUpdateOne) SetPath(s string) *MountUpdateOne {
-	muo.mutation.SetPath(s)
-	return muo
+func (vuo *VolumeUpdateOne) SetPath(s string) *VolumeUpdateOne {
+	vuo.mutation.SetPath(s)
+	return vuo
 }
 
 // AddUserIDs adds the "users" edge to the User entity by IDs.
-func (muo *MountUpdateOne) AddUserIDs(ids ...string) *MountUpdateOne {
-	muo.mutation.AddUserIDs(ids...)
-	return muo
+func (vuo *VolumeUpdateOne) AddUserIDs(ids ...string) *VolumeUpdateOne {
+	vuo.mutation.AddUserIDs(ids...)
+	return vuo
 }
 
 // AddUsers adds the "users" edges to the User entity.
-func (muo *MountUpdateOne) AddUsers(u ...*User) *MountUpdateOne {
+func (vuo *VolumeUpdateOne) AddUsers(u ...*User) *VolumeUpdateOne {
 	ids := make([]string, len(u))
 	for i := range u {
 		ids[i] = u[i].ID
 	}
-	return muo.AddUserIDs(ids...)
+	return vuo.AddUserIDs(ids...)
 }
 
 // AddGroupIDs adds the "groups" edge to the Group entity by IDs.
-func (muo *MountUpdateOne) AddGroupIDs(ids ...int) *MountUpdateOne {
-	muo.mutation.AddGroupIDs(ids...)
-	return muo
+func (vuo *VolumeUpdateOne) AddGroupIDs(ids ...int) *VolumeUpdateOne {
+	vuo.mutation.AddGroupIDs(ids...)
+	return vuo
 }
 
 // AddGroups adds the "groups" edges to the Group entity.
-func (muo *MountUpdateOne) AddGroups(g ...*Group) *MountUpdateOne {
+func (vuo *VolumeUpdateOne) AddGroups(g ...*Group) *VolumeUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return muo.AddGroupIDs(ids...)
+	return vuo.AddGroupIDs(ids...)
 }
 
-// Mutation returns the MountMutation object of the builder.
-func (muo *MountUpdateOne) Mutation() *MountMutation {
-	return muo.mutation
+// Mutation returns the VolumeMutation object of the builder.
+func (vuo *VolumeUpdateOne) Mutation() *VolumeMutation {
+	return vuo.mutation
 }
 
 // ClearUsers clears all "users" edges to the User entity.
-func (muo *MountUpdateOne) ClearUsers() *MountUpdateOne {
-	muo.mutation.ClearUsers()
-	return muo
+func (vuo *VolumeUpdateOne) ClearUsers() *VolumeUpdateOne {
+	vuo.mutation.ClearUsers()
+	return vuo
 }
 
 // RemoveUserIDs removes the "users" edge to User entities by IDs.
-func (muo *MountUpdateOne) RemoveUserIDs(ids ...string) *MountUpdateOne {
-	muo.mutation.RemoveUserIDs(ids...)
-	return muo
+func (vuo *VolumeUpdateOne) RemoveUserIDs(ids ...string) *VolumeUpdateOne {
+	vuo.mutation.RemoveUserIDs(ids...)
+	return vuo
 }
 
 // RemoveUsers removes "users" edges to User entities.
-func (muo *MountUpdateOne) RemoveUsers(u ...*User) *MountUpdateOne {
+func (vuo *VolumeUpdateOne) RemoveUsers(u ...*User) *VolumeUpdateOne {
 	ids := make([]string, len(u))
 	for i := range u {
 		ids[i] = u[i].ID
 	}
-	return muo.RemoveUserIDs(ids...)
+	return vuo.RemoveUserIDs(ids...)
 }
 
 // ClearGroups clears all "groups" edges to the Group entity.
-func (muo *MountUpdateOne) ClearGroups() *MountUpdateOne {
-	muo.mutation.ClearGroups()
-	return muo
+func (vuo *VolumeUpdateOne) ClearGroups() *VolumeUpdateOne {
+	vuo.mutation.ClearGroups()
+	return vuo
 }
 
 // RemoveGroupIDs removes the "groups" edge to Group entities by IDs.
-func (muo *MountUpdateOne) RemoveGroupIDs(ids ...int) *MountUpdateOne {
-	muo.mutation.RemoveGroupIDs(ids...)
-	return muo
+func (vuo *VolumeUpdateOne) RemoveGroupIDs(ids ...int) *VolumeUpdateOne {
+	vuo.mutation.RemoveGroupIDs(ids...)
+	return vuo
 }
 
 // RemoveGroups removes "groups" edges to Group entities.
-func (muo *MountUpdateOne) RemoveGroups(g ...*Group) *MountUpdateOne {
+func (vuo *VolumeUpdateOne) RemoveGroups(g ...*Group) *VolumeUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return muo.RemoveGroupIDs(ids...)
+	return vuo.RemoveGroupIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (muo *MountUpdateOne) Select(field string, fields ...string) *MountUpdateOne {
-	muo.fields = append([]string{field}, fields...)
-	return muo
+func (vuo *VolumeUpdateOne) Select(field string, fields ...string) *VolumeUpdateOne {
+	vuo.fields = append([]string{field}, fields...)
+	return vuo
 }
 
-// Save executes the query and returns the updated Mount entity.
-func (muo *MountUpdateOne) Save(ctx context.Context) (*Mount, error) {
+// Save executes the query and returns the updated Volume entity.
+func (vuo *VolumeUpdateOne) Save(ctx context.Context) (*Volume, error) {
 	var (
 		err  error
-		node *Mount
+		node *Volume
 	)
-	if len(muo.hooks) == 0 {
-		if err = muo.check(); err != nil {
+	if len(vuo.hooks) == 0 {
+		if err = vuo.check(); err != nil {
 			return nil, err
 		}
-		node, err = muo.sqlSave(ctx)
+		node, err = vuo.sqlSave(ctx)
 	} else {
 		var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-			mutation, ok := m.(*MountMutation)
+			mutation, ok := m.(*VolumeMutation)
 			if !ok {
 				return nil, fmt.Errorf("unexpected mutation type %T", m)
 			}
-			if err = muo.check(); err != nil {
+			if err = vuo.check(); err != nil {
 				return nil, err
 			}
-			muo.mutation = mutation
-			node, err = muo.sqlSave(ctx)
+			vuo.mutation = mutation
+			node, err = vuo.sqlSave(ctx)
 			mutation.done = true
 			return node, err
 		})
-		for i := len(muo.hooks) - 1; i >= 0; i-- {
-			mut = muo.hooks[i](mut)
+		for i := len(vuo.hooks) - 1; i >= 0; i-- {
+			if vuo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
+			mut = vuo.hooks[i](mut)
 		}
-		if _, err := mut.Mutate(ctx, muo.mutation); err != nil {
+		if _, err := mut.Mutate(ctx, vuo.mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -476,8 +481,8 @@ func (muo *MountUpdateOne) Save(ctx context.Context) (*Mount, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (muo *MountUpdateOne) SaveX(ctx context.Context) *Mount {
-	node, err := muo.Save(ctx)
+func (vuo *VolumeUpdateOne) SaveX(ctx context.Context) *Volume {
+	node, err := vuo.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -485,83 +490,83 @@ func (muo *MountUpdateOne) SaveX(ctx context.Context) *Mount {
 }
 
 // Exec executes the query on the entity.
-func (muo *MountUpdateOne) Exec(ctx context.Context) error {
-	_, err := muo.Save(ctx)
+func (vuo *VolumeUpdateOne) Exec(ctx context.Context) error {
+	_, err := vuo.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (muo *MountUpdateOne) ExecX(ctx context.Context) {
-	if err := muo.Exec(ctx); err != nil {
+func (vuo *VolumeUpdateOne) ExecX(ctx context.Context) {
+	if err := vuo.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (muo *MountUpdateOne) check() error {
-	if v, ok := muo.mutation.Path(); ok {
-		if err := mount.PathValidator(v); err != nil {
+func (vuo *VolumeUpdateOne) check() error {
+	if v, ok := vuo.mutation.Path(); ok {
+		if err := volume.PathValidator(v); err != nil {
 			return &ValidationError{Name: "path", err: fmt.Errorf("ent: validator failed for field \"path\": %w", err)}
 		}
 	}
 	return nil
 }
 
-func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error) {
+func (vuo *VolumeUpdateOne) sqlSave(ctx context.Context) (_node *Volume, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
-			Table:   mount.Table,
-			Columns: mount.Columns,
+			Table:   volume.Table,
+			Columns: volume.Columns,
 			ID: &sqlgraph.FieldSpec{
 				Type:   field.TypeInt,
-				Column: mount.FieldID,
+				Column: volume.FieldID,
 			},
 		},
 	}
-	id, ok := muo.mutation.ID()
+	id, ok := vuo.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Mount.ID for update")}
+		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Volume.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	if fields := muo.fields; len(fields) > 0 {
+	if fields := vuo.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, mount.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, volume.FieldID)
 		for _, f := range fields {
-			if !mount.ValidColumn(f) {
+			if !volume.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 			}
-			if f != mount.FieldID {
+			if f != volume.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
 	}
-	if ps := muo.mutation.predicates; len(ps) > 0 {
+	if ps := vuo.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := muo.mutation.Name(); ok {
+	if value, ok := vuo.mutation.Label(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: mount.FieldName,
+			Column: volume.FieldLabel,
 		})
 	}
-	if value, ok := muo.mutation.Path(); ok {
+	if value, ok := vuo.mutation.Path(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: mount.FieldPath,
+			Column: volume.FieldPath,
 		})
 	}
-	if muo.mutation.UsersCleared() {
+	if vuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -572,12 +577,12 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.RemovedUsersIDs(); len(nodes) > 0 && !muo.mutation.UsersCleared() {
+	if nodes := vuo.mutation.RemovedUsersIDs(); len(nodes) > 0 && !vuo.mutation.UsersCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -591,12 +596,12 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.UsersIDs(); len(nodes) > 0 {
+	if nodes := vuo.mutation.UsersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.UsersTable,
-			Columns: mount.UsersPrimaryKey,
+			Table:   volume.UsersTable,
+			Columns: volume.UsersPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -610,12 +615,12 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if muo.mutation.GroupsCleared() {
+	if vuo.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -626,12 +631,12 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !muo.mutation.GroupsCleared() {
+	if nodes := vuo.mutation.RemovedGroupsIDs(); len(nodes) > 0 && !vuo.mutation.GroupsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -645,12 +650,12 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.GroupsIDs(); len(nodes) > 0 {
+	if nodes := vuo.mutation.GroupsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2M,
 			Inverse: true,
-			Table:   mount.GroupsTable,
-			Columns: mount.GroupsPrimaryKey,
+			Table:   volume.GroupsTable,
+			Columns: volume.GroupsPrimaryKey,
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -664,14 +669,14 @@ func (muo *MountUpdateOne) sqlSave(ctx context.Context) (_node *Mount, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Mount{config: muo.config}
+	_node = &Volume{config: vuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, muo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, vuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{mount.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+			err = &NotFoundError{volume.Label}
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

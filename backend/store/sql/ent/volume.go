@@ -7,26 +7,25 @@ import (
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
-
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent/mount"
+	"github.com/filebrowser/filebrowser/v3/store/sql/ent/volume"
 )
 
-// Mount is the model entity for the Mount schema.
-type Mount struct {
+// Volume is the model entity for the Volume schema.
+type Volume struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	// Label holds the value of the "label" field.
+	Label string `json:"label,omitempty"`
 	// Path holds the value of the "path" field.
 	Path string `json:"path,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the MountQuery when eager-loading is set.
-	Edges MountEdges `json:"edges"`
+	// The values are being populated by the VolumeQuery when eager-loading is set.
+	Edges VolumeEdges `json:"edges"`
 }
 
-// MountEdges holds the relations/edges for other nodes in the graph.
-type MountEdges struct {
+// VolumeEdges holds the relations/edges for other nodes in the graph.
+type VolumeEdges struct {
 	// Users holds the value of the users edge.
 	Users []*User `json:"users,omitempty"`
 	// Groups holds the value of the groups edge.
@@ -38,7 +37,7 @@ type MountEdges struct {
 
 // UsersOrErr returns the Users value or an error if the edge
 // was not loaded in eager-loading.
-func (e MountEdges) UsersOrErr() ([]*User, error) {
+func (e VolumeEdges) UsersOrErr() ([]*User, error) {
 	if e.loadedTypes[0] {
 		return e.Users, nil
 	}
@@ -47,7 +46,7 @@ func (e MountEdges) UsersOrErr() ([]*User, error) {
 
 // GroupsOrErr returns the Groups value or an error if the edge
 // was not loaded in eager-loading.
-func (e MountEdges) GroupsOrErr() ([]*Group, error) {
+func (e VolumeEdges) GroupsOrErr() ([]*Group, error) {
 	if e.loadedTypes[1] {
 		return e.Groups, nil
 	}
@@ -55,98 +54,98 @@ func (e MountEdges) GroupsOrErr() ([]*Group, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Mount) scanValues(columns []string) ([]interface{}, error) {
+func (*Volume) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case mount.FieldID:
+		case volume.FieldID:
 			values[i] = new(sql.NullInt64)
-		case mount.FieldName, mount.FieldPath:
+		case volume.FieldLabel, volume.FieldPath:
 			values[i] = new(sql.NullString)
 		default:
-			return nil, fmt.Errorf("unexpected column %q for type Mount", columns[i])
+			return nil, fmt.Errorf("unexpected column %q for type Volume", columns[i])
 		}
 	}
 	return values, nil
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Mount fields.
-func (m *Mount) assignValues(columns []string, values []interface{}) error {
+// to the Volume fields.
+func (v *Volume) assignValues(columns []string, values []interface{}) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case mount.FieldID:
+		case volume.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
-			m.ID = int(value.Int64)
-		case mount.FieldName:
+			v.ID = int(value.Int64)
+		case volume.FieldLabel:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field name", values[i])
+				return fmt.Errorf("unexpected type %T for field label", values[i])
 			} else if value.Valid {
-				m.Name = value.String
+				v.Label = value.String
 			}
-		case mount.FieldPath:
+		case volume.FieldPath:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field path", values[i])
 			} else if value.Valid {
-				m.Path = value.String
+				v.Path = value.String
 			}
 		}
 	}
 	return nil
 }
 
-// QueryUsers queries the "users" edge of the Mount entity.
-func (m *Mount) QueryUsers() *UserQuery {
-	return (&MountClient{config: m.config}).QueryUsers(m)
+// QueryUsers queries the "users" edge of the Volume entity.
+func (v *Volume) QueryUsers() *UserQuery {
+	return (&VolumeClient{config: v.config}).QueryUsers(v)
 }
 
-// QueryGroups queries the "groups" edge of the Mount entity.
-func (m *Mount) QueryGroups() *GroupQuery {
-	return (&MountClient{config: m.config}).QueryGroups(m)
+// QueryGroups queries the "groups" edge of the Volume entity.
+func (v *Volume) QueryGroups() *GroupQuery {
+	return (&VolumeClient{config: v.config}).QueryGroups(v)
 }
 
-// Update returns a builder for updating this Mount.
-// Note that you need to call Mount.Unwrap() before calling this method if this Mount
+// Update returns a builder for updating this Volume.
+// Note that you need to call Volume.Unwrap() before calling this method if this Volume
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (m *Mount) Update() *MountUpdateOne {
-	return (&MountClient{config: m.config}).UpdateOne(m)
+func (v *Volume) Update() *VolumeUpdateOne {
+	return (&VolumeClient{config: v.config}).UpdateOne(v)
 }
 
-// Unwrap unwraps the Mount entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Volume entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (m *Mount) Unwrap() *Mount {
-	tx, ok := m.config.driver.(*txDriver)
+func (v *Volume) Unwrap() *Volume {
+	tx, ok := v.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Mount is not a transactional entity")
+		panic("ent: Volume is not a transactional entity")
 	}
-	m.config.driver = tx.drv
-	return m
+	v.config.driver = tx.drv
+	return v
 }
 
 // String implements the fmt.Stringer.
-func (m *Mount) String() string {
+func (v *Volume) String() string {
 	var builder strings.Builder
-	builder.WriteString("Mount(")
-	builder.WriteString(fmt.Sprintf("id=%v", m.ID))
-	builder.WriteString(", name=")
-	builder.WriteString(m.Name)
+	builder.WriteString("Volume(")
+	builder.WriteString(fmt.Sprintf("id=%v", v.ID))
+	builder.WriteString(", label=")
+	builder.WriteString(v.Label)
 	builder.WriteString(", path=")
-	builder.WriteString(m.Path)
+	builder.WriteString(v.Path)
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// Mounts is a parsable slice of Mount.
-type Mounts []*Mount
+// Volumes is a parsable slice of Volume.
+type Volumes []*Volume
 
-func (m Mounts) config(cfg config) {
-	for _i := range m {
-		m[_i].config = cfg
+func (v Volumes) config(cfg config) {
+	for _i := range v {
+		v[_i].config = cfg
 	}
 }

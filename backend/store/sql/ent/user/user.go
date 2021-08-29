@@ -23,18 +23,18 @@ const (
 	FieldLockPassword = "lock_password"
 	// FieldBlocked holds the string denoting the blocked field in the database.
 	FieldBlocked = "blocked"
-	// EdgeMounts holds the string denoting the mounts edge name in mutations.
-	EdgeMounts = "mounts"
+	// EdgeVolumes holds the string denoting the volumes edge name in mutations.
+	EdgeVolumes = "volumes"
 	// EdgeGroups holds the string denoting the groups edge name in mutations.
 	EdgeGroups = "groups"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// MountsTable is the table the holds the mounts relation/edge. The primary key declared below.
-	MountsTable = "user_mounts"
-	// MountsInverseTable is the table name for the Mount entity.
-	// It exists in this package in order to avoid circular dependency with the "mount" package.
-	MountsInverseTable = "mounts"
-	// GroupsTable is the table the holds the groups relation/edge. The primary key declared below.
+	// VolumesTable is the table that holds the volumes relation/edge. The primary key declared below.
+	VolumesTable = "user_volumes"
+	// VolumesInverseTable is the table name for the Volume entity.
+	// It exists in this package in order to avoid circular dependency with the "volume" package.
+	VolumesInverseTable = "volumes"
+	// GroupsTable is the table that holds the groups relation/edge. The primary key declared below.
 	GroupsTable = "user_groups"
 	// GroupsInverseTable is the table name for the Group entity.
 	// It exists in this package in order to avoid circular dependency with the "group" package.
@@ -55,9 +55,9 @@ var Columns = []string{
 }
 
 var (
-	// MountsPrimaryKey and MountsColumn2 are the table columns denoting the
-	// primary key for the mounts relation (M2M).
-	MountsPrimaryKey = []string{"user_id", "mount_id"}
+	// VolumesPrimaryKey and VolumesColumn2 are the table columns denoting the
+	// primary key for the volumes relation (M2M).
+	VolumesPrimaryKey = []string{"user_id", "volume_id"}
 	// GroupsPrimaryKey and GroupsColumn2 are the table columns denoting the
 	// primary key for the groups relation (M2M).
 	GroupsPrimaryKey = []string{"user_id", "group_id"}
