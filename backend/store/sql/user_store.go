@@ -5,19 +5,20 @@ import (
 
 	"github.com/filebrowser/filebrowser/v3/store"
 	"github.com/filebrowser/filebrowser/v3/store/sql/conv"
+	"github.com/filebrowser/filebrowser/v3/store/sql/conv/generated"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent/user"
 )
 
 type UserStore struct {
 	client    *ent.Client
-	converter UserConverter
+	converter conv.UserConverter
 }
 
 func NewUserStore(client *ent.Client) *UserStore {
 	return &UserStore{
 		client:    client,
-		converter: &conv.UserConverterImpl{},
+		converter: &generated.UserConverterImpl{},
 	}
 }
 

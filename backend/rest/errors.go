@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
@@ -62,7 +63,7 @@ type stackTracer interface {
 	StackTrace() errors.StackTrace
 }
 
-// SendErrorJSON makes {"error": "blah", "details": "blah", "code": 0} json body and responds with error code
+// SendErrorJSON makes {"details": "blah", "code": 0} json body and responds with error code
 func SendErrorJSON(c *gin.Context, httpStatusCode int, err error, details string, errCode int) {
 	fields := log.Fields{
 		"http_status": httpStatusCode,
@@ -74,7 +75,7 @@ func SendErrorJSON(c *gin.Context, httpStatusCode int, err error, details string
 	}
 	log.WithContext(c.Request.Context()).WithFields(fields).Warnf("%v", err)
 
-	c.AbortWithStatusJSON(httpStatusCode, gin.H{"error": err.Error(), "details": details, "code": errCode})
+	c.AbortWithStatusJSON(httpStatusCode, gin.H{"code": errCode, "details": details})
 }
 
 func SendNotFoundError(c *gin.Context, err error, details string) {
@@ -85,6 +86,25 @@ func SendInternalError(c *gin.Context, err error, details string) {
 	SendErrorJSON(c, http.StatusInternalServerError, err, details, ErrCodeInternal)
 }
 
+func SendAccessDeniedError(c *gin.Context, err error, details string) {
+	SendErrorJSON(c, http.StatusForbidden, err, details, ErrCodeNoPermissions)
+}
+
 func SendBadRequestError(c *gin.Context, err error, details string) {
 	SendErrorJSON(c, http.StatusBadRequest, err, details, ErrBadRequest)
+}
+
+func SendServiceError(c *gin.Context, err error) {
+	var (
+		notFoundError     service.NotFoundError
+		accessDeniedError service.AccessDeniedError
+	)
+	switch {
+	case errors.As(err, &notFoundError):
+		SendNotFoundError(c, err, notFoundError.Error())
+	case errors.As(err, &accessDeniedError):
+		SendAccessDeniedError(c, err, "you have no permissions to perform this action")
+	default:
+		SendInternalError(c, err, "internal server error")
+	}
 }

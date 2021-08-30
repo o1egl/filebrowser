@@ -1,10 +1,11 @@
-package api
+package filebrowser
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/filebrowser/filebrowser/v3/filesystem"
@@ -12,7 +13,7 @@ import (
 
 func Test_sortResources(t *testing.T) {
 	modTime := time.Date(2021, 1, 2, 15, 32, 14, 0, time.UTC)
-	resources := []filesystem.Info{
+	files := []service.File{
 		{
 			Path:      "/file1",
 			Name:      "file1",
@@ -59,18 +60,18 @@ func Test_sortResources(t *testing.T) {
 		},
 	}
 	testCases := map[string]struct {
-		resources []filesystem.Info
-		groupBy   GroupBy
-		sortBy    SortBy
-		orderBy   OrderBy
-		want      []filesystem.Info
+		resources []service.File
+		groupBy   service.GroupBy
+		sortBy    service.SortBy
+		orderBy   service.OrderBy
+		want      []service.File
 	}{
 		"group by: type, sort by: name, order: asc": {
-			resources: resources,
-			groupBy:   GroupByType,
-			sortBy:    SortByName,
-			orderBy:   OrderByAsc,
-			want: []filesystem.Info{
+			resources: files,
+			groupBy:   service.GroupByType,
+			sortBy:    service.SortByName,
+			orderBy:   service.OrderByAsc,
+			want: []service.File{
 				{
 					Path:      "/dir1",
 					Name:      "dir1",
@@ -118,11 +119,11 @@ func Test_sortResources(t *testing.T) {
 			},
 		},
 		"group by: type, sort by: name, order: desc": {
-			resources: resources,
-			groupBy:   GroupByType,
-			sortBy:    SortByName,
-			orderBy:   OrderByDesc,
-			want: []filesystem.Info{
+			resources: files,
+			groupBy:   service.GroupByType,
+			sortBy:    service.SortByName,
+			orderBy:   service.OrderByDesc,
+			want: []service.File{
 				{
 					Path:      "/dir2",
 					Name:      "dir2",
@@ -170,11 +171,11 @@ func Test_sortResources(t *testing.T) {
 			},
 		},
 		"group by: none, sort by: name, order: asc": {
-			resources: resources,
-			groupBy:   GroupByType,
-			sortBy:    SortByName,
-			orderBy:   OrderByAsc,
-			want: []filesystem.Info{
+			resources: files,
+			groupBy:   service.GroupByType,
+			sortBy:    service.SortByName,
+			orderBy:   service.OrderByAsc,
+			want: []service.File{
 				{
 					Path:      "/dir1",
 					Name:      "dir1",
@@ -222,11 +223,11 @@ func Test_sortResources(t *testing.T) {
 			},
 		},
 		"group by: none, sort by: size, order: asc": {
-			resources: resources,
-			groupBy:   GroupByNone,
-			sortBy:    SortBySize,
-			orderBy:   OrderByDesc,
-			want: []filesystem.Info{
+			resources: files,
+			groupBy:   service.GroupByNone,
+			sortBy:    service.SortBySize,
+			orderBy:   service.OrderByDesc,
+			want: []service.File{
 				{
 					Path:      "/dir2",
 					Name:      "dir2",
@@ -276,7 +277,7 @@ func Test_sortResources(t *testing.T) {
 	}
 	for name, tt := range testCases {
 		t.Run(name, func(t *testing.T) {
-			got := sortResources(tt.resources, tt.groupBy, tt.sortBy, tt.orderBy)
+			got := sortFiles(tt.resources, tt.groupBy, tt.sortBy, tt.orderBy)
 			fmt.Println(got)
 			assert.Equal(t, tt.want, got)
 		})

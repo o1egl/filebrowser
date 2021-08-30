@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/didip/tollbooth/v6"
+	"github.com/filebrowser/filebrowser/v3/service"
+	"github.com/filebrowser/filebrowser/v3/store"
 	ginCors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-pkgz/auth"
-	"github.com/spf13/afero"
-
-	"github.com/filebrowser/filebrowser/v3/store"
 
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/rest/middleware"
@@ -39,17 +38,17 @@ const (
 )
 
 type Server struct {
-	Root          afero.Fs
-	Authenticator *auth.Service
-	TokenService  *token.Service
-	UserStore     store.UserStore
-	Host          string
-	Port          int
-	ServerURL     string
-	SharedSecret  string
-	Revision      string
-	AccessLog     bool
-	Anonymous     bool
+	FileBrowserSvc service.FileBrowser
+	Authenticator  *auth.Service
+	TokenService   *token.Service
+	UserStore      store.UserStore
+	Host           string
+	Port           int
+	ServerURL      string
+	SharedSecret   string
+	Revision       string
+	AccessLog      bool
+	Anonymous      bool
 
 	SSLConfig   SSLConfig
 	httpsServer *http.Server
@@ -182,11 +181,11 @@ func (s *Server) newEngine() *gin.Engine {
 		{
 			protected.Use(middleware.Timeout(ProtectedRoutesTimeout))
 			protected.Use(middleware.LimitHandler(tollbooth.NewLimiter(StaticRouterLimiter, nil)))
-			protected.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(s.UserStore), middleware.NoCache)
+			protected.Use(middleware.WrapHH(authMiddleware.Auth), middleware.User(), middleware.NoCache)
 
 			// file handlers
 			protected.GET("/files/:volume/*path", fileCtrl.ListHandler)
-			protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
+			//protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
 			//protected.GET("/files/volumes/:id/*path", fileCtrl.VolumeListHandler)
 		}
 	}
@@ -223,7 +222,7 @@ func (s *Server) makeControllers() (*staticController, *fileController) {
 	}
 
 	fileCtrl := &fileController{
-		rootFS: s.Root,
+		fileBrowserSvc: s.FileBrowserSvc,
 	}
 
 	return staticCtrl, fileCtrl

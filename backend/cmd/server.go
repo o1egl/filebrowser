@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto"
+	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	pkgAuth "github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/provider"
@@ -188,6 +189,8 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 	}
 
 	userStore := sql.NewUserStore(entClient)
+	volumeStore := sql.NewVolumeStore(entClient)
+
 	authService := auth.NewService(userStore, s.Auth.User.Home, s.Locale)
 
 	hashedPassword, err := hash.Password(s.Auth.Admin.Password)
@@ -219,19 +222,22 @@ func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
 		return nil, errors.Wrap(err, "failed to get abs path")
 	}
 
+	rootFs := afero.NewBasePathFs(afero.NewOsFs(), absRootPath)
+	fileBrowserSvc := filebrowser.New(rootFs, userStore, volumeStore)
+
 	apiServer := &api.Server{
-		Root:          afero.NewBasePathFs(afero.NewOsFs(), absRootPath),
-		Authenticator: authenticator,
-		TokenService:  token.New(s.Secret),
-		UserStore:     userStore,
-		Host:          s.Host,
-		Port:          s.Port,
-		ServerURL:     s.ServerURL,
-		SharedSecret:  s.Secret,
-		Revision:      s.Revision,
-		AccessLog:     s.AccessLog.Enable,
-		Anonymous:     s.Auth.Anonymous.Enable,
-		SSLConfig:     sslConfig,
+		FileBrowserSvc: fileBrowserSvc,
+		Authenticator:  authenticator,
+		TokenService:   token.New(s.Secret),
+		UserStore:      userStore,
+		Host:           s.Host,
+		Port:           s.Port,
+		ServerURL:      s.ServerURL,
+		SharedSecret:   s.Secret,
+		Revision:       s.Revision,
+		AccessLog:      s.AccessLog.Enable,
+		Anonymous:      s.Auth.Anonymous.Enable,
+		SSLConfig:      sslConfig,
 	}
 
 	return &serverApp{

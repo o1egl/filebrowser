@@ -1,80 +1,22 @@
-//go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
 package api
 
 import (
 	"net/http"
 	"strconv"
 
-	"github.com/filebrowser/filebrowser/v3/mathx"
-	"github.com/filebrowser/filebrowser/v3/store"
+	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/spf13/afero"
 
-	"github.com/filebrowser/filebrowser/v3/filesystem"
 	"github.com/filebrowser/filebrowser/v3/rest"
 )
 
-const (
-	HomeVolumeName = "home"
-
-	defaultGroupBy = GroupByType
-	defaultSortBy  = SortByName
-	defaultOrderBy = OrderByAsc
-)
-
 type fileController struct {
-	rootFS afero.Fs
-}
-
-type FileListResponse struct {
-	filesystem.Info
-	Children []filesystem.Info `json:"children"`
-	Metadata FileListMetadata  `json:"metadata"`
-}
-
-type FileListMetadata struct {
-	FilesCount int `json:"files_count"`
-	DirsCount  int `json:"dirs_count"`
-	TotalCount int `json:"total_count"`
-}
-
-/*
-ENUM(
-none
-type
-)
-*/
-type GroupBy int
-
-/*
-ENUM(
-name
-size
-modified
-)
-*/
-type SortBy int
-
-/*
-ENUM(
-asc
-desc
-)
-*/
-type OrderBy int
-
-type ListHandlerParams struct {
-	Volume   string  `json:"volume"`
-	Filename string  `json:"path"`
-	GroupBy  GroupBy `form:"group_by"`
-	SortBy   SortBy  `form:"sort_by" `
-	OrderBy  OrderBy `form:"order_by" `
-	Offset   int     `form:"offset" `
-	Limit    int     `form:"limit"`
+	fileBrowserSvc service.FileBrowser
 }
 
 func (fc *fileController) ListHandler(c *gin.Context) {
+	ctx := c.Request.Context()
 	params, err := parseListHandlerParams(c)
 	if err != nil {
 		rest.SendBadRequestError(c, err, "failed to parse input params")
@@ -83,19 +25,74 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 
 	user := rest.MustGetUser(c)
 
-	userFs := afero.NewBasePathFs(fc.rootFS, user.Home)
-
-	fc.listHandler(c, userFs, params)
+	list, err := fc.fileBrowserSvc.List(ctx, user, *params)
+	if err != nil {
+		rest.SendServiceError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, list)
 }
 
-func (fc *fileController) getVolumeFS(user *store.User, volume string) (afero.Fs, error) {
-	if volume == HomeVolumeName {
-		return afero.NewBasePathFs(fc.rootFS, user.Home), nil
+func parseListHandlerParams(c *gin.Context) (*service.ListParams, error) {
+	volumeInput := c.Param("volume")
+	filename := c.Param("path")
+	groupByInput := c.Query("group_by")
+	sortByInput := c.Query("sort_by")
+	orderByInput := c.Query("order_by")
+	offsetInput := c.Query("offset")
+	limitInput := c.Query("limit")
+
+	params := &service.ListParams{
+		Volume:   service.HomeVolumeID,
+		Filename: filename,
+		GroupBy:  service.DefaultGroupBy,
+		SortBy:   service.DefaultSortBy,
+		OrderBy:  service.DefaultOrderBy,
+		Offset:   0,
+		Limit:    service.NoLimit,
 	}
 
+	var err error
+	params.Volume, err = strconv.ParseInt(volumeInput, 10, 64)
+	if err != nil {
+		return nil, errors.Wrap(err, "incorrect volume id")
+	}
+	if groupByInput != "" {
+		if params.GroupBy, err = service.ParseGroupBy(groupByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect group_by param")
+		}
+	}
+	if sortByInput != "" {
+		if params.SortBy, err = service.ParseSortBy(sortByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect sort_by param")
+		}
+	}
+	if orderByInput != "" {
+		if params.OrderBy, err = service.ParseOrderBy(orderByInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect order_by param")
+		}
+	}
+	if offsetInput != "" {
+		if params.Offset, err = strconv.Atoi(offsetInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect offset param")
+		}
+		if params.Offset < 0 {
+			return nil, errors.New("offset must be negative")
+		}
+	}
+	if limitInput != "" {
+		if params.Limit, err = strconv.Atoi(limitInput); err != nil {
+			return nil, errors.Wrap(err, "incorrect limit param")
+		}
+		if params.Limit == 0 {
+			return nil, errors.New("offset must be greater than 0")
+		}
+	}
+
+	return params, nil
 }
 
-func (fc *fileController) listHandler(c *gin.Context, fSys afero.Fs, params *ListHandlerParams) {
+/*func (fc *fileController) listHandler(c *gin.Context, fSys afero.Fs, params *ListHandlerParams) {
 	info, err := filesystem.Stat(fSys, params.Filename)
 	if err != nil {
 		switch {
@@ -140,60 +137,7 @@ func (fc *fileController) listHandler(c *gin.Context, fSys afero.Fs, params *Lis
 	c.JSON(http.StatusOK, response)
 }
 
-func parseListHandlerParams(c *gin.Context) (*ListHandlerParams, error) {
-	volume := c.Param("volume")
-	filename := c.Param("path")
-	groupByInput := c.Query("group_by")
-	sortByInput := c.Query("sort_by")
-	orderByInput := c.Query("order_by")
-	offsetInput := c.Query("offset")
-	limitInput := c.Query("limit")
 
-	params := &ListHandlerParams{
-		Volume:   volume,
-		Filename: filename,
-		GroupBy:  defaultGroupBy,
-		SortBy:   defaultSortBy,
-		OrderBy:  defaultOrderBy,
-		Offset:   0,
-		Limit:    -1,
-	}
-
-	var err error
-	if groupByInput != "" {
-		if params.GroupBy, err = ParseGroupBy(groupByInput); err != nil {
-			return nil, errors.Wrap(err, "incorrect group_by param")
-		}
-	}
-	if sortByInput != "" {
-		if params.SortBy, err = ParseSortBy(sortByInput); err != nil {
-			return nil, errors.Wrap(err, "incorrect sort_by param")
-		}
-	}
-	if orderByInput != "" {
-		if params.OrderBy, err = ParseOrderBy(orderByInput); err != nil {
-			return nil, errors.Wrap(err, "incorrect order_by param")
-		}
-	}
-	if offsetInput != "" {
-		if params.Offset, err = strconv.Atoi(offsetInput); err != nil {
-			return nil, errors.Wrap(err, "incorrect offset param")
-		}
-		if params.Offset < 0 {
-			return nil, errors.New("offset must be negative")
-		}
-	}
-	if limitInput != "" {
-		if params.Limit, err = strconv.Atoi(limitInput); err != nil {
-			return nil, errors.Wrap(err, "incorrect limit param")
-		}
-		if params.Limit == 0 {
-			return nil, errors.New("offset must be greater than 0")
-		}
-	}
-
-	return params, nil
-}
 
 func (fc *fileController) DeleteHandler(c *gin.Context) {
 	filename := c.Param("path")
@@ -205,7 +149,7 @@ func (fc *fileController) DeleteHandler(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusOK)
-}
+}*/
 
 /*func (fc *fileController) ModifyHandler(c *gin.Context) {
 	filename := c.Param("path")

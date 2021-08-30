@@ -8,10 +8,17 @@ import (
 	"time"
 
 	"github.com/filebrowser/filebrowser/v3/auth"
+	"github.com/filebrowser/filebrowser/v3/filesystem"
 )
 
 const (
-	HomeVolumeID int64 = 0
+	HomeVolumeLabel       = "Home"
+	HomeVolumeID    int64 = 0
+
+	DefaultGroupBy = GroupByType
+	DefaultSortBy  = SortByName
+	DefaultOrderBy = OrderByAsc
+	NoLimit        = -1
 )
 
 type FileBrowser interface {
@@ -33,29 +40,27 @@ type ListParams struct {
 
 type FileWithChildren struct {
 	File
-	Children []File `json:"children,omitempty"`
+	Children []File       `json:"children,omitempty"`
+	Meta     FileMetaData `json:"meta"`
 }
 
 type File struct {
-	Path      string      `json:"path"`
-	Name      string      `json:"name"`
-	Size      int64       `json:"size"`
-	Extension string      `json:"extension,omitempty"`
-	ModTime   time.Time   `json:"modified"`
-	Mode      os.FileMode `json:"mode"`
-	Type      FileType    `json:"type"`
-	IsSymlink bool        `json:"is_symlink"`
-	IsDir     bool        `json:"is_dir"`
+	Path      string          `json:"path"`
+	Name      string          `json:"name"`
+	Size      int64           `json:"size"`
+	Extension string          `json:"extension,omitempty"`
+	ModTime   time.Time       `json:"modified"`
+	Mode      os.FileMode     `json:"mode"`
+	Type      filesystem.Type `json:"type"`
+	IsSymlink bool            `json:"is_symlink"`
+	IsDir     bool            `json:"is_dir"`
 }
 
-/*
-ENUM(
-file
-dir
-special
-)
-*/
-type FileType int
+type FileMetaData struct {
+	FilesCount int `json:"files_count"`
+	DirsCount  int `json:"dirs_count"`
+	TotalCount int `json:"total_count"`
+}
 
 /*
 ENUM(
