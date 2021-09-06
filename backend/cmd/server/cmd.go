@@ -8,12 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dgraph-io/ristretto"
-	"github.com/filebrowser/filebrowser/v3/cache"
 	"github.com/filebrowser/filebrowser/v3/cmd"
 	"github.com/filebrowser/filebrowser/v3/log"
-	pkgAuth "github.com/go-pkgz/auth"
-	"github.com/go-pkgz/auth/provider"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
@@ -157,69 +153,6 @@ func (s *ServerCommand) Execute(_ []string) error {
 	return nil
 }
 
-func addAuthProviders(srvCmd *ServerCommand, authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
-	providers := 0
-
-	providers++
-	authenticator.AddDirectProvider("local", localProvider)
-
-	if srvCmd.Auth.Google.CID != "" && srvCmd.Auth.Google.CSEC != "" {
-		authenticator.AddProvider("google", srvCmd.Auth.Google.CID, srvCmd.Auth.Google.CSEC)
-		providers++
-	}
-	if srvCmd.Auth.Github.CID != "" && srvCmd.Auth.Github.CSEC != "" {
-		authenticator.AddProvider("github", srvCmd.Auth.Github.CID, srvCmd.Auth.Github.CSEC)
-		providers++
-	}
-	if srvCmd.Auth.Facebook.CID != "" && srvCmd.Auth.Facebook.CSEC != "" {
-		authenticator.AddProvider("facebook", srvCmd.Auth.Facebook.CID, srvCmd.Auth.Facebook.CSEC)
-		providers++
-	}
-	if srvCmd.Auth.Twitter.CID != "" && srvCmd.Auth.Twitter.CSEC != "" {
-		authenticator.AddProvider("twitter", srvCmd.Auth.Twitter.CID, srvCmd.Auth.Twitter.CSEC)
-		providers++
-	}
-
-	if srvCmd.Auth.Dev {
-		log.Warnf("dev oauth provider is enabled")
-		authenticator.AddProvider("dev", "", "")
-		providers++
-
-		// run dev/test oauth2 server on :8084
-		go func() {
-			devAuthServer, err := authenticator.DevAuth() // peak dev oauth2 server
-			if err != nil {
-				log.Fatalf("failed to start dev oauth2 server, %v", err)
-			}
-			devAuthServer.Run(context.Background())
-		}()
-	}
-
-	if providers == 0 {
-		log.Warnf("no auth providers defined")
-	}
-}
-
-// Run all application objects
-func (a *serverApp) run(ctx context.Context) error {
-	go func() {
-		// shutdown on context cancellation
-		<-ctx.Done()
-		log.Warnf("shutdown initiated")
-		a.restSrv.Shutdown()
-	}()
-
-	a.restSrv.Run()
-
-	close(a.terminated)
-	return nil
-}
-
-// Wait for application completion (termination)
-func (a *serverApp) Wait() {
-	<-a.terminated
-}
-
 // getServerBasePath returns base path for the server.
 // For example for serverURL https://filebrowser.org/base/path it should return /base/path
 func (s *ServerCommand) getServerBasePath() string {
@@ -228,33 +161,4 @@ func (s *ServerCommand) getServerBasePath() string {
 		return "/"
 	}
 	return u.Path
-}
-
-// authRefreshCache used by authenticator to minimize repeatable token refreshes
-type authRefreshCache struct {
-	cache.Cache
-}
-
-func newAuthRefreshCache() *authRefreshCache {
-	memCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 10000,
-		MaxCost:     1000,
-		BufferItems: 64,
-	})
-
-	if err != nil {
-		log.Fatalf("Failed to init cache: %s", err)
-	}
-
-	return &authRefreshCache{Cache: memCache}
-}
-
-// Get implements cache getter with key converted to string
-func (c *authRefreshCache) Get(key interface{}) (interface{}, bool) {
-	return c.Get(key)
-}
-
-// Set implements cache setter with key converted to string
-func (c *authRefreshCache) Set(key, value interface{}) {
-	c.SetWithTTL(key, value, 1, 5*time.Second)
 }
