@@ -44,7 +44,7 @@ func (s *Server) httpToHTTPSRouter() *gin.Engine {
 
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.AccessLog {
+	if s.Options.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -64,7 +64,7 @@ func (s *Server) httpChallengeRouter(m *autocert.Manager) *gin.Engine {
 
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.AccessLog {
+	if s.Options.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -77,7 +77,7 @@ func (s *Server) httpChallengeRouter(m *autocert.Manager) *gin.Engine {
 
 func (s *Server) redirectHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		newURL := s.ServerURL + r.URL.Path
+		newURL := s.Options.ServerURL + r.URL.Path
 		if r.URL.RawQuery != "" {
 			newURL += "?" + r.URL.RawQuery
 		}
@@ -88,9 +88,9 @@ func (s *Server) redirectHandler() http.Handler {
 func (s *Server) makeAutocertManager() *autocert.Manager {
 	return &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(s.SSLConfig.ACMELocation),
+		Cache:      autocert.DirCache(s.Options.SSLConfig.ACMELocation),
 		HostPolicy: autocert.HostWhitelist(s.getServerHost()),
-		Email:      s.SSLConfig.ACMEEmail,
+		Email:      s.Options.SSLConfig.ACMEEmail,
 	}
 }
 
@@ -113,7 +113,7 @@ func (s *Server) makeHTTPSServer(addr string, router http.Handler) *http.Server 
 // getServerHost returns hostname for the server.
 // For example for serverURL https://filebrowser.org:443 it should return filebrowser.org
 func (s *Server) getServerHost() string {
-	u, err := url.Parse(s.ServerURL)
+	u, err := url.Parse(s.Options.ServerURL)
 	if err != nil {
 		return ""
 	}

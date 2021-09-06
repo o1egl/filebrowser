@@ -37,29 +37,49 @@ const (
 	AdminRouterLimiter = 10
 )
 
+type Options struct {
+	Host         string
+	Port         int
+	ServerURL    string
+	SharedSecret string
+	Revision     string
+	AccessLog    bool
+	Anonymous    bool
+	SSLConfig    SSLConfig
+}
+
 type Server struct {
 	FileBrowserSvc service.FileBrowser
 	Authenticator  *auth.Service
 	TokenService   *token.Service
 	UserStore      store.UserStore
-	Host           string
-	Port           int
-	ServerURL      string
-	SharedSecret   string
-	Revision       string
-	AccessLog      bool
-	Anonymous      bool
+	Options        Options
 
-	SSLConfig   SSLConfig
 	httpsServer *http.Server
 	httpServer  *http.Server
 	lock        sync.Mutex
 }
 
+func NewServer(
+	fileBrowserSvc service.FileBrowser,
+	authenticator *auth.Service,
+	tokenService *token.Service,
+	userStore store.UserStore,
+	options Options,
+) *Server {
+	return &Server{
+		FileBrowserSvc: fileBrowserSvc,
+		Authenticator:  authenticator,
+		TokenService:   tokenService,
+		UserStore:      userStore,
+		Options:        options,
+	}
+}
+
 func (s *Server) Run() {
-	httpAddr := fmt.Sprintf("%s:%d", s.Host, s.Port)
-	httpsAddr := fmt.Sprintf("%s:%d", s.Host, s.SSLConfig.Port)
-	switch s.SSLConfig.SSLMode {
+	httpAddr := fmt.Sprintf("%s:%d", s.Options.Host, s.Options.Port)
+	httpsAddr := fmt.Sprintf("%s:%d", s.Options.Host, s.Options.SSLConfig.Port)
+	switch s.Options.SSLConfig.SSLMode {
 	case None:
 		log.Infof("activate http rest server on %s", httpAddr)
 
@@ -87,7 +107,7 @@ func (s *Server) Run() {
 			log.Warnf("http redirect server terminated, %s", err)
 		}()
 
-		err := s.httpsServer.ListenAndServeTLS(s.SSLConfig.Cert, s.SSLConfig.Key)
+		err := s.httpsServer.ListenAndServeTLS(s.Options.SSLConfig.Cert, s.Options.SSLConfig.Key)
 		log.Warnf("https server terminated, %s", err)
 	case Auto:
 		log.Infof("activate https server in 'auto' mode on %s", httpsAddr)
@@ -150,7 +170,7 @@ func (s *Server) newEngine() *gin.Engine {
 	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.AccessLog {
+	if s.Options.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -217,8 +237,8 @@ func (s *Server) newEngine() *gin.Engine {
 func (s *Server) makeControllers() (*staticController, *fileController) {
 	staticCtrl := &staticController{
 		BasePath:  s.getServerBasePath(),
-		Revision:  s.Revision,
-		Anonymous: s.Anonymous,
+		Revision:  s.Options.Revision,
+		Anonymous: s.Options.Anonymous,
 	}
 
 	fileCtrl := &fileController{
@@ -231,7 +251,7 @@ func (s *Server) makeControllers() (*staticController, *fileController) {
 // getServerBasePath returns base path for the server.
 // For example for serverURL https://filebrowser.org/base/path it should return /base/path
 func (s *Server) getServerBasePath() string {
-	u, err := url.Parse(s.ServerURL)
+	u, err := url.Parse(s.Options.ServerURL)
 	if err != nil {
 		return "/"
 	}

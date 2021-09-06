@@ -1,39 +1,22 @@
-package cmd
+package server
 
 import (
 	"context" //nolint:gosec
-	"fmt"
 	"net/url"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
-	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
+	"github.com/filebrowser/filebrowser/v3/cache"
+	"github.com/filebrowser/filebrowser/v3/cmd"
+	"github.com/filebrowser/filebrowser/v3/log"
 	pkgAuth "github.com/go-pkgz/auth"
-	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/provider"
-	authToken "github.com/go-pkgz/auth/token"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pkg/errors"
-	"github.com/spf13/afero"
-
-	"github.com/filebrowser/filebrowser/v3/auth"
-	"github.com/filebrowser/filebrowser/v3/hash"
-
-	"github.com/filebrowser/filebrowser/v3/store/sql"
-	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
-
-	"github.com/filebrowser/filebrowser/v3/cache"
-	"github.com/filebrowser/filebrowser/v3/log"
-	"github.com/filebrowser/filebrowser/v3/rest/api"
-	"github.com/filebrowser/filebrowser/v3/store"
-	"github.com/filebrowser/filebrowser/v3/token"
 )
 
 // ServerCommand with command line flags and env
@@ -51,7 +34,7 @@ type ServerCommand struct {
 	Host      string `long:"host" env:"HOST" default:"0.0.0.0" description:"host"`
 	Port      int    `long:"port" env:"PORT" default:"8080" description:"port"`
 
-	CommonOpts
+	cmd.CommonOpts
 }
 
 // StoreGroup defines options group for storage
@@ -140,16 +123,9 @@ type AccessLogGroup struct {
 	Enable bool `long:"enable" env:"ENABLE" description:"enable access log"`
 }
 
-// serverApp holds all active objects
-type serverApp struct {
-	*ServerCommand
-	restSrv    *api.Server
-	terminated chan struct{}
-}
-
 // Execute runs file browser server
 func (s *ServerCommand) Execute(_ []string) error {
-	resetEnv(
+	cmd.ResetEnv(
 		"SECRET", "AUTH_ADMIN_USERNAME", "AUTH_ADMIN_PASSWORD",
 		"GOOGLE_CID", "GOOGLE_CSEC",
 		"GITHUB_CID", "GITHUB_CSEC",
@@ -167,11 +143,12 @@ func (s *ServerCommand) Execute(_ []string) error {
 		cancel()
 	}()
 
-	app, err := s.newServerApp(ctx)
+	app, err := InitializeServer(ctx, s)
 	if err != nil {
 		log.Fatalf("failed to setup application, %+v", err)
 		return err
 	}
+
 	if err = app.run(ctx); err != nil {
 		log.Fatalf("terminated with error %+v", err)
 		return err
@@ -180,155 +157,30 @@ func (s *ServerCommand) Execute(_ []string) error {
 	return nil
 }
 
-// newServerApp prepares application and return it with all active parts
-// doesn't start anything
-func (s *ServerCommand) newServerApp(ctx context.Context) (*serverApp, error) {
-	entClient, err := s.makeEntClient(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to initiate data engine")
-	}
-
-	userStore := sql.NewUserStore(entClient)
-	volumeStore := sql.NewVolumeStore(entClient)
-
-	authService := auth.NewService(userStore, s.Auth.User.Home, s.Locale)
-
-	hashedPassword, err := hash.Password(s.Auth.Admin.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := authService.InitAdminUser(ctx, hashedPassword); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize admin user")
-	}
-
-	if err := authService.InitGuestUser(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to initialize guest user")
-	}
-
-	authRefreshCache := newAuthRefreshCache()
-	authenticator, err := s.makeAuthenticator(authService, authRefreshCache)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make authenticator")
-	}
-
-	sslConfig, err := s.makeSSLConfig()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to make config of ssl server params")
-	}
-
-	absRootPath, err := filepath.Abs(s.RootPath)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get abs path")
-	}
-
-	rootFs := afero.NewBasePathFs(afero.NewOsFs(), absRootPath)
-	fileBrowserSvc := filebrowser.New(rootFs, userStore, volumeStore)
-
-	apiServer := &api.Server{
-		FileBrowserSvc: fileBrowserSvc,
-		Authenticator:  authenticator,
-		TokenService:   token.New(s.Secret),
-		UserStore:      userStore,
-		Host:           s.Host,
-		Port:           s.Port,
-		ServerURL:      s.ServerURL,
-		SharedSecret:   s.Secret,
-		Revision:       s.Revision,
-		AccessLog:      s.AccessLog.Enable,
-		Anonymous:      s.Auth.Anonymous.Enable,
-		SSLConfig:      sslConfig,
-	}
-
-	return &serverApp{
-		ServerCommand: s,
-		restSrv:       apiServer,
-		terminated:    make(chan struct{}),
-	}, nil
-}
-
-func (s *ServerCommand) makeAuthenticator(
-	authService *auth.Service,
-	authRefreshCache *authRefreshCache, //nolint:interfacer
-) (*pkgAuth.Service, error) { //nolint:unparam
-	authenticator := pkgAuth.NewService(pkgAuth.Opts{
-		DisableXSRF:    true, // TODO remove it
-		URL:            strings.TrimSuffix(s.ServerURL, "/"),
-		Issuer:         "File Browser",
-		TokenDuration:  s.Auth.TTL.JWT,
-		CookieDuration: s.Auth.TTL.Cookie,
-		SecureCookies:  strings.HasPrefix(s.ServerURL, "https://"),
-		SecretReader: authToken.SecretFunc(func(aud string) (string, error) {
-			return s.Secret, nil
-		}),
-		ClaimsUpd:        authService,
-		BasicAuthChecker: authService.BasicAuthChecker,
-		Validator:        authService,
-		AvatarStore:      avatar.NewNoOp(),
-		Logger:           log.NewLogrAdapter(log.DefaultLogger),
-		RefreshCache:     authRefreshCache,
-	})
-
-	s.addAuthProviders(authenticator, authService)
-
-	return authenticator, nil
-}
-
-func (s *ServerCommand) newClaimsUpdater(ctx context.Context, userStore store.UserStore) authToken.ClaimsUpdater {
-	return authToken.ClaimsUpdFunc(func(c authToken.Claims) authToken.Claims {
-		if c.User == nil {
-			return c
-		}
-		user, err := userStore.Get(ctx, c.User.ID)
-		switch {
-		// new login with external provider
-		case errors.Is(err, store.ErrNotFound):
-			user = &store.User{
-				ID:           c.User.ID,
-				Provider:     strings.Split(c.User.ID, "_")[0],
-				Username:     "",
-				Password:     "",
-				Home:         s.Auth.User.Home,
-				Name:         c.User.Name,
-				Locale:       s.Locale,
-				LockPassword: false,
-				Blocked:      false,
-			}
-			if err := userStore.Create(ctx, user); err != nil {
-				log.WithContext(ctx).Errorf("failed to create user: %+v", err)
-				return c
-			}
-		}
-		c.User.SetBoolAttr("blocked", user.Blocked)
-
-		return c
-	})
-}
-
-func (s *ServerCommand) addAuthProviders(authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
+func addAuthProviders(srvCmd *ServerCommand, authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
 	providers := 0
 
 	providers++
 	authenticator.AddDirectProvider("local", localProvider)
 
-	if s.Auth.Google.CID != "" && s.Auth.Google.CSEC != "" {
-		authenticator.AddProvider("google", s.Auth.Google.CID, s.Auth.Google.CSEC)
+	if srvCmd.Auth.Google.CID != "" && srvCmd.Auth.Google.CSEC != "" {
+		authenticator.AddProvider("google", srvCmd.Auth.Google.CID, srvCmd.Auth.Google.CSEC)
 		providers++
 	}
-	if s.Auth.Github.CID != "" && s.Auth.Github.CSEC != "" {
-		authenticator.AddProvider("github", s.Auth.Github.CID, s.Auth.Github.CSEC)
+	if srvCmd.Auth.Github.CID != "" && srvCmd.Auth.Github.CSEC != "" {
+		authenticator.AddProvider("github", srvCmd.Auth.Github.CID, srvCmd.Auth.Github.CSEC)
 		providers++
 	}
-	if s.Auth.Facebook.CID != "" && s.Auth.Facebook.CSEC != "" {
-		authenticator.AddProvider("facebook", s.Auth.Facebook.CID, s.Auth.Facebook.CSEC)
+	if srvCmd.Auth.Facebook.CID != "" && srvCmd.Auth.Facebook.CSEC != "" {
+		authenticator.AddProvider("facebook", srvCmd.Auth.Facebook.CID, srvCmd.Auth.Facebook.CSEC)
 		providers++
 	}
-	if s.Auth.Twitter.CID != "" && s.Auth.Twitter.CSEC != "" {
-		authenticator.AddProvider("twitter", s.Auth.Twitter.CID, s.Auth.Twitter.CSEC)
+	if srvCmd.Auth.Twitter.CID != "" && srvCmd.Auth.Twitter.CSEC != "" {
+		authenticator.AddProvider("twitter", srvCmd.Auth.Twitter.CID, srvCmd.Auth.Twitter.CSEC)
 		providers++
 	}
 
-	if s.Auth.Dev {
+	if srvCmd.Auth.Dev {
 		log.Warnf("dev oauth provider is enabled")
 		authenticator.AddProvider("dev", "", "")
 		providers++
@@ -346,60 +198,6 @@ func (s *ServerCommand) addAuthProviders(authenticator *pkgAuth.Service, localPr
 	if providers == 0 {
 		log.Warnf("no auth providers defined")
 	}
-}
-
-func (s *ServerCommand) makeEntClient(ctx context.Context) (client *ent.Client, err error) {
-	switch s.Store.Type {
-	case "sqlite":
-		if err = makeDirs(filepath.Dir(s.Store.SQLite.File)); err != nil {
-			return nil, errors.Wrap(err, "failed to create sqlite store")
-		}
-		client, err = ent.Open("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1", s.Store.SQLite.File))
-	case "postgres":
-		client, err = ent.Open("postgres", s.Store.Postgres.DSN)
-	case "mysql":
-		client, err = ent.Open("mysql", s.Store.Postgres.DSN)
-	default:
-		return nil, errors.Errorf("unsupported store type %s", s.Store.Type)
-	}
-	if err != nil {
-		return nil, errors.Wrap(err, "can't initialize data store")
-	}
-
-	log.WithContext(ctx).Debugf("Apply schema migrations")
-	if err := client.Schema.Create(ctx); err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-func (s *ServerCommand) makeSSLConfig() (config api.SSLConfig, err error) {
-	switch s.SSL.Type {
-	case "none":
-		config.SSLMode = api.None
-	case "static":
-		if s.SSL.Cert == "" {
-			return config, errors.New("path to cert.pem is required")
-		}
-		if s.SSL.Key == "" {
-			return config, errors.New("path to key.pem is required")
-		}
-		config.SSLMode = api.Static
-		config.Port = s.SSL.Port
-		config.Cert = s.SSL.Cert
-		config.Key = s.SSL.Key
-	case "auto":
-		config.SSLMode = api.Auto
-		config.Port = s.SSL.Port
-		config.ACMELocation = s.SSL.ACMELocation
-		if s.SSL.ACMEEmail != "" {
-			config.ACMEEmail = s.SSL.ACMEEmail
-		} else if u, e := url.Parse(s.ServerURL); e == nil {
-			config.ACMEEmail = "admin@" + u.Hostname()
-		}
-	}
-	return config, err
 }
 
 // Run all application objects

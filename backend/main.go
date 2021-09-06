@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/filebrowser/filebrowser/v3/cmd/server"
 	"github.com/jessevdk/go-flags"
 	"github.com/pkg/errors"
 
@@ -13,8 +14,8 @@ import (
 
 // Opts with all cli commands and flags
 type Opts struct {
-	ServerCmd   cmd.ServerCommand   `command:"server"`
-	PasswordCmd cmd.PasswordCommand `command:"password"`
+	ServerCmd   server.ServerCommand `command:"server"`
+	PasswordCmd cmd.PasswordCommand  `command:"password"`
 
 	Log LogGroup `group:"log" namespace:"log" env-namespace:"LOG"`
 

@@ -14,6 +14,7 @@ require (
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
 	github.com/golang/mock v1.5.0
 	github.com/google/uuid v1.3.0
+	github.com/google/wire v0.5.0
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lib/pq v1.10.2
 	github.com/marusama/semaphore/v2 v2.5.0
