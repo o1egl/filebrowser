@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
 	"github.com/didip/tollbooth/v6"
+	"github.com/filebrowser/filebrowser/v3/config"
+	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/filebrowser/filebrowser/v3/hash"
-	"github.com/filebrowser/filebrowser/v3/service"
+	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/filebrowser/filebrowser/v3/store"
 	ginCors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,6 @@ import (
 
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/rest/middleware"
-	"github.com/filebrowser/filebrowser/v3/token"
 )
 
 const (
@@ -38,24 +38,13 @@ const (
 	AdminRouterLimiter = 10
 )
 
-type Options struct {
-	Host         string
-	Port         int
-	ServerURL    string
-	SharedSecret string
-	Revision     string
-	AccessLog    bool
-	Anonymous    bool
-	SSLConfig    SSLConfig
-}
-
 type Server struct {
-	fileBrowserSvc service.FileBrowser
+	cfg            *config.Config
+	fileBrowserSvc filebrowser.Service
 	authenticator  *auth.Service
-	tokenService   *token.Service
 	userStore      store.UserStore
 	hasher         hash.Hasher
-	options        Options
+	version        domain.Version
 
 	httpsServer *http.Server
 	httpServer  *http.Server
@@ -63,28 +52,28 @@ type Server struct {
 }
 
 func NewServer(
-	fileBrowserSvc service.FileBrowser,
+	cfg *config.Config,
+	fileBrowserSvc filebrowser.Service,
 	authenticator *auth.Service,
-	tokenService *token.Service,
 	hasher hash.Hasher,
 	userStore store.UserStore,
-	options Options,
+	version domain.Version,
 ) *Server {
 	return &Server{
+		cfg:            cfg,
 		fileBrowserSvc: fileBrowserSvc,
 		authenticator:  authenticator,
-		tokenService:   tokenService,
 		userStore:      userStore,
 		hasher:         hasher,
-		options:        options,
+		version:        version,
 	}
 }
 
 func (s *Server) Run() {
-	httpAddr := fmt.Sprintf("%s:%d", s.options.Host, s.options.Port)
-	httpsAddr := fmt.Sprintf("%s:%d", s.options.Host, s.options.SSLConfig.Port)
-	switch s.options.SSLConfig.SSLMode {
-	case None:
+	httpAddr := fmt.Sprintf("%s:%d", s.cfg.Server.Host, s.cfg.Server.Port)
+	httpsAddr := fmt.Sprintf("%s:%d", s.cfg.Server.Host, s.cfg.Server.SSL.Port)
+	switch s.cfg.Server.SSL.Mode {
+	case config.SSLModeNone:
 		log.Infof("activate http rest server on %s", httpAddr)
 
 		s.lock.Lock()
@@ -94,7 +83,7 @@ func (s *Server) Run() {
 
 		err := s.httpServer.ListenAndServe()
 		log.Warnf("http server terminated, %s", err)
-	case Static:
+	case config.SSLModeStatic:
 		log.Infof("activate https server in 'static' mode on %s", httpsAddr)
 
 		s.lock.Lock()
@@ -111,9 +100,9 @@ func (s *Server) Run() {
 			log.Warnf("http redirect server terminated, %s", err)
 		}()
 
-		err := s.httpsServer.ListenAndServeTLS(s.options.SSLConfig.Cert, s.options.SSLConfig.Key)
+		err := s.httpsServer.ListenAndServeTLS(s.cfg.Server.SSL.Cert, s.cfg.Server.SSL.Key)
 		log.Warnf("https server terminated, %s", err)
-	case Auto:
+	case config.SSLModeAuto:
 		log.Infof("activate https server in 'auto' mode on %s", httpsAddr)
 
 		m := s.makeAutocertManager()
@@ -174,14 +163,14 @@ func (s *Server) newEngine() *gin.Engine {
 	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.options.AccessLog {
+	if s.cfg.Server.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
 	engine.Use(ginCors.New(ginCors.Config{
 		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-XSRF-Token", "X-JWT"},
+		AllowHeaders:     []string{"Accept", "Authorization", "Content-Mode", "X-XSRF-Token", "X-JWT"},
 		AllowCredentials: true,
 		ExposeHeaders:    []string{"Authorization"},
 		MaxAge:           300,
@@ -192,10 +181,11 @@ func (s *Server) newEngine() *gin.Engine {
 	authHandler, _ := s.authenticator.Handlers()
 	authMiddleware := s.authenticator.Middleware()
 
-	staticCtrl, fileCtrl := s.makeControllers()
+	staticCtrl := newStaticController(s.cfg.Server.BasePath(), s.version, s.cfg.Auth.Anonymous.Enabled)
+	fileCtrl := newFileController(s.fileBrowserSvc, s.hasher)
 
 	engine.NoRoute(staticCtrl.indexHandler)
-	router := engine.Group(s.getServerBasePath())
+	router := engine.Group(s.cfg.Server.BasePath())
 	router.GET("/static/*path", staticCtrl.staticHandler)
 	router.Any("/auth/*path", middleware.NoCache, gin.WrapH(authHandler))
 
@@ -236,28 +226,4 @@ func (s *Server) newEngine() *gin.Engine {
 	}*/
 
 	return engine
-}
-
-func (s *Server) makeControllers() (*staticController, *fileController) {
-	staticCtrl := &staticController{
-		BasePath:  s.getServerBasePath(),
-		Revision:  s.options.Revision,
-		Anonymous: s.options.Anonymous,
-	}
-
-	fileCtrl := &fileController{
-		fileBrowserSvc: s.fileBrowserSvc,
-	}
-
-	return staticCtrl, fileCtrl
-}
-
-// getServerBasePath returns base path for the server.
-// For example for serverURL https://filebrowser.org/base/path it should return /base/path
-func (s *Server) getServerBasePath() string {
-	u, err := url.Parse(s.options.ServerURL)
-	if err != nil {
-		return "/"
-	}
-	return u.Path
 }

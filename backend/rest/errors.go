@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/filebrowser/filebrowser/v3/service"
+	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
@@ -96,8 +96,8 @@ func SendBadRequestError(c *gin.Context, err error, details string) {
 
 func SendServiceError(c *gin.Context, err error) {
 	var (
-		notFoundError     service.NotFoundError
-		accessDeniedError service.AccessDeniedError
+		notFoundError     *domain.NotFoundError
+		accessDeniedError *domain.AccessDeniedError
 	)
 	switch {
 	case errors.As(err, &notFoundError):

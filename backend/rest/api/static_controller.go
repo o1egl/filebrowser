@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/gin-gonic/gin"
 
 	"github.com/filebrowser/filebrowser/v3/assets"
@@ -16,15 +17,19 @@ import (
 // staticController provides router for all requests with no required auth
 type staticController struct {
 	BasePath  string
-	Revision  string
+	Version   domain.Version
 	Anonymous bool
+}
+
+func newStaticController(basePath string, version domain.Version, anonymous bool) *staticController {
+	return &staticController{BasePath: basePath, Version: version, Anonymous: anonymous}
 }
 
 func (h *staticController) indexHandler(c *gin.Context) {
 	data := map[string]interface{}{
 		"Name":       "File Browser",
 		"BaseURL":    h.BasePath,
-		"Version":    h.Revision,
+		"Version":    h.Version,
 		"StaticURL":  path.Join(h.BasePath, "/static"),
 		"Signup":     true,
 		"NoAuth":     h.Anonymous,
@@ -53,7 +58,7 @@ func (h *staticController) staticHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Type", "text/javascript")
+	c.Header("Content-Mode", "text/javascript")
 
 	data := map[string]interface{}{
 		"StaticURL": path.Join(h.BasePath, "/static"),

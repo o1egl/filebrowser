@@ -9,73 +9,73 @@ import (
 )
 
 const (
-	// SSLTypeNone is a SSLType of type None.
-	SSLTypeNone SSLType = iota
-	// SSLTypeStatis is a SSLType of type Statis.
-	SSLTypeStatis
-	// SSLTypeAuto is a SSLType of type Auto.
-	SSLTypeAuto
+	// SSLModeNone is a SSLMode of type None.
+	SSLModeNone SSLMode = iota
+	// SSLModeStatic is a SSLMode of type Static.
+	SSLModeStatic
+	// SSLModeAuto is a SSLMode of type Auto.
+	SSLModeAuto
 )
 
-const _SSLTypeName = "nonestatisauto"
+const _SSLModeName = "nonestaticauto"
 
-var _SSLTypeNames = []string{
-	_SSLTypeName[0:4],
-	_SSLTypeName[4:10],
-	_SSLTypeName[10:14],
+var _SSLModeNames = []string{
+	_SSLModeName[0:4],
+	_SSLModeName[4:10],
+	_SSLModeName[10:14],
 }
 
-// SSLTypeNames returns a list of possible string values of SSLType.
-func SSLTypeNames() []string {
-	tmp := make([]string, len(_SSLTypeNames))
-	copy(tmp, _SSLTypeNames)
+// SSLModeNames returns a list of possible string values of SSLMode.
+func SSLModeNames() []string {
+	tmp := make([]string, len(_SSLModeNames))
+	copy(tmp, _SSLModeNames)
 	return tmp
 }
 
-var _SSLTypeMap = map[SSLType]string{
-	0: _SSLTypeName[0:4],
-	1: _SSLTypeName[4:10],
-	2: _SSLTypeName[10:14],
+var _SSLModeMap = map[SSLMode]string{
+	0: _SSLModeName[0:4],
+	1: _SSLModeName[4:10],
+	2: _SSLModeName[10:14],
 }
 
 // String implements the Stringer interface.
-func (x SSLType) String() string {
-	if str, ok := _SSLTypeMap[x]; ok {
+func (x SSLMode) String() string {
+	if str, ok := _SSLModeMap[x]; ok {
 		return str
 	}
-	return fmt.Sprintf("SSLType(%d)", x)
+	return fmt.Sprintf("SSLMode(%d)", x)
 }
 
-var _SSLTypeValue = map[string]SSLType{
-	_SSLTypeName[0:4]:                    0,
-	strings.ToLower(_SSLTypeName[0:4]):   0,
-	_SSLTypeName[4:10]:                   1,
-	strings.ToLower(_SSLTypeName[4:10]):  1,
-	_SSLTypeName[10:14]:                  2,
-	strings.ToLower(_SSLTypeName[10:14]): 2,
+var _SSLModeValue = map[string]SSLMode{
+	_SSLModeName[0:4]:                    0,
+	strings.ToLower(_SSLModeName[0:4]):   0,
+	_SSLModeName[4:10]:                   1,
+	strings.ToLower(_SSLModeName[4:10]):  1,
+	_SSLModeName[10:14]:                  2,
+	strings.ToLower(_SSLModeName[10:14]): 2,
 }
 
-// ParseSSLType attempts to convert a string to a SSLType
-func ParseSSLType(name string) (SSLType, error) {
-	if x, ok := _SSLTypeValue[name]; ok {
+// ParseSSLMode attempts to convert a string to a SSLMode
+func ParseSSLMode(name string) (SSLMode, error) {
+	if x, ok := _SSLModeValue[name]; ok {
 		return x, nil
 	}
 	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
-	if x, ok := _SSLTypeValue[strings.ToLower(name)]; ok {
+	if x, ok := _SSLModeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
-	return SSLType(0), fmt.Errorf("%s is not a valid SSLType, try [%s]", name, strings.Join(_SSLTypeNames, ", "))
+	return SSLMode(0), fmt.Errorf("%s is not a valid SSLMode, try [%s]", name, strings.Join(_SSLModeNames, ", "))
 }
 
 // MarshalText implements the text marshaller method
-func (x SSLType) MarshalText() ([]byte, error) {
+func (x SSLMode) MarshalText() ([]byte, error) {
 	return []byte(x.String()), nil
 }
 
 // UnmarshalText implements the text unmarshaller method
-func (x *SSLType) UnmarshalText(text []byte) error {
+func (x *SSLMode) UnmarshalText(text []byte) error {
 	name := string(text)
-	tmp, err := ParseSSLType(name)
+	tmp, err := ParseSSLMode(name)
 	if err != nil {
 		return err
 	}

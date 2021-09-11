@@ -80,7 +80,7 @@ type PreviewSize int
 		return
 	}
 
-	switch fileInfo.Type {
+	switch fileInfo.Mode {
 	case file.TypeImage:
 		h.imagePreview(w, r, userFs, filePath, previewSize)
 	default:

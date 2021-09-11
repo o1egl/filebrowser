@@ -6,7 +6,7 @@ import (
 
 	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/rest"
-	"github.com/filebrowser/filebrowser/v3/service"
+	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	_ "github.com/speps/go-hashids/v2"
@@ -15,8 +15,12 @@ import (
 const homeVolumeID = "home"
 
 type fileController struct {
-	fileBrowserSvc service.FileBrowser
+	fileBrowserSvc filebrowser.Service
 	hasher         hash.Hasher
+}
+
+func newFileController(fileBrowserSvc filebrowser.Service, hasher hash.Hasher) *fileController {
+	return &fileController{fileBrowserSvc: fileBrowserSvc, hasher: hasher}
 }
 
 func (fc *fileController) ListHandler(c *gin.Context) {
@@ -37,7 +41,7 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListParams, error) {
+func (fc *fileController) parseListHandlerParams(c *gin.Context) (*filebrowser.ListParams, error) {
 	volumeInput := c.Param("volume")
 	filename := c.Param("path")
 	groupByInput := c.Query("group_by")
@@ -46,20 +50,20 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListP
 	offsetInput := c.Query("offset")
 	limitInput := c.Query("limit")
 
-	params := &service.ListParams{
-		Volume:   service.HomeVolumeID,
+	params := &filebrowser.ListParams{
+		Volume:   filebrowser.HomeVolumeID,
 		Filename: filename,
-		GroupBy:  service.DefaultGroupBy,
-		SortBy:   service.DefaultSortBy,
-		OrderBy:  service.DefaultOrderBy,
+		GroupBy:  filebrowser.DefaultGroupBy,
+		SortBy:   filebrowser.DefaultSortBy,
+		OrderBy:  filebrowser.DefaultOrderBy,
 		Offset:   0,
-		Limit:    service.NoLimit,
+		Limit:    filebrowser.NoLimit,
 	}
 
 	var err error
 	switch volumeInput {
 	case homeVolumeID:
-		params.Volume = service.HomeVolumeID
+		params.Volume = filebrowser.HomeVolumeID
 	default:
 		params.Volume, err = fc.hasher.DecodeInt64(volumeInput)
 		if err != nil {
@@ -67,17 +71,17 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListP
 		}
 	}
 	if groupByInput != "" {
-		if params.GroupBy, err = service.ParseGroupBy(groupByInput); err != nil {
+		if params.GroupBy, err = filebrowser.ParseGroupBy(groupByInput); err != nil {
 			return nil, errors.Wrap(err, "incorrect group_by param")
 		}
 	}
 	if sortByInput != "" {
-		if params.SortBy, err = service.ParseSortBy(sortByInput); err != nil {
+		if params.SortBy, err = filebrowser.ParseSortBy(sortByInput); err != nil {
 			return nil, errors.Wrap(err, "incorrect sort_by param")
 		}
 	}
 	if orderByInput != "" {
-		if params.OrderBy, err = service.ParseOrderBy(orderByInput); err != nil {
+		if params.OrderBy, err = filebrowser.ParseOrderBy(orderByInput); err != nil {
 			return nil, errors.Wrap(err, "incorrect order_by param")
 		}
 	}
@@ -86,7 +90,7 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListP
 			return nil, errors.Wrap(err, "incorrect offset param")
 		}
 		if params.Offset < 0 {
-			return nil, errors.New("offset must be negative")
+			return nil, errors.New("offset must be positive")
 		}
 	}
 	if limitInput != "" {
@@ -94,7 +98,7 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListP
 			return nil, errors.Wrap(err, "incorrect limit param")
 		}
 		if params.Limit == 0 {
-			return nil, errors.New("offset must be greater than 0")
+			return nil, errors.New("limit must be greater than 0")
 		}
 	}
 
@@ -116,7 +120,7 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListP
 	response := FileListResponse{
 		Info: info,
 	}
-	if info.Type == filesystem.TypeDir {
+	if info.Mode == filesystem.TypeDir {
 		children, err := filesystem.ReadDir(fSys, params.Filename)
 		if err != nil {
 			rest.SendErrorJSON(c, http.StatusInternalServerError, err, "can't open requested resource", rest.ErrCodeInternal)
@@ -238,7 +242,7 @@ func (fc *fileController) DeleteHandler(c *gin.Context) {
 		return rest.NewHttpError(err, "failed to get file info", rest.ErrCodeInternal, http.StatusInternalServerError)
 	}
 
-	if fileInfo.Type == filesystem.TypeDir {
+	if fileInfo.Mode == filesystem.TypeDir {
 		err := errors.Errorf("folder %s already exist", filename)
 		return rest.NewHttpError(err, err.Error(), rest.ErrFolderExist, http.StatusConflict)
 	}

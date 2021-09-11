@@ -45,7 +45,7 @@ func (x Type) String() string {
 	if str, ok := _TypeMap[x]; ok {
 		return str
 	}
-	return fmt.Sprintf("Type(%d)", x)
+	return fmt.Sprintf("Mode(%d)", x)
 }
 
 var _TypeValue = map[string]Type{
@@ -66,7 +66,7 @@ func ParseType(name string) (Type, error) {
 	if x, ok := _TypeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
-	return Type(0), fmt.Errorf("%s is not a valid Type, try [%s]", name, strings.Join(_TypeNames, ", "))
+	return Type(0), fmt.Errorf("%s is not a valid Mode, try [%s]", name, strings.Join(_TypeNames, ", "))
 }
 
 // MarshalText implements the text marshaller method

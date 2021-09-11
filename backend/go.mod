@@ -11,6 +11,7 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-pkgz/auth v1.15.1-0.20210527182916-99f2d83d03a7
+	github.com/go-playground/validator/v10 v10.9.0 // indirect
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
 	github.com/goccy/go-yaml v1.9.3
 	github.com/golang/mock v1.5.0
@@ -26,8 +27,8 @@ require (
 	github.com/spf13/afero v1.6.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
+	gopkg.in/go-playground/validator.v9 v9.29.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

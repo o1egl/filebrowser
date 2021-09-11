@@ -1,18 +1,53 @@
 //go:generate go-enum --marshal --nocase --names --file $GOFILE
 package config
 
-import "time"
+import (
+	"net/url"
+	"time"
+
+	"github.com/google/uuid"
+	"gopkg.in/go-playground/validator.v9"
+)
 
 type Config struct {
-	RootPath  string `yaml:"root"` // server root folder
-	Secret    string `yaml:"secret"`
-	ServerURL string `yaml:"server_url"` // file browser url. required for ssl and oauth
-	Locale    string `yaml:"locale"`     // default locale
+	RootPath string `yaml:"root"` // server root folder
+	Secret   string `yaml:"secret" validate:"required"`
+	Locale   string `yaml:"locale"` // default locale
+	Server   Server `yaml:"server"` // http server config
+	Auth     Auth   `yaml:"auth"`
+	Store    Store  `yaml:"store"`
+}
+
+func (c *Config) Validate() error {
+	return validator.New().Struct(c)
+}
+
+type Server struct {
+	AccessLog bool   `yaml:"access_log"`
+	URL       string `yaml:"url"` // file browser url. required for ssl and oauth
 	Host      string `yaml:"host"`
 	Port      int    `yaml:"port"`
-	Auth      Auth   `yaml:"auth"`
-	Store     Store  `yaml:"store"`
 	SSL       SSL    `yaml:"ssl"`
+}
+
+// BasePath returns base path for the server.
+// For example for serverURL https://filebrowser.org/base/path it should return /base/path
+func (s Server) BasePath() string {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return "/"
+	}
+	return u.Path
+}
+
+// Hostname returns hostname for the server.
+// For example for serverURL https://filebrowser.org:443 it should return filebrowser.org
+func (s Server) Hostname() string {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return ""
+	}
+	return u.Hostname()
 }
 
 type Auth struct {
@@ -20,13 +55,13 @@ type Auth struct {
 		JWT    time.Duration `yaml:"jwt"`    // jwt TTL
 		Cookie time.Duration `yaml:"cookie"` // auth cookie TTL
 	} `yaml:"ttl"`
-	Google    OAuth         `yaml:"google"`   // google oauth
-	Github    OAuth         `yaml:"github"`   // github oauth
-	Facebook  OAuth         `yaml:"facebook"` // facebook oauth
-	Twitter   OAuth         `yaml:"twitter"`  // twitter oauth
-	Dev       bool          `yaml:"dev"`      // enable dev (local) oauth2
-	User      AuthUser      `yaml:"user"`
-	Anonymous AnonymousUser `yaml:"anonymous"`
+	Google    OAuth     `yaml:"google"`   // google oauth
+	Github    OAuth     `yaml:"github"`   // github oauth
+	Facebook  OAuth     `yaml:"facebook"` // facebook oauth
+	Twitter   OAuth     `yaml:"twitter"`  // twitter oauth
+	Dev       bool      `yaml:"dev"`      // enable dev (local) oauth2
+	User      User      `yaml:"user"`
+	Anonymous Anonymous `yaml:"anonymous"`
 }
 
 type OAuth struct {
@@ -34,11 +69,11 @@ type OAuth struct {
 	CSEC string `yaml:"csec"` // OAuth client secret
 }
 
-type AuthUser struct {
+type User struct {
 	Home        string      `yaml:"home"`        // default user home
 	Permissions Permissions `yaml:"permissions"` // default user permissions for home volume
 }
-type AnonymousUser struct {
+type Anonymous struct {
 	Enabled     bool        `yaml:"enabled"`
 	Home        string      `yaml:"home"`        // home path
 	Permissions Permissions `yaml:"permissions"` // default user permissions for home volume
@@ -85,14 +120,14 @@ type PostgresStore struct {
 /*
 ENUM(
 none
-statis
+static
 auto
 )
 */
-type SSLType int
+type SSLMode int
 
 type SSL struct {
-	Type SSLType `yaml:"type"`
+	Mode SSLMode `yaml:"mode"`
 	Port int     `yaml:"port"` // port number for https server
 	Cert string  `yaml:"cert"` // path to cert.pem file
 	Key  string  `yaml:"key"`  // path to key.pem file
@@ -105,12 +140,23 @@ type ACME struct {
 	FQDNs []string `yaml:"fqdns"` // FQDN(s) for ACME certificates
 }
 
-func defaultConfig() Config {
-	return Config{
+// Default returns default config
+func Default() *Config {
+	return &Config{
 		RootPath: ".",
+		Secret:   uuid.New().String(),
 		Locale:   "en",
-		Host:     "0.0.0.0",
-		Port:     8080,
+		Server: Server{
+			Host: "0.0.0.0",
+			Port: 8080,
+			SSL: SSL{
+				Mode: SSLModeNone,
+				Port: 8443,
+				ACME: ACME{
+					Path: "./var/acme",
+				},
+			},
+		},
 		Auth: Auth{
 			TTL: struct {
 				JWT    time.Duration `yaml:"jwt"`
@@ -119,7 +165,7 @@ func defaultConfig() Config {
 				JWT:    10 * time.Second,
 				Cookie: 7 * 24 * time.Hour,
 			},
-			User: AuthUser{
+			User: User{
 				Home: "/",
 				Permissions: Permissions{
 					Admin:    false,
@@ -131,7 +177,7 @@ func defaultConfig() Config {
 					Download: true,
 				},
 			},
-			Anonymous: AnonymousUser{
+			Anonymous: Anonymous{
 				Enabled: false,
 				Home:    "/",
 				Permissions: Permissions{
@@ -150,10 +196,6 @@ func defaultConfig() Config {
 			SQLite: SQLiteStore{
 				File: "./var/filebrowser.db",
 			},
-		},
-		SSL: SSL{
-			Type: SSLTypeNone,
-			Port: 8443,
 		},
 	}
 }

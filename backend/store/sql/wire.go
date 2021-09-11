@@ -1,4 +1,4 @@
-package server
+package sql
 
 import (
 	"context"
@@ -6,35 +6,35 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/filebrowser/filebrowser/v3/config"
 	"github.com/filebrowser/filebrowser/v3/log"
 	"github.com/filebrowser/filebrowser/v3/store"
-	"github.com/filebrowser/filebrowser/v3/store/sql"
 	"github.com/filebrowser/filebrowser/v3/store/sql/ent"
 	"github.com/google/wire"
 	"github.com/pkg/errors"
 )
 
-var DataStoreSet = wire.NewSet(
+var Set = wire.NewSet(
 	EntClientProvider,
-	sql.NewUserStore,
-	wire.Bind(new(store.UserStore), new(*sql.UserStore)),
-	sql.NewVolumeStore,
-	wire.Bind(new(store.VolumeStore), new(*sql.VolumeStore)),
+	NewUserStore,
+	wire.Bind(new(store.UserStore), new(*UserStore)),
+	NewVolumeStore,
+	wire.Bind(new(store.VolumeStore), new(*VolumeStore)),
 )
 
-func EntClientProvider(ctx context.Context, srvCmd *ServerCommand) (client *ent.Client, err error) {
-	switch srvCmd.Store.Type {
-	case "sqlite":
-		if err = makeDirs(filepath.Dir(srvCmd.Store.SQLite.File)); err != nil {
+func EntClientProvider(ctx context.Context, cfg *config.Config) (client *ent.Client, err error) {
+	switch cfg.Store.Type {
+	case config.StoreTypeSqlite:
+		if err = makeDirs(filepath.Dir(cfg.Store.SQLite.File)); err != nil {
 			return nil, errors.Wrap(err, "failed to create sqlite store")
 		}
-		client, err = ent.Open("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1", srvCmd.Store.SQLite.File))
-	case "postgres":
-		client, err = ent.Open("postgres", srvCmd.Store.Postgres.DSN)
-	case "mysql":
-		client, err = ent.Open("mysql", srvCmd.Store.Postgres.DSN)
+		client, err = ent.Open("sqlite3", fmt.Sprintf("file:%s?cache=shared&mode=rwc&_fk=1", cfg.Store.SQLite.File))
+	case config.StoreTypePostgres:
+		client, err = ent.Open("postgres", cfg.Store.Postgres.DSN)
+	case config.StoreTypeMysql:
+		client, err = ent.Open("mysql", cfg.Store.Postgres.DSN)
 	default:
-		return nil, errors.Errorf("unsupported store type %s", srvCmd.Store.Type)
+		return nil, errors.Errorf("unsupported store type %s", cfg.Store.Type)
 	}
 	if err != nil {
 		return nil, errors.Wrap(err, "can't initialize data store")

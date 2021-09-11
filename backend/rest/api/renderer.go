@@ -99,7 +99,7 @@ func (r *tplRenderer) Render(w http.ResponseWriter) error {
 // WriteContentType (HTML) writes HTML ContentType.
 func (r *tplRenderer) WriteContentType(w http.ResponseWriter) {
 	header := w.Header()
-	if val := header["Content-Type"]; len(val) == 0 {
-		header["Content-Type"] = []string{"text/html; charset=utf-8"}
+	if val := header["Content-Mode"]; len(val) == 0 {
+		header["Content-Mode"] = []string{"text/html; charset=utf-8"}
 	}
 }

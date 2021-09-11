@@ -7,12 +7,18 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/filebrowser/filebrowser/v3/service"
+	"github.com/filebrowser/filebrowser/v3/hash"
+	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseListHandlerParams(t *testing.T) {
+	hasher := hash.NewHasher("secret")
+	hashed123, err := hasher.EncodeInt64(123)
+	require.NoError(t, err)
+
 	testCases := map[string]struct {
 		volume   string
 		filename string
@@ -21,86 +27,94 @@ func Test_parseListHandlerParams(t *testing.T) {
 		orderBy  string
 		offset   string
 		limit    string
-		want     *service.ListParams
+		want     *filebrowser.ListParams
 		wantErr  bool
+		errMsg   string
 	}{
 		"no user defined params sent": {
-			volume:   "0",
-			filename: "/foo",
-			want: &service.ListParams{
-				Volume:   123,
+			volume:   homeVolumeID,
+			filename: "foo",
+			want: &filebrowser.ListParams{
+				Volume:   filebrowser.HomeVolumeID,
 				Filename: "/foo",
-				GroupBy:  service.DefaultGroupBy,
-				SortBy:   service.DefaultSortBy,
-				OrderBy:  service.DefaultOrderBy,
+				GroupBy:  filebrowser.DefaultGroupBy,
+				SortBy:   filebrowser.DefaultSortBy,
+				OrderBy:  filebrowser.DefaultOrderBy,
 				Offset:   0,
 				Limit:    -1,
 			},
 		},
 		"with user defined params": {
-			volume:   "123",
-			filename: "/foo",
+			volume:   hashed123,
+			filename: "foo",
 			groupBy:  "type",
 			sortBy:   "name",
 			orderBy:  "asc",
 			offset:   "40",
 			limit:    "20",
-			want: &service.ListParams{
+			want: &filebrowser.ListParams{
 				Volume:   123,
 				Filename: "/foo",
-				GroupBy:  service.GroupByType,
-				SortBy:   service.SortByName,
-				OrderBy:  service.OrderByAsc,
+				GroupBy:  filebrowser.GroupByType,
+				SortBy:   filebrowser.SortByName,
+				OrderBy:  filebrowser.OrderByAsc,
 				Offset:   40,
 				Limit:    20,
 			},
-			wantErr: false,
 		},
 		"incorrect volume format": {
 			volume:  "foo",
 			wantErr: true,
+			errMsg:  "incorrect volume id",
 		},
 		"unsupported group_by": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			groupBy:  "bar",
 			wantErr:  true,
+			errMsg:   "incorrect group_by param",
 		},
 		"unsupported sort_by": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			sortBy:   "bar",
 			wantErr:  true,
+			errMsg:   "incorrect sort_by param",
 		},
 		"unsupported order_by": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			orderBy:  "bar",
 			wantErr:  true,
+			errMsg:   "incorrect order_by param",
 		},
 		"offset parsing error": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			offset:   "bar",
 			wantErr:  true,
+			errMsg:   "incorrect offset param",
 		},
 		"negative offset error": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			offset:   "-5",
 			wantErr:  true,
+			errMsg:   "offset must be positive",
 		},
 		"limit parsing error": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			limit:    "bar",
 			wantErr:  true,
+			errMsg:   "incorrect limit param",
 		},
 		"zero limit error": {
-			volume:   "123",
+			volume:   homeVolumeID,
 			filename: "/foo",
 			limit:    "0",
 			wantErr:  true,
+			errMsg:   "limit must be greater than 0",
 		},
 	}
 	for name, tt := range testCases {
@@ -111,10 +125,14 @@ func Test_parseListHandlerParams(t *testing.T) {
 			var handlerCalled bool
 			engine.GET("/files/:volume/*path", func(c *gin.Context) {
 				handlerCalled = true
-				got, err := parseListHandlerParams(c)
+				fc := newFileController(nil, hasher)
+				got, err := fc.parseListHandlerParams(c)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("wantErr: %v, got: %+v", tt.want, err)
 					return
+				}
+				if tt.errMsg != "" {
+					assert.Contains(t, err.Error(), tt.errMsg)
 				}
 				assert.Equal(t, tt.want, got)
 			})

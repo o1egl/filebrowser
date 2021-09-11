@@ -12,7 +12,7 @@ import (
 // DefaultLogger instance that can be used immediately
 var DefaultLogger Logger
 
-// Fields Type to pass when we want to call WithFields for structured logging
+// Fields Mode to pass when we want to call WithFields for structured logging
 type Fields map[string]interface{}
 
 /*

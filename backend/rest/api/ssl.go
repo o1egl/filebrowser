@@ -3,7 +3,6 @@ package api
 import (
 	"crypto/tls"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,30 +12,6 @@ import (
 	"github.com/filebrowser/filebrowser/v3/rest/middleware"
 )
 
-// sslMode defines ssl mode for Server server
-type sslMode int8
-
-const (
-	// None defines to run http server only
-	None sslMode = iota
-
-	// Static defines to run both https and http server. Redirect http to https
-	Static
-
-	// Auto defines to run both https and http server. Redirect http to https. Https server with autocert support
-	Auto
-)
-
-// SSLConfig holds all ssl params for Server server
-type SSLConfig struct {
-	SSLMode      sslMode
-	Cert         string
-	Key          string
-	Port         int
-	ACMELocation string
-	ACMEEmail    string
-}
-
 // httpToHTTPSRouter creates new router which does redirect from http to https server
 // with default middlewares. Used in 'static' ssl mode.
 func (s *Server) httpToHTTPSRouter() *gin.Engine {
@@ -44,7 +19,7 @@ func (s *Server) httpToHTTPSRouter() *gin.Engine {
 
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.options.AccessLog {
+	if s.cfg.Server.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -64,7 +39,7 @@ func (s *Server) httpChallengeRouter(m *autocert.Manager) *gin.Engine {
 
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.options.AccessLog {
+	if s.cfg.Server.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -77,7 +52,7 @@ func (s *Server) httpChallengeRouter(m *autocert.Manager) *gin.Engine {
 
 func (s *Server) redirectHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		newURL := s.options.ServerURL + r.URL.Path
+		newURL := s.cfg.Server.URL + r.URL.Path
 		if r.URL.RawQuery != "" {
 			newURL += "?" + r.URL.RawQuery
 		}
@@ -88,9 +63,9 @@ func (s *Server) redirectHandler() http.Handler {
 func (s *Server) makeAutocertManager() *autocert.Manager {
 	return &autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(s.options.SSLConfig.ACMELocation),
-		HostPolicy: autocert.HostWhitelist(s.getServerHost()),
-		Email:      s.options.SSLConfig.ACMEEmail,
+		Cache:      autocert.DirCache(s.cfg.Server.SSL.ACME.Path),
+		HostPolicy: autocert.HostWhitelist(s.cfg.Server.Hostname()),
+		Email:      s.cfg.Server.SSL.ACME.Email,
 	}
 }
 
@@ -108,16 +83,6 @@ func (s *Server) makeHTTPSServer(addr string, router http.Handler) *http.Server 
 	server := s.makeHTTPServer(addr, router)
 	server.TLSConfig = s.makeTLSConfig()
 	return server
-}
-
-// getServerHost returns hostname for the server.
-// For example for serverURL https://filebrowser.org:443 it should return filebrowser.org
-func (s *Server) getServerHost() string {
-	u, err := url.Parse(s.options.ServerURL)
-	if err != nil {
-		return ""
-	}
-	return u.Hostname()
 }
 
 func (s *Server) makeTLSConfig() *tls.Config {

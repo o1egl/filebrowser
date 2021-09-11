@@ -36,8 +36,12 @@ func Load(ctx context.Context, loader Loader) (*Config, error) {
 		return nil, errors.Wrap(err, "failed to parse config file")
 	}
 
-	if err := mergo.Merge(&cfg, defaultConfig()); err != nil {
+	if err := mergo.Merge(&cfg, Default()); err != nil {
 		return nil, err
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, errors.Wrap(err, "config validation failed")
 	}
 
 	return &cfg, nil

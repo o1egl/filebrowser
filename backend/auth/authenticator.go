@@ -1,39 +1,32 @@
-package server
+package auth
 
 import (
 	"context"
 	"strings"
 
-	"github.com/filebrowser/filebrowser/v3/auth"
+	"github.com/filebrowser/filebrowser/v3/config"
 	"github.com/filebrowser/filebrowser/v3/log"
 	pkgAuth "github.com/go-pkgz/auth"
 	"github.com/go-pkgz/auth/avatar"
 	"github.com/go-pkgz/auth/middleware"
 	"github.com/go-pkgz/auth/provider"
 	authToken "github.com/go-pkgz/auth/token"
-	"github.com/google/wire"
 )
 
-var AuthenticatorSet = wire.NewSet(
-	AuthenticatorProvider,
-	auth.NewInMemoryAuthRefreshCache,
-	wire.Bind(new(middleware.RefreshCache), new(*auth.InMemoryAuthRefreshCache)),
-)
-
-func AuthenticatorProvider(
-	srvCmd *ServerCommand,
-	authService *auth.Service,
+func NewAuthenticator(
+	cfg *config.Config,
+	authService *Service,
 	authRefreshCache middleware.RefreshCache,
 ) (*pkgAuth.Service, error) {
 	authenticator := pkgAuth.NewService(pkgAuth.Opts{
 		DisableXSRF:    true, // TODO remove it
-		URL:            strings.TrimSuffix(srvCmd.ServerURL, "/"),
+		URL:            strings.TrimSuffix(cfg.Server.URL, "/"),
 		Issuer:         "File Browser",
-		TokenDuration:  srvCmd.Auth.TTL.JWT,
-		CookieDuration: srvCmd.Auth.TTL.Cookie,
-		SecureCookies:  strings.HasPrefix(srvCmd.ServerURL, "https://"),
+		TokenDuration:  cfg.Auth.TTL.JWT,
+		CookieDuration: cfg.Auth.TTL.Cookie,
+		SecureCookies:  strings.HasPrefix(cfg.Server.URL, "https://"),
 		SecretReader: authToken.SecretFunc(func(aud string) (string, error) {
-			return srvCmd.Secret, nil
+			return cfg.Secret, nil
 		}),
 		ClaimsUpd:        authService,
 		BasicAuthChecker: authService.BasicAuthChecker,
@@ -43,35 +36,35 @@ func AuthenticatorProvider(
 		RefreshCache:     authRefreshCache,
 	})
 
-	addAuthProviders(srvCmd, authenticator, authService)
+	addAuthProviders(cfg.Auth, authenticator, authService)
 
 	return authenticator, nil
 }
 
-func addAuthProviders(srvCmd *ServerCommand, authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
+func addAuthProviders(cfg config.Auth, authenticator *pkgAuth.Service, localProvider provider.CredChecker) {
 	providers := 0
 
 	providers++
 	authenticator.AddDirectProvider("local", localProvider)
 
-	if srvCmd.Auth.Google.CID != "" && srvCmd.Auth.Google.CSEC != "" {
-		authenticator.AddProvider("google", srvCmd.Auth.Google.CID, srvCmd.Auth.Google.CSEC)
+	if cfg.Google.CID != "" && cfg.Google.CSEC != "" {
+		authenticator.AddProvider("google", cfg.Google.CID, cfg.Google.CSEC)
 		providers++
 	}
-	if srvCmd.Auth.Github.CID != "" && srvCmd.Auth.Github.CSEC != "" {
-		authenticator.AddProvider("github", srvCmd.Auth.Github.CID, srvCmd.Auth.Github.CSEC)
+	if cfg.Github.CID != "" && cfg.Github.CSEC != "" {
+		authenticator.AddProvider("github", cfg.Github.CID, cfg.Github.CSEC)
 		providers++
 	}
-	if srvCmd.Auth.Facebook.CID != "" && srvCmd.Auth.Facebook.CSEC != "" {
-		authenticator.AddProvider("facebook", srvCmd.Auth.Facebook.CID, srvCmd.Auth.Facebook.CSEC)
+	if cfg.Facebook.CID != "" && cfg.Facebook.CSEC != "" {
+		authenticator.AddProvider("facebook", cfg.Facebook.CID, cfg.Facebook.CSEC)
 		providers++
 	}
-	if srvCmd.Auth.Twitter.CID != "" && srvCmd.Auth.Twitter.CSEC != "" {
-		authenticator.AddProvider("twitter", srvCmd.Auth.Twitter.CID, srvCmd.Auth.Twitter.CSEC)
+	if cfg.Twitter.CID != "" && cfg.Twitter.CSEC != "" {
+		authenticator.AddProvider("twitter", cfg.Twitter.CID, cfg.Twitter.CSEC)
 		providers++
 	}
 
-	if srvCmd.Auth.Dev {
+	if cfg.Dev {
 		log.Warnf("dev oauth provider is enabled")
 		authenticator.AddProvider("dev", "", "")
 		providers++

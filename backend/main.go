@@ -14,13 +14,11 @@ import (
 
 // Opts with all cli commands and flags
 type Opts struct {
-	ServerCmd   server.ServerCommand `command:"server"`
-	PasswordCmd cmd.PasswordCommand  `command:"password"`
+	ServerCmd   server.Command      `command:"server"`
+	PasswordCmd cmd.PasswordCommand `command:"password"`
 
-	Log LogGroup `group:"log" namespace:"log" env-namespace:"LOG"`
-
-	Config  func(string) `long:"config" short:"c" env:"CONFIG" description:"path to config.ini"`
-	Version func()       `long:"version" description:"print version"`
+	Log     LogGroup `group:"log" namespace:"log" env-namespace:"LOG"`
+	Version func()   `long:"version" description:"print version"`
 }
 
 // LogGroup defines options group log params
@@ -46,12 +44,6 @@ func main() {
 	opts.Version = func() {
 		fmt.Printf("File Browser %s\n", revision)
 		os.Exit(0)
-	}
-	opts.Config = func(filename string) {
-		err := flags.NewIniParser(p).ParseFile(filename)
-		if err != nil {
-			log.Fatalf("Failed to read config file: %s", err)
-		}
 	}
 
 	p.CommandHandler = func(command flags.Commander, args []string) error {

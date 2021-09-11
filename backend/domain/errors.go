@@ -1,5 +1,5 @@
 //go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
-package service
+package domain
 
 import (
 	"fmt"

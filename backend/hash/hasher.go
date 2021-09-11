@@ -1,6 +1,7 @@
 package hash
 
 import (
+	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/speps/go-hashids/v2"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,9 +19,9 @@ type HasherImpl struct {
 	enc *hashids.HashID
 }
 
-func NewHasher(secret string) *HasherImpl {
+func NewHasher(secret domain.Secret) *HasherImpl {
 	hd := hashids.NewData()
-	hd.Salt = secret
+	hd.Salt = secret.String()
 	hd.MinLength = hashIDMinLength
 	h, _ := hashids.NewWithData(hd)
 	return &HasherImpl{enc: h}

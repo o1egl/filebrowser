@@ -7,23 +7,21 @@ import (
 	"github.com/filebrowser/filebrowser/v3/rest/api"
 )
 
-// serverApp holds all active objects
-type serverApp struct {
-	*ServerCommand
+// app holds all active objects
+type app struct {
 	restSrv    *api.Server
 	terminated chan struct{}
 }
 
-func NewServerApp(srvCmd *ServerCommand, restSrv *api.Server) (*serverApp, error) {
-	return &serverApp{
-		ServerCommand: srvCmd,
-		restSrv:       restSrv,
-		terminated:    make(chan struct{}),
+func newApp(restSrv *api.Server) (*app, error) {
+	return &app{
+		restSrv:    restSrv,
+		terminated: make(chan struct{}),
 	}, nil
 }
 
 // Run all application objects
-func (a *serverApp) run(ctx context.Context) error {
+func (a *app) run(ctx context.Context) error {
 	go func() {
 		// shutdown on context cancellation
 		<-ctx.Done()
@@ -38,6 +36,6 @@ func (a *serverApp) run(ctx context.Context) error {
 }
 
 // Wait for application completion (termination)
-func (a *serverApp) Wait() {
+func (a *app) Wait() {
 	<-a.terminated
 }

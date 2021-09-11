@@ -8,9 +8,15 @@ package server
 import (
 	"context"
 	"github.com/filebrowser/filebrowser/v3/auth"
+	"github.com/filebrowser/filebrowser/v3/config"
+	"github.com/filebrowser/filebrowser/v3/domain"
+	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/rest/api"
 	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/filebrowser/filebrowser/v3/store/sql"
+	"github.com/pkg/errors"
+	"github.com/spf13/afero"
+	"path/filepath"
 )
 
 import (
@@ -21,31 +27,44 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeServer(ctx context.Context, srvCmd *ServerCommand) (*serverApp, error) {
-	fs := RootFSProvider(srvCmd)
-	client, err := EntClientProvider(ctx, srvCmd)
+func InitializeServer(ctx context.Context, cfg *config.Config, version domain.Version) (*app, error) {
+	fs, err := rootFSProvider(cfg)
+	if err != nil {
+		return nil, err
+	}
+	client, err := sql.EntClientProvider(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 	userStore := sql.NewUserStore(client)
 	volumeStore := sql.NewVolumeStore(client)
-	service := filebrowser.New(fs, userStore, volumeStore)
-	authService := AuthServiceProvider(srvCmd, userStore)
+	serviceImpl := filebrowser.New(fs, userStore, volumeStore)
+	secret := secretProvider(cfg)
+	hasherImpl := hash.NewHasher(secret)
+	service := auth.NewService(cfg, userStore, hasherImpl)
 	inMemoryAuthRefreshCache := auth.NewInMemoryAuthRefreshCache()
-	service2, err := AuthenticatorProvider(srvCmd, authService, inMemoryAuthRefreshCache)
+	authService, err := auth.NewAuthenticator(cfg, service, inMemoryAuthRefreshCache)
 	if err != nil {
 		return nil, err
 	}
-	tokenService := TokenServiceProvider(srvCmd)
-	sslConfig, err := SSLConfigProvider(srvCmd)
+	server := api.NewServer(cfg, serviceImpl, authService, hasherImpl, userStore, version)
+	serverApp, err := newApp(server)
 	if err != nil {
 		return nil, err
 	}
-	options := ApiServerOptionsProvider(srvCmd, sslConfig)
-	server := api.NewServer(service, service2, tokenService, userStore, options)
-	serverServerApp, err := NewServerApp(srvCmd, server)
+	return serverApp, nil
+}
+
+// wire.go:
+
+func secretProvider(cfg *config.Config) domain.Secret {
+	return domain.Secret(cfg.Secret)
+}
+
+func rootFSProvider(cfg *config.Config) (afero.Fs, error) {
+	absRootPath, err := filepath.Abs(cfg.RootPath)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to get abs path")
 	}
-	return serverServerApp, nil
+	return afero.NewBasePathFs(afero.NewOsFs(), absRootPath), nil
 }

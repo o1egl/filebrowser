@@ -4,26 +4,25 @@ import (
 	"sort"
 
 	"github.com/filebrowser/filebrowser/v3/filesystem"
-	"github.com/filebrowser/filebrowser/v3/service"
 )
 
-func sortFiles(files []service.File, groupBy service.GroupBy, sortBy service.SortBy, orderBy service.OrderBy) []service.File {
+func sortFiles(files []File, groupBy GroupBy, sortBy SortBy, orderBy OrderBy) []File {
 	var (
-		grouperFn    func(file service.File) string
+		grouperFn    func(file File) string
 		groupWeights = make(map[string]int)
 	)
 
 	// group files
 	switch groupBy {
-	case service.GroupByType:
-		grouperFn = func(info service.File) string {
+	case GroupByType:
+		grouperFn = func(info File) string {
 			return info.Type.String()
 		}
 		groupWeights[filesystem.TypeDir.String()] = 10
-	case service.GroupByNone:
+	case GroupByNone:
 		fallthrough
 	default:
-		grouperFn = func(_ service.File) string { return "" }
+		grouperFn = func(_ File) string { return "" }
 	}
 
 	fileGroups := groupFiles(files, grouperFn)
@@ -54,22 +53,22 @@ func sortFiles(files []service.File, groupBy service.GroupBy, sortBy service.Sor
 	})
 
 	// merge groups
-	result := make([]service.File, 0, len(files))
+	result := make([]File, 0, len(files))
 	for _, name := range orderedGroupNames {
 		result = append(result, fileGroups[name]...)
 	}
 	return result
 }
 
-func groupFiles(files []service.File, grouper func(service.File) string) map[string][]service.File {
-	groupedFiles := make(map[string][]service.File)
+func groupFiles(files []File, grouper func(File) string) map[string][]File {
+	groupedFiles := make(map[string][]File)
 	for _, file := range files {
 		groupedFiles[grouper(file)] = append(groupedFiles[grouper(file)], file)
 	}
 	return groupedFiles
 }
 
-func sortFileGroup(files []service.File, sortBy service.SortBy, orderBy service.OrderBy) {
+func sortFileGroup(files []File, sortBy SortBy, orderBy OrderBy) {
 	sort.Slice(files, func(i, j int) bool {
 		var result bool
 
@@ -77,17 +76,17 @@ func sortFileGroup(files []service.File, sortBy service.SortBy, orderBy service.
 		fileB := files[j]
 
 		switch sortBy {
-		case service.SortBySize:
+		case SortBySize:
 			result = fileA.Size < fileB.Size
-		case service.SortByModified:
+		case SortByModified:
 			result = fileA.ModTime.Unix() < fileB.ModTime.Unix()
-		case service.SortByName:
+		case SortByName:
 			fallthrough
 		default:
 			result = fileA.Name < fileB.Name
 		}
 
-		if orderBy == service.OrderByDesc {
+		if orderBy == OrderByDesc {
 			return !result
 		}
 		return result

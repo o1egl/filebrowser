@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/filebrowser/filebrowser/v3/config"
 	authToken "github.com/go-pkgz/auth/token"
 	"github.com/google/uuid"
 
@@ -16,14 +17,13 @@ import (
 )
 
 type Service struct {
-	hasher        hash.Hasher
-	userStore     store.UserStore
-	defaultHome   string
-	defaultLocale string
+	cfg       *config.Config
+	hasher    hash.Hasher
+	userStore store.UserStore
 }
 
-func NewService(userStore store.UserStore, hasher hash.Hasher, defaultHome string, defaultLocale string) *Service {
-	return &Service{userStore: userStore, hasher: hasher, defaultHome: defaultHome, defaultLocale: defaultLocale}
+func NewService(cfg *config.Config, userStore store.UserStore, hasher hash.Hasher) *Service {
+	return &Service{cfg: cfg, userStore: userStore, hasher: hasher}
 }
 
 // Check implements provider.CredChecker interface
@@ -82,9 +82,9 @@ func (s *Service) Update(claims authToken.Claims) authToken.Claims {
 			Provider:     strings.Split(claims.User.ID, "_")[0],
 			Username:     username,
 			Password:     "",
-			Home:         s.defaultHome,
+			Home:         s.cfg.Auth.User.Home,
 			Name:         claims.User.Name,
-			Locale:       s.defaultLocale,
+			Locale:       s.cfg.Locale,
 			LockPassword: false,
 			Blocked:      false,
 		}
@@ -115,7 +115,7 @@ func (s *Service) InitAdminUser(ctx context.Context, pwd string) error {
 		Username:     "admin",
 		Password:     pwd,
 		Home:         "/",
-		Locale:       s.defaultLocale,
+		Locale:       s.cfg.Locale,
 		LockPassword: false,
 		Blocked:      false,
 	}
@@ -140,7 +140,7 @@ func (s *Service) InitGuestUser(ctx context.Context) error {
 		Username:     "guest",
 		Password:     "",
 		Home:         "/",
-		Locale:       s.defaultLocale,
+		Locale:       s.cfg.Locale,
 		LockPassword: true,
 		Blocked:      false,
 	}

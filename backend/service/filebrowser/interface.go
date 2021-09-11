@@ -1,5 +1,5 @@
 //go:generate go-enum --sql --marshal --nocase --names --file $GOFILE
-package service
+package filebrowser
 
 import (
 	"context"
@@ -21,7 +21,7 @@ const (
 	NoLimit        = -1
 )
 
-type FileBrowser interface {
+type Service interface {
 	List(ctx context.Context, user auth.User, params ListParams) (*FileWithChildren, error)
 	Create(ctx context.Context, user auth.User, volume int64, filename string, content io.Reader) error
 	Update(ctx context.Context, user auth.User, volume int64, filename string, content io.Reader) error
