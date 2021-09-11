@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/didip/tollbooth/v6"
+	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/filebrowser/filebrowser/v3/store"
 	ginCors "github.com/gin-contrib/cors"
@@ -49,11 +50,12 @@ type Options struct {
 }
 
 type Server struct {
-	FileBrowserSvc service.FileBrowser
-	Authenticator  *auth.Service
-	TokenService   *token.Service
-	UserStore      store.UserStore
-	Options        Options
+	fileBrowserSvc service.FileBrowser
+	authenticator  *auth.Service
+	tokenService   *token.Service
+	userStore      store.UserStore
+	hasher         hash.Hasher
+	options        Options
 
 	httpsServer *http.Server
 	httpServer  *http.Server
@@ -64,22 +66,24 @@ func NewServer(
 	fileBrowserSvc service.FileBrowser,
 	authenticator *auth.Service,
 	tokenService *token.Service,
+	hasher hash.Hasher,
 	userStore store.UserStore,
 	options Options,
 ) *Server {
 	return &Server{
-		FileBrowserSvc: fileBrowserSvc,
-		Authenticator:  authenticator,
-		TokenService:   tokenService,
-		UserStore:      userStore,
-		Options:        options,
+		fileBrowserSvc: fileBrowserSvc,
+		authenticator:  authenticator,
+		tokenService:   tokenService,
+		userStore:      userStore,
+		hasher:         hasher,
+		options:        options,
 	}
 }
 
 func (s *Server) Run() {
-	httpAddr := fmt.Sprintf("%s:%d", s.Options.Host, s.Options.Port)
-	httpsAddr := fmt.Sprintf("%s:%d", s.Options.Host, s.Options.SSLConfig.Port)
-	switch s.Options.SSLConfig.SSLMode {
+	httpAddr := fmt.Sprintf("%s:%d", s.options.Host, s.options.Port)
+	httpsAddr := fmt.Sprintf("%s:%d", s.options.Host, s.options.SSLConfig.Port)
+	switch s.options.SSLConfig.SSLMode {
 	case None:
 		log.Infof("activate http rest server on %s", httpAddr)
 
@@ -107,7 +111,7 @@ func (s *Server) Run() {
 			log.Warnf("http redirect server terminated, %s", err)
 		}()
 
-		err := s.httpsServer.ListenAndServeTLS(s.Options.SSLConfig.Cert, s.Options.SSLConfig.Key)
+		err := s.httpsServer.ListenAndServeTLS(s.options.SSLConfig.Cert, s.options.SSLConfig.Key)
 		log.Warnf("https server terminated, %s", err)
 	case Auto:
 		log.Infof("activate https server in 'auto' mode on %s", httpsAddr)
@@ -170,7 +174,7 @@ func (s *Server) newEngine() *gin.Engine {
 	gin.SetMode(gin.DebugMode)
 	engine := gin.New()
 	engine.Use(middleware.Throttle(CuncurrentRequests), middleware.RequestID)
-	if s.Options.AccessLog {
+	if s.options.AccessLog {
 		engine.Use(middleware.Logger)
 	}
 	engine.Use(middleware.Recovery)
@@ -185,8 +189,8 @@ func (s *Server) newEngine() *gin.Engine {
 	}))
 	engine.HTMLRender = &tplEngine{}
 
-	authHandler, _ := s.Authenticator.Handlers()
-	authMiddleware := s.Authenticator.Middleware()
+	authHandler, _ := s.authenticator.Handlers()
+	authMiddleware := s.authenticator.Middleware()
 
 	staticCtrl, fileCtrl := s.makeControllers()
 
@@ -237,12 +241,12 @@ func (s *Server) newEngine() *gin.Engine {
 func (s *Server) makeControllers() (*staticController, *fileController) {
 	staticCtrl := &staticController{
 		BasePath:  s.getServerBasePath(),
-		Revision:  s.Options.Revision,
-		Anonymous: s.Options.Anonymous,
+		Revision:  s.options.Revision,
+		Anonymous: s.options.Anonymous,
 	}
 
 	fileCtrl := &fileController{
-		fileBrowserSvc: s.FileBrowserSvc,
+		fileBrowserSvc: s.fileBrowserSvc,
 	}
 
 	return staticCtrl, fileCtrl
@@ -251,7 +255,7 @@ func (s *Server) makeControllers() (*staticController, *fileController) {
 // getServerBasePath returns base path for the server.
 // For example for serverURL https://filebrowser.org/base/path it should return /base/path
 func (s *Server) getServerBasePath() string {
-	u, err := url.Parse(s.Options.ServerURL)
+	u, err := url.Parse(s.options.ServerURL)
 	if err != nil {
 		return "/"
 	}

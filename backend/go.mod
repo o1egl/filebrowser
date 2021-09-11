@@ -12,14 +12,17 @@ require (
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-pkgz/auth v1.15.1-0.20210527182916-99f2d83d03a7
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
+	github.com/goccy/go-yaml v1.9.3
 	github.com/golang/mock v1.5.0
 	github.com/google/uuid v1.3.0
 	github.com/google/wire v0.5.0
+	github.com/imdario/mergo v0.3.12
 	github.com/jessevdk/go-flags v1.5.0
 	github.com/lib/pq v1.10.2
 	github.com/marusama/semaphore/v2 v2.5.0
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/pkg/errors v0.9.1
+	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/afero v1.6.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.16.0

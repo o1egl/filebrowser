@@ -10,6 +10,7 @@ import (
 
 // PasswordCommand with command line flags and env
 type PasswordCommand struct {
+	Secret string `long:"secret" env:"SECRET" description:"shared secret key"`
 	CommonOpts
 }
 
@@ -22,7 +23,7 @@ func (s *PasswordCommand) Execute(args []string) error {
 		return errors.New("more than 1 argument provided")
 	}
 
-	password, err := hash.Password(args[0])
+	password, err := hash.NewHasher(s.Secret).Password(args[0])
 	if err != nil {
 		return err
 	}

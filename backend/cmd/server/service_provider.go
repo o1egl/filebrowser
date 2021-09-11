@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/filebrowser/filebrowser/v3/auth"
+	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/filebrowser/filebrowser/v3/store"
@@ -21,8 +22,8 @@ func TokenServiceProvider(srvCmd *ServerCommand) *token.Service {
 	return token.New(srvCmd.Secret)
 }
 
-func AuthServiceProvider(srvCmd *ServerCommand, userStore store.UserStore) *auth.Service {
-	return auth.NewService(userStore, srvCmd.Auth.User.Home, srvCmd.Locale)
+func AuthServiceProvider(srvCmd *ServerCommand, hasher hash.Hasher, userStore store.UserStore) *auth.Service {
+	return auth.NewService(userStore, hasher, srvCmd.Auth.User.Home, srvCmd.Locale)
 }
 
 func RootFSProvider(srvCmd *ServerCommand) afero.Fs {

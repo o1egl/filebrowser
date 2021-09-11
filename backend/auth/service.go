@@ -16,13 +16,14 @@ import (
 )
 
 type Service struct {
+	hasher        hash.Hasher
 	userStore     store.UserStore
 	defaultHome   string
 	defaultLocale string
 }
 
-func NewService(userStore store.UserStore, defaultHome string, defaultLocale string) *Service {
-	return &Service{userStore: userStore, defaultHome: defaultHome, defaultLocale: defaultLocale}
+func NewService(userStore store.UserStore, hasher hash.Hasher, defaultHome string, defaultLocale string) *Service {
+	return &Service{userStore: userStore, hasher: hasher, defaultHome: defaultHome, defaultLocale: defaultLocale}
 }
 
 // Check implements provider.CredChecker interface
@@ -56,7 +57,7 @@ func (s *Service) validateUser(ctx context.Context, username, password string) (
 		return false, nil, err
 	}
 
-	if !hash.CheckPassword(password, user.Password) {
+	if !s.hasher.CheckPassword(password, user.Password) {
 		return false, nil, nil
 	}
 

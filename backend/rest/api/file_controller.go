@@ -4,20 +4,24 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/filebrowser/filebrowser/v3/hash"
+	"github.com/filebrowser/filebrowser/v3/rest"
 	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-
-	"github.com/filebrowser/filebrowser/v3/rest"
+	_ "github.com/speps/go-hashids/v2"
 )
+
+const homeVolumeID = "home"
 
 type fileController struct {
 	fileBrowserSvc service.FileBrowser
+	hasher         hash.Hasher
 }
 
 func (fc *fileController) ListHandler(c *gin.Context) {
 	ctx := c.Request.Context()
-	params, err := parseListHandlerParams(c)
+	params, err := fc.parseListHandlerParams(c)
 	if err != nil {
 		rest.SendBadRequestError(c, err, "failed to parse input params")
 		return
@@ -33,7 +37,7 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, list)
 }
 
-func parseListHandlerParams(c *gin.Context) (*service.ListParams, error) {
+func (fc *fileController) parseListHandlerParams(c *gin.Context) (*service.ListParams, error) {
 	volumeInput := c.Param("volume")
 	filename := c.Param("path")
 	groupByInput := c.Query("group_by")
@@ -53,9 +57,14 @@ func parseListHandlerParams(c *gin.Context) (*service.ListParams, error) {
 	}
 
 	var err error
-	params.Volume, err = strconv.ParseInt(volumeInput, 10, 64)
-	if err != nil {
-		return nil, errors.Wrap(err, "incorrect volume id")
+	switch volumeInput {
+	case homeVolumeID:
+		params.Volume = service.HomeVolumeID
+	default:
+		params.Volume, err = fc.hasher.DecodeInt64(volumeInput)
+		if err != nil {
+			return nil, errors.Wrap(err, "incorrect volume id")
+		}
 	}
 	if groupByInput != "" {
 		if params.GroupBy, err = service.ParseGroupBy(groupByInput); err != nil {
