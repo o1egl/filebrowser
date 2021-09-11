@@ -42,7 +42,6 @@ func (fc *fileController) ListHandler(c *gin.Context) {
 }
 
 func (fc *fileController) parseListHandlerParams(c *gin.Context) (*filebrowser.ListParams, error) {
-	volumeInput := c.Param("volume")
 	filename := c.Param("path")
 	groupByInput := c.Query("group_by")
 	sortByInput := c.Query("sort_by")
@@ -61,14 +60,9 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*filebrowser.L
 	}
 
 	var err error
-	switch volumeInput {
-	case homeVolumeID:
-		params.Volume = filebrowser.HomeVolumeID
-	default:
-		params.Volume, err = fc.hasher.DecodeInt64(volumeInput)
-		if err != nil {
-			return nil, errors.Wrap(err, "incorrect volume id")
-		}
+	params.Volume, err = fc.parseVolumeFromPath(c)
+	if err != nil {
+		return nil, err
 	}
 	if groupByInput != "" {
 		if params.GroupBy, err = filebrowser.ParseGroupBy(groupByInput); err != nil {
@@ -103,6 +97,37 @@ func (fc *fileController) parseListHandlerParams(c *gin.Context) (*filebrowser.L
 	}
 
 	return params, nil
+}
+
+func (fc *fileController) DeleteHandler(c *gin.Context) {
+	ctx := c.Request.Context()
+	user := rest.MustGetUser(c)
+
+	filename := c.Param("path")
+	volumeID, err := fc.parseVolumeFromPath(c)
+	if err != nil {
+		rest.SendBadRequestError(c, err, "failed to parse input params")
+		return
+	}
+
+	err = fc.fileBrowserSvc.Delete(ctx, user, volumeID, filename)
+	if err != nil {
+		rest.SendServiceError(c, err)
+		return
+	}
+
+	c.Status(http.StatusOK)
+}
+
+func (fc *fileController) parseVolumeFromPath(c *gin.Context) (int64, error) {
+	volumeInput := c.Param("volume")
+	switch volumeInput {
+	case homeVolumeID:
+		return filebrowser.HomeVolumeID, nil
+	default:
+		volumeID, err := fc.hasher.DecodeInt64(volumeInput)
+		return volumeID, errors.Wrap(err, "incorrect volume id")
+	}
 }
 
 /*func (fc *fileController) listHandler(c *gin.Context, fSys afero.Fs, params *ListHandlerParams) {

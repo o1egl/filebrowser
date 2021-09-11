@@ -85,8 +85,18 @@ func (s *ServiceImpl) Update(ctx context.Context, user auth.User, volume int64, 
 	panic("implement me")
 }
 
-func (s *ServiceImpl) Delete(ctx context.Context, user auth.User, volume int64, filename string) error {
-	panic("implement me")
+func (s *ServiceImpl) Delete(ctx context.Context, user auth.User, volumeID int64, filename string) error {
+	volume, err := s.loadUserVolume(ctx, user.ID, volumeID)
+	if err != nil {
+		return err
+	}
+
+	err = volume.Fs.RemoveAll(filename)
+	if err != nil {
+		return fsError(err, volume.Path, filename)
+	}
+
+	return nil
 }
 
 func (s *ServiceImpl) loadUser(ctx context.Context, userID string) (*store.User, error) {

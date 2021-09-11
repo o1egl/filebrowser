@@ -199,7 +199,7 @@ func (s *Server) newEngine() *gin.Engine {
 
 			// file handlers
 			protected.GET("/files/:volume/*path", fileCtrl.ListHandler)
-			//protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
+			protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
 			//protected.GET("/files/volumes/:id/*path", fileCtrl.VolumeListHandler)
 		}
 	}
