@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	entgo.io/ent v0.9.1
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/ristretto v0.0.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/didip/tollbooth/v6 v6.0.1
@@ -26,6 +27,7 @@ require (
 	github.com/speps/go-hashids/v2 v2.0.1
 	github.com/spf13/afero v1.6.0
 	github.com/stretchr/testify v1.7.0
+	github.com/tus/tusd v1.6.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/image v0.0.0-20210607152325-775e3b0c77b9

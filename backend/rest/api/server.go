@@ -11,14 +11,13 @@ import (
 	"github.com/filebrowser/filebrowser/v3/config"
 	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/filebrowser/filebrowser/v3/hash"
+	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/filebrowser/filebrowser/v3/rest/middleware"
 	"github.com/filebrowser/filebrowser/v3/service/filebrowser"
 	"github.com/filebrowser/filebrowser/v3/store"
 	ginCors "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/go-pkgz/auth"
-
-	"github.com/filebrowser/filebrowser/v3/log"
-	"github.com/filebrowser/filebrowser/v3/rest/middleware"
 )
 
 const (
@@ -168,13 +167,31 @@ func (s *Server) newEngine() *gin.Engine {
 	}
 	engine.Use(middleware.Recovery)
 	engine.Use(ginCors.New(ginCors.Config{
-		AllowAllOrigins:  true,
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Accept", "Authorization", "Content-Mode", "X-XSRF-Token", "X-JWT"},
+		AllowAllOrigins: true,
+		AllowMethods:    []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"},
+		AllowHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Origin",
+			"X-Requested-With",
+			"X-Request-ID",
+			"X-HTTP-Method-Overrid",
+			"Content-Type",
+			"Upload-Length",
+			"Upload-Offset",
+			"Tus-Resumable",
+			"Upload-Metadata",
+			"Upload-Defer-Length",
+			"Upload-Concat",
+		},
+		//AllowHeaders:     []string{"Accept", "Authorization", "Content-Mode", "X-XSRF-Token", "X-JWT"},
 		AllowCredentials: true,
-		ExposeHeaders:    []string{"Authorization"},
-		MaxAge:           300,
-		AllowWebSockets:  false,
+		//ExposeHeaders:          []string{"Authorization"},
+		MaxAge:                 300,
+		AllowWildcard:          true,
+		AllowBrowserExtensions: false,
+		AllowWebSockets:        false,
+		AllowFiles:             true,
 	}))
 	engine.HTMLRender = &tplEngine{}
 
@@ -183,11 +200,15 @@ func (s *Server) newEngine() *gin.Engine {
 
 	staticCtrl := newStaticController(s.cfg.Server.BasePath(), s.version, s.cfg.Auth.Anonymous.Enabled)
 	fileCtrl := newFileController(s.fileBrowserSvc, s.hasher)
+	uploadHandler := newUploadHandler()
+	fmt.Printf("Supported tus extensions: %s\n", uploadHandler.SupportedExtensions())
 
 	engine.NoRoute(staticCtrl.indexHandler)
 	router := engine.Group(s.cfg.Server.BasePath())
 	router.GET("/static/*path", staticCtrl.staticHandler)
 	router.Any("/auth/*path", middleware.NoCache, gin.WrapH(authHandler))
+	router.Any("/uploads/*path", gin.WrapH(http.StripPrefix("/uploads/", uploadHandler)))
+	router.Any("/uploads", gin.WrapH(http.StripPrefix("/uploads", uploadHandler)))
 
 	v1 := router.Group("/api/v1")
 	{
@@ -200,7 +221,6 @@ func (s *Server) newEngine() *gin.Engine {
 			// file handlers
 			protected.GET("/files/:volume/*path", fileCtrl.ListHandler)
 			protected.DELETE("/files/:volume/*path", fileCtrl.DeleteHandler)
-			//protected.GET("/files/volumes/:id/*path", fileCtrl.VolumeListHandler)
 		}
 	}
 
