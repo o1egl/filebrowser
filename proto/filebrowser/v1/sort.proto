@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package filebrowser.v1;
+
+option go_package = "github.com/filebrowser/filebrowser/v3/backend/gen/proto/filebrowser/v1;filebrowser";
+
+enum SortOrder {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  SORT_ORDER_DESC = 0;
+  SORT_ORDER_ASC = 1;
+}

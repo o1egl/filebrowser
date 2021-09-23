@@ -5,15 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/filebrowser/filebrowser/v3/service"
-	"github.com/stretchr/testify/assert"
-
 	"github.com/filebrowser/filebrowser/v3/filesystem"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_sortResources(t *testing.T) {
 	modTime := time.Date(2021, 1, 2, 15, 32, 14, 0, time.UTC)
-	files := []service.File{
+	files := []File{
 		{
 			Path:      "/file1",
 			Name:      "file1",
@@ -60,18 +58,18 @@ func Test_sortResources(t *testing.T) {
 		},
 	}
 	testCases := map[string]struct {
-		resources []service.File
-		groupBy   service.GroupBy
-		sortBy    service.SortBy
-		orderBy   service.OrderBy
-		want      []service.File
+		resources []File
+		groupBy   GroupBy
+		sortBy    SortBy
+		orderBy   OrderBy
+		want      []File
 	}{
 		"group by: type, sort by: name, order: asc": {
 			resources: files,
-			groupBy:   service.GroupByType,
-			sortBy:    service.SortByName,
-			orderBy:   service.OrderByAsc,
-			want: []service.File{
+			groupBy:   GroupByType,
+			sortBy:    SortByName,
+			orderBy:   OrderByAsc,
+			want: []File{
 				{
 					Path:      "/dir1",
 					Name:      "dir1",
@@ -120,10 +118,10 @@ func Test_sortResources(t *testing.T) {
 		},
 		"group by: type, sort by: name, order: desc": {
 			resources: files,
-			groupBy:   service.GroupByType,
-			sortBy:    service.SortByName,
-			orderBy:   service.OrderByDesc,
-			want: []service.File{
+			groupBy:   GroupByType,
+			sortBy:    SortByName,
+			orderBy:   OrderByDesc,
+			want: []File{
 				{
 					Path:      "/dir2",
 					Name:      "dir2",
@@ -172,10 +170,10 @@ func Test_sortResources(t *testing.T) {
 		},
 		"group by: none, sort by: name, order: asc": {
 			resources: files,
-			groupBy:   service.GroupByType,
-			sortBy:    service.SortByName,
-			orderBy:   service.OrderByAsc,
-			want: []service.File{
+			groupBy:   GroupByType,
+			sortBy:    SortByName,
+			orderBy:   OrderByAsc,
+			want: []File{
 				{
 					Path:      "/dir1",
 					Name:      "dir1",
@@ -224,10 +222,10 @@ func Test_sortResources(t *testing.T) {
 		},
 		"group by: none, sort by: size, order: asc": {
 			resources: files,
-			groupBy:   service.GroupByNone,
-			sortBy:    service.SortBySize,
-			orderBy:   service.OrderByDesc,
-			want: []service.File{
+			groupBy:   GroupByNone,
+			sortBy:    SortBySize,
+			orderBy:   OrderByDesc,
+			want: []File{
 				{
 					Path:      "/dir2",
 					Name:      "dir2",
