@@ -22,54 +22,15 @@ func NewFileServiceWithTwirpValidation(base FileService) FileServiceWithTwirpVal
 	}
 }
 
-// CreateDir implements FileService
-func (_d FileServiceWithTwirpValidation) CreateDir(ctx context.Context, cp1 *CreateDirRequest) (cp2 *CreateDirResponse, err error) {
-
-	if _v, _ok := interface{}(cp1).(interface{ Validate() error }); _ok {
-		if err = _v.Validate(); err != nil {
-			err = twirp.NewError(twirp.InvalidArgument, err.Error())
-			return
-		}
-	}
-
-	return _d.FileService.CreateDir(ctx, cp1)
-}
-
-// CreateFile implements FileService
-func (_d FileServiceWithTwirpValidation) CreateFile(ctx context.Context, cp1 *CreateFileRequest) (cp2 *CreateFileResponse, err error) {
-
-	if _v, _ok := interface{}(cp1).(interface{ Validate() error }); _ok {
-		if err = _v.Validate(); err != nil {
-			err = twirp.NewError(twirp.InvalidArgument, err.Error())
-			return
-		}
-	}
-
-	return _d.FileService.CreateFile(ctx, cp1)
-}
-
 // List implements FileService
-func (_d FileServiceWithTwirpValidation) List(ctx context.Context, lp1 *ListRequest) (lp2 *ListResponse, err error) {
+func (_d FileServiceWithTwirpValidation) List(ctx context.Context, fp1 *FileServiceListRequest) (fp2 *FileServiceListResponse, err error) {
 
-	if _v, _ok := interface{}(lp1).(interface{ Validate() error }); _ok {
+	if _v, _ok := interface{}(fp1).(interface{ Validate() error }); _ok {
 		if err = _v.Validate(); err != nil {
 			err = twirp.NewError(twirp.InvalidArgument, err.Error())
 			return
 		}
 	}
 
-	return _d.FileService.List(ctx, lp1)
-}
-
-// Remove implements FileService
-func (_d FileServiceWithTwirpValidation) Remove(ctx context.Context, rp1 *RemoveRequest) (rp2 *RemoveResponse, err error) {
-
-	if _v, _ok := interface{}(rp1).(interface{ Validate() error }); _ok {
-		if err = _v.Validate(); err != nil {
-			err = twirp.NewError(twirp.InvalidArgument, err.Error())
-			return
-		}
-	}
-
-	return _d.FileService.Remove(ctx, rp1)
+	return _d.FileService.List(ctx, fp1)
 }

@@ -7,9 +7,8 @@ package mock_log
 import (
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	log "github.com/filebrowser/filebrowser/v3/log"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockLogger is a mock of Logger interface.

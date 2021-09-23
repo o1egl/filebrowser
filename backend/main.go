@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/filebrowser/filebrowser/v3/cmd/server"
-	"github.com/jessevdk/go-flags"
-	"github.com/pkg/errors"
+	_ "github.com/google/subcommands" // required by wire cmd
+	_ "golang.org/x/mod/semver"       // required by wire cmd
 
 	"github.com/filebrowser/filebrowser/v3/cmd"
+	"github.com/filebrowser/filebrowser/v3/cmd/server"
 	"github.com/filebrowser/filebrowser/v3/log"
+	"github.com/jessevdk/go-flags"
+	"github.com/pkg/errors"
 )
 
 // Opts with all cli commands and flags

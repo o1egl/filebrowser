@@ -33,13 +33,7 @@ const _ = twirp.TwirpPackageMinVersion_8_1_0
 // =====================
 
 type FileService interface {
-	List(context.Context, *ListRequest) (*ListResponse, error)
-
-	CreateFile(context.Context, *CreateFileRequest) (*CreateFileResponse, error)
-
-	CreateDir(context.Context, *CreateDirRequest) (*CreateDirResponse, error)
-
-	Remove(context.Context, *RemoveRequest) (*RemoveResponse, error)
+	List(context.Context, *FileServiceListRequest) (*FileServiceListResponse, error)
 }
 
 // ===========================
@@ -48,7 +42,7 @@ type FileService interface {
 
 type fileServiceProtobufClient struct {
 	client      HTTPClient
-	urls        [4]string
+	urls        [1]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -76,11 +70,8 @@ func NewFileServiceProtobufClient(baseURL string, client HTTPClient, opts ...twi
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(pathPrefix, "filebrowser.v1", "FileService")
-	urls := [4]string{
+	urls := [1]string{
 		serviceURL + "List",
-		serviceURL + "CreateFile",
-		serviceURL + "CreateDir",
-		serviceURL + "Remove",
 	}
 
 	return &fileServiceProtobufClient{
@@ -91,26 +82,26 @@ func NewFileServiceProtobufClient(baseURL string, client HTTPClient, opts ...twi
 	}
 }
 
-func (c *fileServiceProtobufClient) List(ctx context.Context, in *ListRequest) (*ListResponse, error) {
+func (c *fileServiceProtobufClient) List(ctx context.Context, in *FileServiceListRequest) (*FileServiceListResponse, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "FileService")
 	ctx = ctxsetters.WithMethodName(ctx, "List")
 	caller := c.callList
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+		caller = func(ctx context.Context, req *FileServiceListRequest) (*FileServiceListResponse, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRequest)
+					typedReq, ok := req.(*FileServiceListRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*FileServiceListRequest) when calling interceptor")
 					}
 					return c.callList(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListResponse)
+				typedResp, ok := resp.(*FileServiceListResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*FileServiceListResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -120,147 +111,9 @@ func (c *fileServiceProtobufClient) List(ctx context.Context, in *ListRequest) (
 	return caller(ctx, in)
 }
 
-func (c *fileServiceProtobufClient) callList(ctx context.Context, in *ListRequest) (*ListResponse, error) {
-	out := new(ListResponse)
+func (c *fileServiceProtobufClient) callList(ctx context.Context, in *FileServiceListRequest) (*FileServiceListResponse, error) {
+	out := new(FileServiceListResponse)
 	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceProtobufClient) CreateFile(ctx context.Context, in *CreateFileRequest) (*CreateFileResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "CreateFile")
-	caller := c.callCreateFile
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *CreateFileRequest) (*CreateFileResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateFileRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateFileRequest) when calling interceptor")
-					}
-					return c.callCreateFile(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateFileResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateFileResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceProtobufClient) callCreateFile(ctx context.Context, in *CreateFileRequest) (*CreateFileResponse, error) {
-	out := new(CreateFileResponse)
-	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceProtobufClient) CreateDir(ctx context.Context, in *CreateDirRequest) (*CreateDirResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "CreateDir")
-	caller := c.callCreateDir
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *CreateDirRequest) (*CreateDirResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateDirRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateDirRequest) when calling interceptor")
-					}
-					return c.callCreateDir(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateDirResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateDirResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceProtobufClient) callCreateDir(ctx context.Context, in *CreateDirRequest) (*CreateDirResponse, error) {
-	out := new(CreateDirResponse)
-	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[2], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceProtobufClient) Remove(ctx context.Context, in *RemoveRequest) (*RemoveResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "Remove")
-	caller := c.callRemove
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*RemoveRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*RemoveRequest) when calling interceptor")
-					}
-					return c.callRemove(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*RemoveResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*RemoveResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceProtobufClient) callRemove(ctx context.Context, in *RemoveRequest) (*RemoveResponse, error) {
-	out := new(RemoveResponse)
-	ctx, err := doProtobufRequest(ctx, c.client, c.opts.Hooks, c.urls[3], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
 		if !ok {
@@ -281,7 +134,7 @@ func (c *fileServiceProtobufClient) callRemove(ctx context.Context, in *RemoveRe
 
 type fileServiceJSONClient struct {
 	client      HTTPClient
-	urls        [4]string
+	urls        [1]string
 	interceptor twirp.Interceptor
 	opts        twirp.ClientOptions
 }
@@ -309,11 +162,8 @@ func NewFileServiceJSONClient(baseURL string, client HTTPClient, opts ...twirp.C
 	// Build method URLs: <baseURL>[<prefix>]/<package>.<Service>/<Method>
 	serviceURL := sanitizeBaseURL(baseURL)
 	serviceURL += baseServicePath(pathPrefix, "filebrowser.v1", "FileService")
-	urls := [4]string{
+	urls := [1]string{
 		serviceURL + "List",
-		serviceURL + "CreateFile",
-		serviceURL + "CreateDir",
-		serviceURL + "Remove",
 	}
 
 	return &fileServiceJSONClient{
@@ -324,26 +174,26 @@ func NewFileServiceJSONClient(baseURL string, client HTTPClient, opts ...twirp.C
 	}
 }
 
-func (c *fileServiceJSONClient) List(ctx context.Context, in *ListRequest) (*ListResponse, error) {
+func (c *fileServiceJSONClient) List(ctx context.Context, in *FileServiceListRequest) (*FileServiceListResponse, error) {
 	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
 	ctx = ctxsetters.WithServiceName(ctx, "FileService")
 	ctx = ctxsetters.WithMethodName(ctx, "List")
 	caller := c.callList
 	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+		caller = func(ctx context.Context, req *FileServiceListRequest) (*FileServiceListResponse, error) {
 			resp, err := c.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRequest)
+					typedReq, ok := req.(*FileServiceListRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*FileServiceListRequest) when calling interceptor")
 					}
 					return c.callList(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListResponse)
+				typedResp, ok := resp.(*FileServiceListResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*FileServiceListResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -353,147 +203,9 @@ func (c *fileServiceJSONClient) List(ctx context.Context, in *ListRequest) (*Lis
 	return caller(ctx, in)
 }
 
-func (c *fileServiceJSONClient) callList(ctx context.Context, in *ListRequest) (*ListResponse, error) {
-	out := new(ListResponse)
+func (c *fileServiceJSONClient) callList(ctx context.Context, in *FileServiceListRequest) (*FileServiceListResponse, error) {
+	out := new(FileServiceListResponse)
 	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[0], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceJSONClient) CreateFile(ctx context.Context, in *CreateFileRequest) (*CreateFileResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "CreateFile")
-	caller := c.callCreateFile
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *CreateFileRequest) (*CreateFileResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateFileRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateFileRequest) when calling interceptor")
-					}
-					return c.callCreateFile(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateFileResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateFileResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceJSONClient) callCreateFile(ctx context.Context, in *CreateFileRequest) (*CreateFileResponse, error) {
-	out := new(CreateFileResponse)
-	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[1], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceJSONClient) CreateDir(ctx context.Context, in *CreateDirRequest) (*CreateDirResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "CreateDir")
-	caller := c.callCreateDir
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *CreateDirRequest) (*CreateDirResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateDirRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateDirRequest) when calling interceptor")
-					}
-					return c.callCreateDir(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateDirResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateDirResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceJSONClient) callCreateDir(ctx context.Context, in *CreateDirRequest) (*CreateDirResponse, error) {
-	out := new(CreateDirResponse)
-	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[2], in, out)
-	if err != nil {
-		twerr, ok := err.(twirp.Error)
-		if !ok {
-			twerr = twirp.InternalErrorWith(err)
-		}
-		callClientError(ctx, c.opts.Hooks, twerr)
-		return nil, err
-	}
-
-	callClientResponseReceived(ctx, c.opts.Hooks)
-
-	return out, nil
-}
-
-func (c *fileServiceJSONClient) Remove(ctx context.Context, in *RemoveRequest) (*RemoveResponse, error) {
-	ctx = ctxsetters.WithPackageName(ctx, "filebrowser.v1")
-	ctx = ctxsetters.WithServiceName(ctx, "FileService")
-	ctx = ctxsetters.WithMethodName(ctx, "Remove")
-	caller := c.callRemove
-	if c.interceptor != nil {
-		caller = func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
-			resp, err := c.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*RemoveRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*RemoveRequest) when calling interceptor")
-					}
-					return c.callRemove(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*RemoveResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*RemoveResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-	return caller(ctx, in)
-}
-
-func (c *fileServiceJSONClient) callRemove(ctx context.Context, in *RemoveRequest) (*RemoveResponse, error) {
-	out := new(RemoveResponse)
-	ctx, err := doJSONRequest(ctx, c.client, c.opts.Hooks, c.urls[3], in, out)
 	if err != nil {
 		twerr, ok := err.(twirp.Error)
 		if !ok {
@@ -608,15 +320,6 @@ func (s *fileServiceServer) ServeHTTP(resp http.ResponseWriter, req *http.Reques
 	case "List":
 		s.serveList(ctx, resp, req)
 		return
-	case "CreateFile":
-		s.serveCreateFile(ctx, resp, req)
-		return
-	case "CreateDir":
-		s.serveCreateDir(ctx, resp, req)
-		return
-	case "Remove":
-		s.serveRemove(ctx, resp, req)
-		return
 	default:
 		msg := fmt.Sprintf("no handler for path %q", req.URL.Path)
 		s.writeError(ctx, resp, badRouteError(msg, req.Method, req.URL.Path))
@@ -657,7 +360,7 @@ func (s *fileServiceServer) serveListJSON(ctx context.Context, resp http.Respons
 		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
 		return
 	}
-	reqContent := new(ListRequest)
+	reqContent := new(FileServiceListRequest)
 	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
 	if err = unmarshaler.Unmarshal(rawReqBody, reqContent); err != nil {
 		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
@@ -666,20 +369,20 @@ func (s *fileServiceServer) serveListJSON(ctx context.Context, resp http.Respons
 
 	handler := s.FileService.List
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+		handler = func(ctx context.Context, req *FileServiceListRequest) (*FileServiceListResponse, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRequest)
+					typedReq, ok := req.(*FileServiceListRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*FileServiceListRequest) when calling interceptor")
 					}
 					return s.FileService.List(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListResponse)
+				typedResp, ok := resp.(*FileServiceListResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*FileServiceListResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -688,7 +391,7 @@ func (s *fileServiceServer) serveListJSON(ctx context.Context, resp http.Respons
 	}
 
 	// Call service method
-	var respContent *ListResponse
+	var respContent *FileServiceListResponse
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -699,7 +402,7 @@ func (s *fileServiceServer) serveListJSON(ctx context.Context, resp http.Respons
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListResponse and nil error while calling List. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *FileServiceListResponse and nil error while calling List. nil responses are not supported"))
 		return
 	}
 
@@ -739,7 +442,7 @@ func (s *fileServiceServer) serveListProtobuf(ctx context.Context, resp http.Res
 		s.handleRequestBodyError(ctx, resp, "failed to read request body", err)
 		return
 	}
-	reqContent := new(ListRequest)
+	reqContent := new(FileServiceListRequest)
 	if err = proto.Unmarshal(buf, reqContent); err != nil {
 		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
 		return
@@ -747,20 +450,20 @@ func (s *fileServiceServer) serveListProtobuf(ctx context.Context, resp http.Res
 
 	handler := s.FileService.List
 	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *ListRequest) (*ListResponse, error) {
+		handler = func(ctx context.Context, req *FileServiceListRequest) (*FileServiceListResponse, error) {
 			resp, err := s.interceptor(
 				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*ListRequest)
+					typedReq, ok := req.(*FileServiceListRequest)
 					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*ListRequest) when calling interceptor")
+						return nil, twirp.InternalError("failed type assertion req.(*FileServiceListRequest) when calling interceptor")
 					}
 					return s.FileService.List(ctx, typedReq)
 				},
 			)(ctx, req)
 			if resp != nil {
-				typedResp, ok := resp.(*ListResponse)
+				typedResp, ok := resp.(*FileServiceListResponse)
 				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*ListResponse) when calling interceptor")
+					return nil, twirp.InternalError("failed type assertion resp.(*FileServiceListResponse) when calling interceptor")
 				}
 				return typedResp, err
 			}
@@ -769,7 +472,7 @@ func (s *fileServiceServer) serveListProtobuf(ctx context.Context, resp http.Res
 	}
 
 	// Call service method
-	var respContent *ListResponse
+	var respContent *FileServiceListResponse
 	func() {
 		defer ensurePanicResponses(ctx, resp, s.hooks)
 		respContent, err = handler(ctx, reqContent)
@@ -780,547 +483,7 @@ func (s *fileServiceServer) serveListProtobuf(ctx context.Context, resp http.Res
 		return
 	}
 	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *ListResponse and nil error while calling List. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	respBytes, err := proto.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/protobuf")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveCreateFile(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	header := req.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveCreateFileJSON(ctx, resp, req)
-	case "application/protobuf":
-		s.serveCreateFileProtobuf(ctx, resp, req)
-	default:
-		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
-		twerr := badRouteError(msg, req.Method, req.URL.Path)
-		s.writeError(ctx, resp, twerr)
-	}
-}
-
-func (s *fileServiceServer) serveCreateFileJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "CreateFile")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	d := json.NewDecoder(req.Body)
-	rawReqBody := json.RawMessage{}
-	if err := d.Decode(&rawReqBody); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-	reqContent := new(CreateFileRequest)
-	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
-	if err = unmarshaler.Unmarshal(rawReqBody, reqContent); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-
-	handler := s.FileService.CreateFile
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *CreateFileRequest) (*CreateFileResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateFileRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateFileRequest) when calling interceptor")
-					}
-					return s.FileService.CreateFile(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateFileResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateFileResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *CreateFileResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *CreateFileResponse and nil error while calling CreateFile. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	marshaler := &protojson.MarshalOptions{UseProtoNames: !s.jsonCamelCase, EmitUnpopulated: !s.jsonSkipDefaults}
-	respBytes, err := marshaler.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/json")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveCreateFileProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "CreateFile")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	buf, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		s.handleRequestBodyError(ctx, resp, "failed to read request body", err)
-		return
-	}
-	reqContent := new(CreateFileRequest)
-	if err = proto.Unmarshal(buf, reqContent); err != nil {
-		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
-		return
-	}
-
-	handler := s.FileService.CreateFile
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *CreateFileRequest) (*CreateFileResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateFileRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateFileRequest) when calling interceptor")
-					}
-					return s.FileService.CreateFile(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateFileResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateFileResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *CreateFileResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *CreateFileResponse and nil error while calling CreateFile. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	respBytes, err := proto.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/protobuf")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveCreateDir(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	header := req.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveCreateDirJSON(ctx, resp, req)
-	case "application/protobuf":
-		s.serveCreateDirProtobuf(ctx, resp, req)
-	default:
-		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
-		twerr := badRouteError(msg, req.Method, req.URL.Path)
-		s.writeError(ctx, resp, twerr)
-	}
-}
-
-func (s *fileServiceServer) serveCreateDirJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "CreateDir")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	d := json.NewDecoder(req.Body)
-	rawReqBody := json.RawMessage{}
-	if err := d.Decode(&rawReqBody); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-	reqContent := new(CreateDirRequest)
-	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
-	if err = unmarshaler.Unmarshal(rawReqBody, reqContent); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-
-	handler := s.FileService.CreateDir
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *CreateDirRequest) (*CreateDirResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateDirRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateDirRequest) when calling interceptor")
-					}
-					return s.FileService.CreateDir(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateDirResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateDirResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *CreateDirResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *CreateDirResponse and nil error while calling CreateDir. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	marshaler := &protojson.MarshalOptions{UseProtoNames: !s.jsonCamelCase, EmitUnpopulated: !s.jsonSkipDefaults}
-	respBytes, err := marshaler.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/json")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveCreateDirProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "CreateDir")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	buf, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		s.handleRequestBodyError(ctx, resp, "failed to read request body", err)
-		return
-	}
-	reqContent := new(CreateDirRequest)
-	if err = proto.Unmarshal(buf, reqContent); err != nil {
-		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
-		return
-	}
-
-	handler := s.FileService.CreateDir
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *CreateDirRequest) (*CreateDirResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*CreateDirRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*CreateDirRequest) when calling interceptor")
-					}
-					return s.FileService.CreateDir(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*CreateDirResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*CreateDirResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *CreateDirResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *CreateDirResponse and nil error while calling CreateDir. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	respBytes, err := proto.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal proto response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/protobuf")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveRemove(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	header := req.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveRemoveJSON(ctx, resp, req)
-	case "application/protobuf":
-		s.serveRemoveProtobuf(ctx, resp, req)
-	default:
-		msg := fmt.Sprintf("unexpected Content-Type: %q", req.Header.Get("Content-Type"))
-		twerr := badRouteError(msg, req.Method, req.URL.Path)
-		s.writeError(ctx, resp, twerr)
-	}
-}
-
-func (s *fileServiceServer) serveRemoveJSON(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "Remove")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	d := json.NewDecoder(req.Body)
-	rawReqBody := json.RawMessage{}
-	if err := d.Decode(&rawReqBody); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-	reqContent := new(RemoveRequest)
-	unmarshaler := protojson.UnmarshalOptions{DiscardUnknown: true}
-	if err = unmarshaler.Unmarshal(rawReqBody, reqContent); err != nil {
-		s.handleRequestBodyError(ctx, resp, "the json request could not be decoded", err)
-		return
-	}
-
-	handler := s.FileService.Remove
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*RemoveRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*RemoveRequest) when calling interceptor")
-					}
-					return s.FileService.Remove(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*RemoveResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*RemoveResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *RemoveResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *RemoveResponse and nil error while calling Remove. nil responses are not supported"))
-		return
-	}
-
-	ctx = callResponsePrepared(ctx, s.hooks)
-
-	marshaler := &protojson.MarshalOptions{UseProtoNames: !s.jsonCamelCase, EmitUnpopulated: !s.jsonSkipDefaults}
-	respBytes, err := marshaler.Marshal(respContent)
-	if err != nil {
-		s.writeError(ctx, resp, wrapInternal(err, "failed to marshal json response"))
-		return
-	}
-
-	ctx = ctxsetters.WithStatusCode(ctx, http.StatusOK)
-	resp.Header().Set("Content-Type", "application/json")
-	resp.Header().Set("Content-Length", strconv.Itoa(len(respBytes)))
-	resp.WriteHeader(http.StatusOK)
-
-	if n, err := resp.Write(respBytes); err != nil {
-		msg := fmt.Sprintf("failed to write response, %d of %d bytes written: %s", n, len(respBytes), err.Error())
-		twerr := twirp.NewError(twirp.Unknown, msg)
-		ctx = callError(ctx, s.hooks, twerr)
-	}
-	callResponseSent(ctx, s.hooks)
-}
-
-func (s *fileServiceServer) serveRemoveProtobuf(ctx context.Context, resp http.ResponseWriter, req *http.Request) {
-	var err error
-	ctx = ctxsetters.WithMethodName(ctx, "Remove")
-	ctx, err = callRequestRouted(ctx, s.hooks)
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-
-	buf, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		s.handleRequestBodyError(ctx, resp, "failed to read request body", err)
-		return
-	}
-	reqContent := new(RemoveRequest)
-	if err = proto.Unmarshal(buf, reqContent); err != nil {
-		s.writeError(ctx, resp, malformedRequestError("the protobuf request could not be decoded"))
-		return
-	}
-
-	handler := s.FileService.Remove
-	if s.interceptor != nil {
-		handler = func(ctx context.Context, req *RemoveRequest) (*RemoveResponse, error) {
-			resp, err := s.interceptor(
-				func(ctx context.Context, req interface{}) (interface{}, error) {
-					typedReq, ok := req.(*RemoveRequest)
-					if !ok {
-						return nil, twirp.InternalError("failed type assertion req.(*RemoveRequest) when calling interceptor")
-					}
-					return s.FileService.Remove(ctx, typedReq)
-				},
-			)(ctx, req)
-			if resp != nil {
-				typedResp, ok := resp.(*RemoveResponse)
-				if !ok {
-					return nil, twirp.InternalError("failed type assertion resp.(*RemoveResponse) when calling interceptor")
-				}
-				return typedResp, err
-			}
-			return nil, err
-		}
-	}
-
-	// Call service method
-	var respContent *RemoveResponse
-	func() {
-		defer ensurePanicResponses(ctx, resp, s.hooks)
-		respContent, err = handler(ctx, reqContent)
-	}()
-
-	if err != nil {
-		s.writeError(ctx, resp, err)
-		return
-	}
-	if respContent == nil {
-		s.writeError(ctx, resp, twirp.InternalError("received a nil *RemoveResponse and nil error while calling Remove. nil responses are not supported"))
+		s.writeError(ctx, resp, twirp.InternalError("received a nil *FileServiceListResponse and nil error while calling List. nil responses are not supported"))
 		return
 	}
 
@@ -1928,53 +1091,50 @@ func callClientError(ctx context.Context, h *twirp.ClientHooks, err twirp.Error)
 }
 
 var twirpFileDescriptor0 = []byte{
-	// 761 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x8c, 0x55, 0xdd, 0x6e, 0xea, 0x46,
-	0x10, 0x8e, 0xf9, 0x67, 0x38, 0xa1, 0xce, 0x9e, 0x73, 0x54, 0xc7, 0x4d, 0x5a, 0xc7, 0x57, 0x28,
-	0xaa, 0xec, 0x86, 0xa4, 0x52, 0xd5, 0x5e, 0x01, 0x76, 0x2a, 0x4b, 0x10, 0xa2, 0xc5, 0x54, 0x4d,
-	0x6e, 0x2c, 0xc0, 0x0b, 0xb1, 0x82, 0xbd, 0x74, 0xed, 0x50, 0xd1, 0x47, 0xe9, 0x83, 0xf4, 0x19,
-	0xfa, 0x14, 0x7d, 0x90, 0x5e, 0x55, 0x5e, 0x63, 0xf3, 0x13, 0x1a, 0xe5, 0x8a, 0x99, 0x6f, 0xbf,
-	0x99, 0x9d, 0x6f, 0xf8, 0x6c, 0xc3, 0xc5, 0xd4, 0x9b, 0x93, 0x31, 0xa3, 0xbf, 0x87, 0x84, 0xe9,
-	0xcb, 0x2b, 0x3d, 0x4e, 0x9d, 0x90, 0xb0, 0xa5, 0x37, 0x21, 0xda, 0x82, 0xd1, 0x88, 0xa2, 0xfa,
-	0x16, 0x45, 0x5b, 0x5e, 0xc9, 0x5f, 0x2e, 0x47, 0x73, 0xcf, 0x1d, 0x45, 0x44, 0x4f, 0x83, 0x84,
-	0x28, 0x7f, 0x33, 0xa3, 0x74, 0x36, 0x27, 0x3a, 0xcf, 0xc6, 0x2f, 0x53, 0x3d, 0xf2, 0x7c, 0x12,
-	0x46, 0x23, 0x7f, 0x91, 0x10, 0xd4, 0x7f, 0x04, 0xa8, 0xdc, 0x7a, 0x73, 0x62, 0x05, 0x53, 0x8a,
-	0x10, 0x14, 0x16, 0xa3, 0xe8, 0x49, 0x12, 0x14, 0xa1, 0x51, 0xc5, 0x3c, 0x8e, 0xb1, 0x60, 0xe4,
-	0x13, 0x29, 0x97, 0x60, 0x71, 0x1c, 0x63, 0xa1, 0xf7, 0x07, 0x91, 0xf2, 0x8a, 0xd0, 0xc8, 0x63,
-	0x1e, 0xa3, 0x6f, 0xa1, 0x10, 0xad, 0x16, 0x44, 0x2a, 0x28, 0x42, 0xa3, 0xde, 0x94, 0xb4, 0xdd,
-	0x09, 0xb5, 0xf8, 0x0e, 0x7b, 0xb5, 0x20, 0x98, 0xb3, 0xd0, 0x39, 0x80, 0x17, 0x3a, 0xe1, 0xca,
-	0x9f, 0x7b, 0xc1, 0xb3, 0x54, 0x54, 0x84, 0x46, 0x05, 0x57, 0xbd, 0x70, 0x90, 0x00, 0xe8, 0x7b,
-	0xa8, 0xf8, 0xd4, 0x75, 0xe2, 0x61, 0xa5, 0x92, 0x22, 0x34, 0x6a, 0x4d, 0x59, 0x4b, 0x94, 0x68,
-	0xa9, 0x12, 0xcd, 0x4e, 0x95, 0xe0, 0xb2, 0x4f, 0xdd, 0x38, 0x8b, 0xe7, 0xf2, 0xa9, 0x4b, 0xa4,
-	0xb2, 0x22, 0x34, 0x8e, 0x31, 0x8f, 0xd5, 0x3f, 0x05, 0xa8, 0x75, 0xbd, 0x30, 0xc2, 0xe4, 0xb7,
-	0x17, 0x12, 0x46, 0xe8, 0x6c, 0x5b, 0x63, 0xbb, 0xf2, 0x6f, 0xbb, 0xc8, 0xf2, 0x3f, 0x0a, 0xfa,
-	0x5a, 0xed, 0x35, 0x94, 0x43, 0xca, 0x22, 0x67, 0xbc, 0xe2, 0x82, 0xeb, 0x4d, 0xf9, 0x90, 0x90,
-	0x01, 0x65, 0x51, 0x7b, 0x85, 0x4b, 0x21, 0xff, 0x45, 0x3f, 0x00, 0xf0, 0x22, 0xca, 0x5c, 0xc2,
-	0xf8, 0x52, 0xea, 0xcd, 0xd3, 0xfd, 0xba, 0xb8, 0xa6, 0x1f, 0x13, 0x70, 0x35, 0x4c, 0x43, 0x95,
-	0xc1, 0x87, 0x64, 0xb6, 0x70, 0x41, 0x83, 0x90, 0x2f, 0xd1, 0x0b, 0xa6, 0x94, 0x0f, 0x57, 0x3b,
-	0xbc, 0xc4, 0xf8, 0x8f, 0xc2, 0x9c, 0x85, 0x6e, 0xa0, 0x32, 0x79, 0xf2, 0xe6, 0x2e, 0x23, 0x81,
-	0x94, 0x53, 0xf2, 0x6f, 0x56, 0x64, 0x4c, 0x75, 0x06, 0x27, 0x1d, 0x46, 0x46, 0x11, 0x89, 0xcf,
-	0xde, 0xb7, 0x15, 0x19, 0x2a, 0x74, 0x49, 0x18, 0xf3, 0xdc, 0xc4, 0x07, 0x15, 0x9c, 0xe5, 0x48,
-	0x82, 0xf2, 0x84, 0x06, 0x11, 0x09, 0x22, 0xae, 0xfc, 0x03, 0x4e, 0x53, 0xf5, 0x13, 0xa0, 0xed,
-	0x8b, 0x12, 0x89, 0xea, 0x77, 0x20, 0x26, 0xa8, 0xe1, 0xb1, 0x77, 0xdd, 0xae, 0x7e, 0x4c, 0x07,
-	0xe6, 0x15, 0xeb, 0x36, 0x1d, 0x38, 0xc6, 0xc4, 0xa7, 0xcb, 0x77, 0x2a, 0xf8, 0x04, 0xc5, 0x29,
-	0x65, 0x93, 0x74, 0xfc, 0x24, 0x51, 0x45, 0xa8, 0xa7, 0x4d, 0x92, 0xb6, 0x97, 0x7f, 0xad, 0x1f,
-	0x87, 0xd8, 0xaa, 0xe8, 0x14, 0x3e, 0xdf, 0x5a, 0x5d, 0xd3, 0xb1, 0x1f, 0xee, 0x4d, 0x67, 0x78,
-	0x37, 0xb8, 0x37, 0x3b, 0xd6, 0xad, 0x65, 0x1a, 0xe2, 0x11, 0x42, 0x50, 0xdf, 0x1c, 0xb5, 0xbb,
-	0xfd, 0xb6, 0x28, 0xa0, 0x8f, 0xf0, 0xc5, 0x06, 0xfb, 0xc5, 0x32, 0xcc, 0xbe, 0x98, 0xdb, 0x05,
-	0x5b, 0x43, 0xc3, 0xea, 0x8b, 0xf9, 0x5d, 0xd0, 0xea, 0xb5, 0x7e, 0x36, 0xc5, 0xc2, 0x6e, 0x4b,
-	0xdb, 0xfc, 0xd5, 0x16, 0x8b, 0xe8, 0x04, 0x8e, 0x37, 0x98, 0x61, 0x61, 0xb1, 0x84, 0x3e, 0xc3,
-	0xc9, 0x06, 0xe2, 0x23, 0xb5, 0xba, 0x62, 0xf9, 0x72, 0x08, 0xb0, 0x71, 0x66, 0x46, 0x1a, 0xf4,
-	0xb1, 0xed, 0xb4, 0x1f, 0x9c, 0xbb, 0x56, 0xcf, 0x14, 0x8f, 0x5e, 0xc1, 0x03, 0xeb, 0xd1, 0x14,
-	0x85, 0x4c, 0x67, 0x0a, 0xf7, 0xfa, 0x86, 0x63, 0x5b, 0x3d, 0x53, 0xcc, 0x5d, 0xde, 0x40, 0x35,
-	0x33, 0x6e, 0x3c, 0x36, 0xa7, 0xf4, 0xb1, 0x61, 0x62, 0xc7, 0x30, 0x07, 0x9d, 0x64, 0x13, 0x5b,
-	0x60, 0x6b, 0xd0, 0x11, 0x85, 0xe6, 0xdf, 0x39, 0xa8, 0xf1, 0x69, 0x92, 0x97, 0x16, 0xea, 0x40,
-	0x21, 0xb6, 0x39, 0xfa, 0x6a, 0xdf, 0x9e, 0x5b, 0x0f, 0xa6, 0x7c, 0x76, 0xf8, 0x70, 0xfd, 0x7f,
-	0x1f, 0xa1, 0x21, 0xc0, 0xc6, 0x4e, 0xe8, 0x62, 0x9f, 0xfd, 0xca, 0xd3, 0xb2, 0xfa, 0x16, 0x25,
-	0x6b, 0x8b, 0xa1, 0x9a, 0xb9, 0x0b, 0x29, 0x87, 0x4b, 0x36, 0x56, 0x95, 0x2f, 0xde, 0x60, 0x64,
-	0x3d, 0x2d, 0x28, 0x25, 0xbe, 0x42, 0xe7, 0xfb, 0xf4, 0x1d, 0xd3, 0xca, 0x5f, 0xff, 0xdf, 0x71,
-	0xda, 0xaa, 0x6d, 0x3f, 0xe2, 0x99, 0x17, 0x3d, 0xbd, 0x8c, 0xb5, 0x09, 0xf5, 0xf5, 0xed, 0x2f,
-	0xc3, 0xce, 0x57, 0xe2, 0x5a, 0x1f, 0x8f, 0x26, 0xcf, 0x24, 0x70, 0xf5, 0x19, 0x09, 0x92, 0xb7,
-	0xfd, 0x2e, 0xe1, 0xea, 0xa7, 0xad, 0x74, 0x5c, 0xe2, 0x8c, 0xeb, 0xff, 0x02, 0x00, 0x00, 0xff,
-	0xff, 0x26, 0x6e, 0x13, 0x15, 0x6b, 0x06, 0x00, 0x00,
+	// 713 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x54, 0x5d, 0x6f, 0xda, 0x4a,
+	0x10, 0x8d, 0x81, 0xf0, 0x31, 0x28, 0x91, 0xb3, 0xba, 0x49, 0x1c, 0x6e, 0xae, 0xc2, 0xe5, 0xa1,
+	0x45, 0x51, 0x65, 0x2b, 0x24, 0xad, 0xaa, 0x56, 0x7d, 0x08, 0x89, 0x13, 0xa1, 0x42, 0x89, 0x16,
+	0xf2, 0x90, 0xbc, 0x58, 0x06, 0x2f, 0xb0, 0x8a, 0xed, 0x75, 0xbd, 0x0b, 0x2d, 0xfd, 0x0b, 0xfd,
+	0x39, 0xfd, 0x77, 0x55, 0x1f, 0xaa, 0x5d, 0x43, 0x02, 0x01, 0xb5, 0x4f, 0x9e, 0x39, 0x7b, 0xce,
+	0xcc, 0xe8, 0x78, 0x76, 0xe1, 0xff, 0x01, 0xf5, 0x49, 0x2f, 0x66, 0x5f, 0x38, 0x89, 0xad, 0xc9,
+	0x89, 0x25, 0x53, 0x87, 0x93, 0x78, 0x42, 0xfb, 0xc4, 0x8c, 0x62, 0x26, 0x18, 0xda, 0x5e, 0xa0,
+	0x98, 0x93, 0x93, 0xd2, 0xfe, 0xc4, 0xf5, 0xa9, 0xe7, 0x0a, 0x62, 0xcd, 0x83, 0x84, 0x58, 0x3a,
+	0x1a, 0x32, 0x36, 0xf4, 0x89, 0xa5, 0xb2, 0xde, 0x78, 0x60, 0x09, 0x1a, 0x10, 0x2e, 0xdc, 0x20,
+	0x9a, 0x11, 0x0e, 0x9e, 0x35, 0xe3, 0x2c, 0x16, 0xc9, 0x51, 0xe5, 0x7b, 0x0a, 0xf6, 0xae, 0xa8,
+	0x4f, 0x3a, 0x49, 0xeb, 0x26, 0xe5, 0x02, 0x93, 0xcf, 0x63, 0xc2, 0x05, 0x3a, 0x84, 0x4c, 0xe4,
+	0x8a, 0x91, 0xa1, 0x95, 0xb5, 0x6a, 0xa1, 0x9e, 0xff, 0x59, 0xdf, 0x8c, 0xd3, 0xef, 0x34, 0x0b,
+	0x2b, 0x14, 0xbd, 0x81, 0xfc, 0x30, 0x66, 0xe3, 0xc8, 0xe9, 0x4d, 0x8d, 0x54, 0x59, 0xab, 0x6e,
+	0xd7, 0xfe, 0x35, 0x97, 0x07, 0x36, 0x65, 0xdd, 0x6b, 0xc9, 0xa9, 0x4f, 0x71, 0x6e, 0x98, 0x04,
+	0xe8, 0x14, 0x72, 0xb2, 0xbd, 0x94, 0xa5, 0x95, 0xac, 0xb4, 0x4e, 0xd6, 0x61, 0xb1, 0xa8, 0x4f,
+	0x71, 0x96, 0xab, 0x2f, 0x7a, 0x0b, 0xa0, 0x44, 0x2c, 0xf6, 0x48, 0x6c, 0x64, 0x94, 0xee, 0xe0,
+	0xb9, 0x4e, 0x6a, 0xda, 0x92, 0x80, 0x0b, 0x7c, 0x1e, 0xa2, 0x7f, 0x60, 0xd3, 0xa7, 0x01, 0x15,
+	0xc6, 0x66, 0x59, 0xab, 0xa6, 0x71, 0x92, 0xa0, 0x3d, 0xc8, 0xb2, 0xc1, 0x80, 0x13, 0x61, 0x64,
+	0x15, 0x3c, 0xcb, 0x2a, 0x3f, 0x34, 0xd8, 0x5f, 0x71, 0x83, 0x47, 0x2c, 0xe4, 0x04, 0xbd, 0x82,
+	0x0c, 0x0d, 0x07, 0x4c, 0xd9, 0x51, 0xac, 0x19, 0xeb, 0xa6, 0x6e, 0x84, 0x03, 0x86, 0x15, 0x0b,
+	0x9d, 0x41, 0xbe, 0x3f, 0xa2, 0xbe, 0x17, 0x93, 0xd0, 0x48, 0x95, 0xd3, 0x7f, 0x54, 0x3c, 0x32,
+	0xd1, 0x19, 0x64, 0x02, 0x22, 0x5c, 0xe5, 0x4c, 0xb1, 0x56, 0x5e, 0xa7, 0x90, 0x33, 0xb5, 0x88,
+	0x70, 0x2f, 0x5d, 0xe1, 0x62, 0xc5, 0xae, 0xfc, 0xd2, 0x20, 0x3f, 0x2f, 0x86, 0xd0, 0xe2, 0x5f,
+	0x9b, 0xfd, 0x2b, 0x04, 0x99, 0xd0, 0x0d, 0x88, 0xfa, 0x4f, 0x05, 0xac, 0x62, 0x89, 0x71, 0xfa,
+	0x8d, 0xa8, 0x56, 0x69, 0xac, 0x62, 0x74, 0x08, 0x05, 0xf2, 0x55, 0x90, 0x90, 0x53, 0x16, 0x2a,
+	0x97, 0x0b, 0xf8, 0x09, 0x40, 0xaf, 0x21, 0x1f, 0x30, 0xcf, 0x91, 0xcb, 0xa5, 0xdc, 0x2c, 0xd6,
+	0x4a, 0x66, 0xb2, 0x79, 0xe6, 0x7c, 0xf3, 0xcc, 0xee, 0x7c, 0xf3, 0x70, 0x2e, 0x60, 0x9e, 0xcc,
+	0x64, 0xa3, 0x80, 0x79, 0x44, 0x39, 0xbd, 0x85, 0x55, 0x2c, 0xbd, 0x14, 0xd3, 0x88, 0x18, 0x39,
+	0xf5, 0x27, 0xd7, 0x3a, 0xd3, 0x9d, 0x46, 0x04, 0x2b, 0x16, 0xfa, 0x0f, 0x80, 0x72, 0x87, 0x4f,
+	0x03, 0x9f, 0x86, 0x0f, 0x46, 0xbe, 0xac, 0x55, 0xf3, 0xb8, 0x40, 0x79, 0x27, 0x01, 0x2a, 0x1c,
+	0xf4, 0xe7, 0xc6, 0xa0, 0x23, 0x28, 0xca, 0x9a, 0xdc, 0xe9, 0xb3, 0x71, 0x28, 0x94, 0x19, 0x69,
+	0x0c, 0x0a, 0xba, 0x90, 0x88, 0xac, 0xe9, 0xd1, 0x78, 0x7e, 0x9e, 0x52, 0xe7, 0x05, 0x89, 0x24,
+	0xc7, 0x47, 0x50, 0x14, 0x4c, 0xb8, 0xfe, 0xec, 0x3c, 0x31, 0x09, 0x14, 0xa4, 0x08, 0xc7, 0x1f,
+	0x13, 0xcb, 0xe5, 0x94, 0x68, 0x17, 0x76, 0xae, 0x1a, 0x4d, 0xdb, 0xe9, 0xde, 0xdd, 0xd8, 0x0e,
+	0xb6, 0xaf, 0x6f, 0x9b, 0xe7, 0x58, 0xdf, 0x40, 0x3b, 0xb0, 0xf5, 0x04, 0x5f, 0x36, 0xb0, 0xae,
+	0x2d, 0x33, 0x3b, 0x37, 0xf6, 0x45, 0xe3, 0xbc, 0xa9, 0xa7, 0x8e, 0x6f, 0x01, 0x9e, 0x96, 0xfe,
+	0x91, 0xd4, 0x69, 0xe3, 0xae, 0x53, 0xbf, 0x73, 0x3e, 0x9d, 0xb7, 0x6c, 0x7d, 0x63, 0x05, 0xee,
+	0x34, 0xee, 0x6d, 0x5d, 0x43, 0x07, 0xb0, 0xbb, 0x04, 0xb7, 0xda, 0x97, 0x4e, 0xb7, 0xd1, 0xb2,
+	0xf5, 0xd4, 0xf1, 0x07, 0x28, 0x2e, 0x5c, 0x41, 0xb4, 0x07, 0x48, 0x31, 0xaf, 0x71, 0xfb, 0xf6,
+	0x66, 0xa1, 0xf0, 0x0a, 0x2e, 0xa7, 0xd3, 0xb5, 0xda, 0x28, 0x91, 0xcf, 0xee, 0x02, 0xba, 0x83,
+	0x8c, 0xb4, 0x18, 0xbd, 0x58, 0x7b, 0x5f, 0x57, 0x9e, 0x8f, 0xd2, 0xcb, 0xbf, 0xf2, 0x92, 0x8b,
+	0x55, 0xd9, 0xa8, 0x77, 0xef, 0xf1, 0x90, 0x8a, 0xd1, 0xb8, 0x67, 0xf6, 0x59, 0x60, 0x2d, 0x3e,
+	0x56, 0x4b, 0x0f, 0xd7, 0xa9, 0xd5, 0x73, 0xfb, 0x0f, 0x24, 0xf4, 0xac, 0x21, 0x09, 0x93, 0xd7,
+	0x6e, 0x99, 0x70, 0xf2, 0x7e, 0x21, 0xed, 0x65, 0x15, 0xe3, 0xf4, 0x77, 0x00, 0x00, 0x00, 0xff,
+	0xff, 0xf1, 0x49, 0xd3, 0x39, 0x6b, 0x05, 0x00, 0x00,
 }

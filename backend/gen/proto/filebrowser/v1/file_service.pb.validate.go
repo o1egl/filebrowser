@@ -33,6 +33,187 @@ var (
 	_ = ptypes.DynamicAny{}
 )
 
+// Validate checks the field values on FileServiceListRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, an error is returned.
+func (m *FileServiceListRequest) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	// no validation rules for Path
+
+	// no validation rules for GroupBy
+
+	// no validation rules for SortBy
+
+	// no validation rules for SortOrder
+
+	// no validation rules for Limit
+
+	// no validation rules for Offset
+
+	return nil
+}
+
+// FileServiceListRequestValidationError is the validation error returned by
+// FileServiceListRequest.Validate if the designated constraints aren't met.
+type FileServiceListRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileServiceListRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileServiceListRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileServiceListRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileServiceListRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileServiceListRequestValidationError) ErrorName() string {
+	return "FileServiceListRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FileServiceListRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileServiceListRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileServiceListRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileServiceListRequestValidationError{}
+
+// Validate checks the field values on FileServiceListResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, an error is returned.
+func (m *FileServiceListResponse) Validate() error {
+	if m == nil {
+		return nil
+	}
+
+	if v, ok := interface{}(m.GetInfo()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileServiceListResponseValidationError{
+				field:  "Info",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	for idx, item := range m.GetChildren() {
+		_, _ = idx, item
+
+		if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FileServiceListResponseValidationError{
+					field:  fmt.Sprintf("Children[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if v, ok := interface{}(m.GetMeta()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return FileServiceListResponseValidationError{
+				field:  "Meta",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	return nil
+}
+
+// FileServiceListResponseValidationError is the validation error returned by
+// FileServiceListResponse.Validate if the designated constraints aren't met.
+type FileServiceListResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e FileServiceListResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e FileServiceListResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e FileServiceListResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e FileServiceListResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e FileServiceListResponseValidationError) ErrorName() string {
+	return "FileServiceListResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e FileServiceListResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sFileServiceListResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = FileServiceListResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = FileServiceListResponseValidationError{}
+
 // Validate checks the field values on FileInfo with the rules defined in the
 // proto definition for this message. If any rules are violated, an error is returned.
 func (m *FileInfo) Validate() error {
@@ -46,9 +227,7 @@ func (m *FileInfo) Validate() error {
 
 	// no validation rules for Size
 
-	// no validation rules for Type
-
-	// no validation rules for IsSymlink
+	// no validation rules for Extension
 
 	if v, ok := interface{}(m.GetModTime()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
@@ -61,6 +240,10 @@ func (m *FileInfo) Validate() error {
 	}
 
 	// no validation rules for Mode
+
+	// no validation rules for Type
+
+	// no validation rules for IsSymlink
 
 	return nil
 }
@@ -119,187 +302,26 @@ var _ interface {
 	ErrorName() string
 } = FileInfoValidationError{}
 
-// Validate checks the field values on ListRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned.
-func (m *ListRequest) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	// no validation rules for Path
-
-	// no validation rules for SortBy
-
-	// no validation rules for SortOrder
-
-	return nil
-}
-
-// ListRequestValidationError is the validation error returned by
-// ListRequest.Validate if the designated constraints aren't met.
-type ListRequestValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e ListRequestValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e ListRequestValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e ListRequestValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e ListRequestValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e ListRequestValidationError) ErrorName() string { return "ListRequestValidationError" }
-
-// Error satisfies the builtin error interface
-func (e ListRequestValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sListRequest.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = ListRequestValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = ListRequestValidationError{}
-
-// Validate checks the field values on ListResponse with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned.
-func (m *ListResponse) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	if v, ok := interface{}(m.GetInfo()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return ListResponseValidationError{
-				field:  "Info",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
-	}
-
-	for idx, item := range m.GetChildren() {
-		_, _ = idx, item
-
-		if v, ok := interface{}(item).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return ListResponseValidationError{
-					field:  fmt.Sprintf("Children[%v]", idx),
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	}
-
-	return nil
-}
-
-// ListResponseValidationError is the validation error returned by
-// ListResponse.Validate if the designated constraints aren't met.
-type ListResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e ListResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e ListResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e ListResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e ListResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e ListResponseValidationError) ErrorName() string { return "ListResponseValidationError" }
-
-// Error satisfies the builtin error interface
-func (e ListResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sListResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = ListResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = ListResponseValidationError{}
-
-// Validate checks the field values on CreateFileRequest with the rules defined
+// Validate checks the field values on FileListMetaData with the rules defined
 // in the proto definition for this message. If any rules are violated, an
 // error is returned.
-func (m *CreateFileRequest) Validate() error {
+func (m *FileListMetaData) Validate() error {
 	if m == nil {
 		return nil
 	}
 
-	// no validation rules for Path
+	// no validation rules for FilesCount
 
-	// no validation rules for Override
+	// no validation rules for DirsCount
 
-	// no validation rules for Content
+	// no validation rules for TotalCount
 
 	return nil
 }
 
-// CreateFileRequestValidationError is the validation error returned by
-// CreateFileRequest.Validate if the designated constraints aren't met.
-type CreateFileRequestValidationError struct {
+// FileListMetaDataValidationError is the validation error returned by
+// FileListMetaData.Validate if the designated constraints aren't met.
+type FileListMetaDataValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -307,24 +329,22 @@ type CreateFileRequestValidationError struct {
 }
 
 // Field function returns field value.
-func (e CreateFileRequestValidationError) Field() string { return e.field }
+func (e FileListMetaDataValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e CreateFileRequestValidationError) Reason() string { return e.reason }
+func (e FileListMetaDataValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e CreateFileRequestValidationError) Cause() error { return e.cause }
+func (e FileListMetaDataValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e CreateFileRequestValidationError) Key() bool { return e.key }
+func (e FileListMetaDataValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e CreateFileRequestValidationError) ErrorName() string {
-	return "CreateFileRequestValidationError"
-}
+func (e FileListMetaDataValidationError) ErrorName() string { return "FileListMetaDataValidationError" }
 
 // Error satisfies the builtin error interface
-func (e CreateFileRequestValidationError) Error() string {
+func (e FileListMetaDataValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -336,14 +356,14 @@ func (e CreateFileRequestValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sCreateFileRequest.%s: %s%s",
+		"invalid %sFileListMetaData.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = CreateFileRequestValidationError{}
+var _ error = FileListMetaDataValidationError{}
 
 var _ interface {
 	Field() string
@@ -351,339 +371,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = CreateFileRequestValidationError{}
-
-// Validate checks the field values on CreateFileResponse with the rules
-// defined in the proto definition for this message. If any rules are
-// violated, an error is returned.
-func (m *CreateFileResponse) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	return nil
-}
-
-// CreateFileResponseValidationError is the validation error returned by
-// CreateFileResponse.Validate if the designated constraints aren't met.
-type CreateFileResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e CreateFileResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e CreateFileResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e CreateFileResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e CreateFileResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e CreateFileResponseValidationError) ErrorName() string {
-	return "CreateFileResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e CreateFileResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sCreateFileResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = CreateFileResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = CreateFileResponseValidationError{}
-
-// Validate checks the field values on CreateDirRequest with the rules defined
-// in the proto definition for this message. If any rules are violated, an
-// error is returned.
-func (m *CreateDirRequest) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	// no validation rules for Path
-
-	return nil
-}
-
-// CreateDirRequestValidationError is the validation error returned by
-// CreateDirRequest.Validate if the designated constraints aren't met.
-type CreateDirRequestValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e CreateDirRequestValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e CreateDirRequestValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e CreateDirRequestValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e CreateDirRequestValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e CreateDirRequestValidationError) ErrorName() string { return "CreateDirRequestValidationError" }
-
-// Error satisfies the builtin error interface
-func (e CreateDirRequestValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sCreateDirRequest.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = CreateDirRequestValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = CreateDirRequestValidationError{}
-
-// Validate checks the field values on CreateDirResponse with the rules defined
-// in the proto definition for this message. If any rules are violated, an
-// error is returned.
-func (m *CreateDirResponse) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	return nil
-}
-
-// CreateDirResponseValidationError is the validation error returned by
-// CreateDirResponse.Validate if the designated constraints aren't met.
-type CreateDirResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e CreateDirResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e CreateDirResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e CreateDirResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e CreateDirResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e CreateDirResponseValidationError) ErrorName() string {
-	return "CreateDirResponseValidationError"
-}
-
-// Error satisfies the builtin error interface
-func (e CreateDirResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sCreateDirResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = CreateDirResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = CreateDirResponseValidationError{}
-
-// Validate checks the field values on RemoveRequest with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned.
-func (m *RemoveRequest) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	// no validation rules for Path
-
-	// no validation rules for Force
-
-	return nil
-}
-
-// RemoveRequestValidationError is the validation error returned by
-// RemoveRequest.Validate if the designated constraints aren't met.
-type RemoveRequestValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e RemoveRequestValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e RemoveRequestValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e RemoveRequestValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e RemoveRequestValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e RemoveRequestValidationError) ErrorName() string { return "RemoveRequestValidationError" }
-
-// Error satisfies the builtin error interface
-func (e RemoveRequestValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sRemoveRequest.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = RemoveRequestValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = RemoveRequestValidationError{}
-
-// Validate checks the field values on RemoveResponse with the rules defined in
-// the proto definition for this message. If any rules are violated, an error
-// is returned.
-func (m *RemoveResponse) Validate() error {
-	if m == nil {
-		return nil
-	}
-
-	return nil
-}
-
-// RemoveResponseValidationError is the validation error returned by
-// RemoveResponse.Validate if the designated constraints aren't met.
-type RemoveResponseValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e RemoveResponseValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e RemoveResponseValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e RemoveResponseValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e RemoveResponseValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e RemoveResponseValidationError) ErrorName() string { return "RemoveResponseValidationError" }
-
-// Error satisfies the builtin error interface
-func (e RemoveResponseValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sRemoveResponse.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = RemoveResponseValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = RemoveResponseValidationError{}
+} = FileListMetaDataValidationError{}

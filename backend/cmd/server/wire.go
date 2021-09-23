@@ -11,6 +11,7 @@ import (
 	"github.com/filebrowser/filebrowser/v3/domain"
 	"github.com/filebrowser/filebrowser/v3/hash"
 	"github.com/filebrowser/filebrowser/v3/rest/api"
+	httpServer "github.com/filebrowser/filebrowser/v3/server"
 	"github.com/filebrowser/filebrowser/v3/service"
 	"github.com/filebrowser/filebrowser/v3/store/sql"
 	"github.com/google/wire"
@@ -27,6 +28,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config, version domain.Ve
 		sql.Set,
 		service.Set,
 		api.NewServer,
+		httpServer.Set,
 		newApp,
 	)
 	return &app{}, nil

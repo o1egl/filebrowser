@@ -8,9 +8,8 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gomock "github.com/golang/mock/gomock"
-
 	store "github.com/filebrowser/filebrowser/v3/store"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockUserStore is a mock of UserStore interface.
