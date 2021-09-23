@@ -1,6 +1,9 @@
 {
   "dependencies": {
+    "@protobuf-ts/plugin": "^2.0.4-alpha.0",
     "commitlint": "^8.3.5",
-    "standard-version": "^8.0.0"
+    "standard-version": "^8.0.0",
+    "ts-proto": "^1.83.1",
+    "twirp-ts": "^2.3.7"
   }
 }

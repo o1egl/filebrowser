@@ -2,7 +2,7 @@
 
 set -euf -o pipefail
 
-readonly version=3.15.6
+readonly version=3.18.0
 
 case "$(uname -s)" in
   Linux*)

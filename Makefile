@@ -24,6 +24,24 @@ proto: $(protoc) $(protoc-gen-go) $(protoc-gen-validate) $(protoc-gen-twirp) $(g
 	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/file/v1 -i FileService -t twirp_validate -g -o ./gen/proto/file/v1/file_service.validate.go
 	$Q cd ./backend && $(gowrap) gen -p ./gen/proto/user/v1 -i UserService -t twirp_validate -g -o ./gen/proto/user/v1/user_service.validate.go
 
+## proto-ts: Generate ts rpc client proto files
+TS_OUT = "./frontend/my-app/gen/proto"
+.PHONY: proto-ts
+proto-ts: $(protoc) $(protoc-gen-twirp_ts) $(protoc-gen-ts_proto)
+	$Q rm -rf $(TS_OUT)
+	$Q mkdir -p $(TS_OUT)
+	$Q for file in $$(find ./proto -name '*.proto' -not -path "*github.com*"); do \
+  		$(protoc) -I ./proto -I ./tools/protoc/include \
+  			--ts_proto_out=$(TS_OUT) \
+  			--ts_proto_opt=esModuleInterop=true \
+  			--ts_proto_opt=env=browser \
+            --ts_proto_opt=outputClientImpl=false \
+  			--twirp_ts_out=$(TS_OUT) \
+  			--twirp_ts_opt="ts_proto" \
+  			--twirp_ts_opt=client_only \
+  			$$file; \
+  	done
+
 ## lint: Run all lints
 .PHONY: lint
 lint: lint-commits | ; $(info $(M) running linters…)

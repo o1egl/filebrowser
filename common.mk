@@ -75,6 +75,17 @@ $(TOOLS_JS_DEPS): $(TOOLS_DIR)/package.json $(TOOLS_DIR)/yarn.lock
 #	$Q find ${TOOLS_DIR}/node_modules -type f | xargs touch -am
 	$Q touch -am $@
 
+
+protoc-gen-twirp_ts=$(TOOLS_BIN)/protoc-gen-twirp_ts
+$(protoc-gen-twirp_ts): $(TOOLS_JS_DEPS)
+	$Q ln -sf $(TOOLS_DIR)/node_modules/.bin/protoc-gen-twirp_ts $@
+	$Q touch -am $@
+
+protoc-gen-ts_proto=$(TOOLS_BIN)/protoc-gen-ts_proto
+$(protoc-gen-ts_proto): $(TOOLS_JS_DEPS)
+	$Q ln -sf $(TOOLS_DIR)/node_modules/.bin/protoc-gen-ts_proto $@
+	$Q touch -am $@
+
 standard-version=$(TOOLS_BIN)/standard-version
 $(standard-version): $(TOOLS_JS_DEPS)
 	$Q ln -sf $(TOOLS_DIR)/node_modules/.bin/standard-version $@
