@@ -1,0 +1,52 @@
+version: 3
+
+tasks:
+  all:
+    desc: Install build dependencies
+    cmds:
+      - task: go-deps
+      - task: js-deps
+
+  go-deps:
+    cmds:
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/abice/go-enum }
+      - task: install-go-dep
+        vars: { PACKAGE: golang.org/x/tools/cmd/goimports }
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/golangci/golangci-lint/cmd/golangci-lint }
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/golang/mock/mockgen }
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/bufbuild/buf/cmd/buf }
+      - task: install-go-dep
+        vars: { PACKAGE: google.golang.org/protobuf/cmd/protoc-gen-go }
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go }
+
+  install-go-dep:
+    vars:
+      BIN:
+        sh: basename "{{ .PACKAGE }}"
+    label: "install-{{.BIN}}"
+    cmds:
+      - go build -o bin/{{ .BIN }}  "{{ .PACKAGE }}"
+    sources:
+      - go.mod
+    generates:
+      - bin/{{ .BIN }}
+
+  js-deps:
+    vars:
+      PWD:
+        sh: pwd
+    cmds:
+      - yarn install --frozen-lockfile
+      - ln -sf {{.PWD}}/node_modules/.bin/standard-version {{.PWD}}/bin/standard-version
+      - ln -sf {{.PWD}}/node_modules/.bin/commitlint {{.PWD}}/bin/commitlint
+    sources:
+      - package.json
+      - yarn.lock
+    generates:
+      - bin/standard-version
+      - bin/commitlint

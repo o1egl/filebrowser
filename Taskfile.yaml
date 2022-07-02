@@ -1,0 +1,72 @@
+version: '3'
+
+includes:
+  deps:
+    taskfile: ./tools/Taskfile.yaml
+    dir: ./tools
+
+vars:
+  PREFIX: env PATH="./tools/bin:$PATH"
+
+tasks:
+  blah:
+    #deps: [proto:backend, proto:frontend]
+    cmds:
+      - echo "$PATH"
+
+  build:
+    desc: Build the app
+    cmds:
+      - task: build:frontend
+      - task: build:backend
+      - mkdir bin
+      - mv backend/filebrowser bin/filebrowser
+
+  build:backend:
+    desc: Build backend
+    dir: ./backend
+    cmds:
+      - task build
+
+  build:frontend:
+    desc: Build frontend
+    dir: ./frontend
+    cmds:
+      - task build
+
+  lint:
+    desc: Run all lints
+    deps:
+      - lint:proto
+      - lint:commits
+      - lint:backend
+
+  lint:backend:
+    desc: Run backend linters
+    dir: ./backend
+    cmds:
+      - task backend:lint
+
+  lint:proto:
+    desc: Run proto linter
+    deps: [deps:all]
+    cmds:
+      - ./tools/bin/buf lint
+
+  lint:commits:
+    desc: Run commits linter
+    deps: [deps:all]
+    cmds:
+      - ./scripts/commitlint.sh
+
+  bump-version:
+    desc: Bump version
+    deps: [deps:all]
+    cmds:
+      - ./scripts/bump_version.sh
+
+  proto:
+    deps: [deps:all]
+    desc: Generate protos
+    cmds:
+      - ./tools/bin/buf generate
