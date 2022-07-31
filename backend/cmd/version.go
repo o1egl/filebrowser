@@ -2,26 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"runtime/debug"
 
 	"github.com/spf13/cobra"
+
+	"github.com/filebrowser/filebrowser/buildinfo"
 )
 
-var revision = "dev"
+func init() {
+	rootCmd.AddCommand(versionCmd)
+}
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print app version",
 	Run: func(cmd *cobra.Command, args []string) {
-		buildInfo, ok := debug.ReadBuildInfo()
-		if !ok {
-
-		}
-		fmt.Printf("File Browser %s\n", buildInfo.Main.Version)
+		fmt.Printf("%s\n", buildinfo.Revision())
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
 }

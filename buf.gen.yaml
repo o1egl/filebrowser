@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/filebrowser/filebrowser/backend/gen/proto
+    default: github.com/filebrowser/filebrowser/gen/proto
 plugins:
   - name: go
     path: ./tools/bin/protoc-gen-go

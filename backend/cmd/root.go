@@ -14,24 +14,6 @@ import (
 
 var cfgFile string
 
-// rootCmd represents the base command when called without any subcommands
-var rootCmd = &cobra.Command{
-	Use:   "filebrowser",
-	Short: "Web based file manager",
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
-}
-
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute() {
-	err := rootCmd.Execute()
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
 func init() {
 	cobra.OnInitialize(initConfig)
 
@@ -43,6 +25,27 @@ func init() {
 	rootCmd.PersistentFlags().Int("log-file-age", 1, "maximum number of days to retain old log files")
 	rootCmd.PersistentFlags().Int("log-file-backups", 5, "the maximum number of old log files to retain")
 	rootCmd.PersistentFlags().Bool("log-file-compress", false, "determines if the rotated log files should be compressed")
+}
+
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "filebrowser",
+	Short: "Web based file manager",
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := cmd.Help(); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	},
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(1)
+	}
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -98,7 +101,6 @@ func bindFlags(cmd *cobra.Command, prefix string) {
 	for _, subCmd := range cmd.Commands() {
 		bindFlags(subCmd, prefix)
 	}
-
 }
 
 func NewLogger() (log.Logger, error) {

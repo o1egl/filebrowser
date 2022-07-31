@@ -1,0 +1,146 @@
+//go:generate ../../tools/bin/go-enum --marshal --nocase --names --file $GOFILE
+package config
+
+import (
+	"net/url"
+	"time"
+)
+
+type Config struct {
+	Root   string `yaml:"root"` // server root folder
+	Secret string `yaml:"secret"`
+	Locale string `yaml:"locale"` // default locale
+	Upload Upload `yaml:"upload"`
+	Server Server `yaml:"server"` // http server config
+	Auth   Auth   `yaml:"auth"`
+	Store  Store  `yaml:"store"`
+}
+
+func (c *Config) Validate() error {
+	return nil
+}
+
+type Upload struct {
+	Path    string `yaml:"path"`
+	MaxSize int64  `yaml:"max_size"`
+}
+
+type Server struct {
+	AccessLog bool   `yaml:"access_log"`
+	URL       string `yaml:"url"` // file browser url. required for ssl and oauth
+	Bind      string `yaml:"bind"`
+	SSL       SSL    `yaml:"ssl"`
+}
+
+// BasePath returns base path for the server.
+// For example for serverURL https://filebrowser.org/base/path it should return /base/path
+func (s Server) BasePath() string {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return "/"
+	}
+	return u.Path
+}
+
+// Hostname returns hostname for the server.
+// For example for serverURL https://filebrowser.org:443 it should return filebrowser.org
+func (s Server) Hostname() string {
+	u, err := url.Parse(s.URL)
+	if err != nil {
+		return ""
+	}
+	return u.Hostname()
+}
+
+type Auth struct {
+	TTL struct {
+		JWT    time.Duration `yaml:"jwt"`    // jwt TTL
+		Cookie time.Duration `yaml:"cookie"` // auth cookie TTL
+	} `yaml:"ttl"`
+	Google    OAuth     `yaml:"google"`   // google oauth
+	Github    OAuth     `yaml:"github"`   // github oauth
+	Facebook  OAuth     `yaml:"facebook"` // facebook oauth
+	Twitter   OAuth     `yaml:"twitter"`  // twitter oauth
+	Dev       bool      `yaml:"dev"`      // enable dev (local) oauth2
+	User      User      `yaml:"user"`
+	Anonymous Anonymous `yaml:"anonymous"`
+}
+
+type OAuth struct {
+	CID  string `yaml:"cid"`  // OAuth client ID
+	CSEC string `yaml:"csec"` // OAuth client secret
+}
+
+type User struct {
+	GenerateHome bool       // if set, personal home folder will be generated
+	Home         HomeVolume `yaml:"home"` // default user home
+}
+
+type HomeVolume struct {
+	Path        string            `yaml:"path"` // must be defined for static and generated volume types
+	Permissions VolumePermissions `yaml:"permissions"`
+}
+
+type VolumePermissions struct {
+	Read   bool `yaml:"read"`
+	Create bool `yaml:"create"`
+	Modify bool `yaml:"modify"`
+	Delete bool `yaml:"delete"`
+	Share  bool `yaml:"share"`
+}
+
+type Anonymous struct {
+	Enabled bool       `yaml:"enabled"`
+	Home    HomeVolume `yaml:"home"` // home path
+}
+
+/*
+ENUM(
+sqlite
+mysql
+postgres
+)
+*/
+type StoreType int
+
+type Store struct {
+	Type     StoreType     `yaml:"type"` // storage backend type
+	SQLite   SQLiteStore   `yaml:"sqlite"`
+	Mysql    MysqlStore    `yaml:"mysql"`
+	Postgres PostgresStore `yaml:"postgres"`
+}
+
+type SQLiteStore struct {
+	File string `yaml:"file"` // sqlite file location
+}
+
+type MysqlStore struct {
+	DSN string `yaml:"dsn"` // mysql dsn (username:password@protocol(address)/dbname)
+}
+
+type PostgresStore struct {
+	DSN string `yaml:"dsn"` // postgres dsn (postgres://username:password@address/dbname?sslmode=disable)
+}
+
+/*
+ENUM(
+none
+static
+auto
+)
+*/
+type SSLMode int
+
+type SSL struct {
+	Mode SSLMode `yaml:"mode"`
+	Bind string  `yaml:"port"` // server addr
+	Cert string  `yaml:"cert"` // path to cert.pem file
+	Key  string  `yaml:"key"`  // path to key.pem file
+	ACME ACME    `yaml:"acme"` // acme config
+}
+
+type ACME struct {
+	Path  string   `yaml:"path"`  // dir where certificates will be stored by autocert manager
+	Email string   `yaml:"email"` // admin email for certificate notifications
+	FQDNs []string `yaml:"fqdns"` // FQDN(s) for ACME certificates
+}
