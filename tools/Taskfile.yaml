@@ -1,28 +1,57 @@
 version: 3
 
+env:
+  TOOLS_BIN:
+    sh: echo "$(pwd)/bin"
+
 tasks:
   all:
     desc: Install build dependencies
     cmds:
-      - task: go-deps
-      - task: js-deps
+      - task: go-enum
+      - task: goimports
+      - task: golangci-lint
+      - task: mockgen
+      - task: buf
+      - task: protoc-gen-go
+      - task: protoc-gen-connect-go
+      - task: standard-version
+      - task: commitlint
 
-  go-deps:
+
+  go-enum:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/abice/go-enum }
+  goimports:
+    cmds:
       - task: install-go-dep
         vars: { PACKAGE: golang.org/x/tools/cmd/goimports }
+  golangci-lint:
+    cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/golangci/golangci-lint/cmd/golangci-lint }
+  mockgen:
+    cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/golang/mock/mockgen }
+  buf:
+    cmds:
       - task: install-go-dep
-        vars: { PACKAGE: github.com/bufbuild/buf/cmd/buf }
+        vars: { PACKAGE: github.com/bufbuild/buf/cmd/buf  }
+  protoc-gen-go:
+    cmds:
       - task: install-go-dep
         vars: { PACKAGE: google.golang.org/protobuf/cmd/protoc-gen-go }
+  protoc-gen-connect-go:
+    cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go }
+  standard-version:
+    deps: [install-js-deps]
+  commitlint:
+    deps: [install-js-deps]
+
 
   install-go-dep:
     vars:
@@ -36,7 +65,8 @@ tasks:
     generates:
       - bin/{{ .BIN }}
 
-  js-deps:
+
+  install-js-deps:
     vars:
       PWD:
         sh: pwd

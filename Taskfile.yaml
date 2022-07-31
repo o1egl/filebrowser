@@ -2,18 +2,10 @@ version: '3'
 
 includes:
   deps:
-    taskfile: ./tools/Taskfile.yaml
+    taskfile: ./tools
     dir: ./tools
 
-vars:
-  PREFIX: env PATH="./tools/bin:$PATH"
-
 tasks:
-  blah:
-    #deps: [proto:backend, proto:frontend]
-    cmds:
-      - echo "$PATH"
-
   build:
     desc: Build the app
     cmds:
@@ -45,13 +37,13 @@ tasks:
     desc: Run backend linters
     dir: ./backend
     cmds:
-      - task backend:lint
+      - task lint
 
   lint:proto:
     desc: Run proto linter
-    deps: [deps:all]
+    deps: [deps:buf]
     cmds:
-      - ./tools/bin/buf lint
+      - ${TOOLS_BIN}/buf lint
 
   lint:commits:
     desc: Run commits linter
@@ -69,4 +61,4 @@ tasks:
     deps: [deps:all]
     desc: Generate protos
     cmds:
-      - ./tools/bin/buf generate
+      - ${TOOLS_BIN}/buf generate

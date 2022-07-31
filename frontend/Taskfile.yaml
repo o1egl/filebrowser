@@ -1,0 +1,10 @@
+version: '3'
+
+includes:
+  deps:
+    taskfile: ../tools/Taskfile.yaml
+    dir: ../tools
+
+tasks:
+  build:
+    desc: Build frontend

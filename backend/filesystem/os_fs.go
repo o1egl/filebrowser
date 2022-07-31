@@ -51,7 +51,7 @@ func (o *OSFS) List(fPath string) ([]File, error) {
 	return files, nil
 }
 
-func (o *OSFS) Open(fPath string) (io.ReadCloser, error) {
+func (o *OSFS) Read(fPath string) (io.ReadCloser, error) {
 	return os.Open(fPath)
 }
 

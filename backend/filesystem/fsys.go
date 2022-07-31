@@ -1,4 +1,4 @@
-//go:generate ../../tools/bin/go-enum --marshal --nocase --names --file $GOFILE
+//go:generate ${TOOLS_BIN}/go-enum --marshal --nocase --names --file $GOFILE
 package filesystem
 
 import (
@@ -28,7 +28,7 @@ type FS interface {
 	Remove(fPath string) error
 	Stat(fPath string) (File, error)
 	List(fPath string) ([]File, error)
-	Open(fPath string) (io.ReadCloser, error)
+	Read(fPath string) (io.ReadCloser, error)
 	Write(fPath string, reader io.Reader) error
 	Move(src, dst string) error
 }

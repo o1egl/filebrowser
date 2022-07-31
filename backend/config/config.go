@@ -21,8 +21,9 @@ func (c *Config) Validate() error {
 }
 
 type Upload struct {
-	Path    string `yaml:"path"`
-	MaxSize int64  `yaml:"max_size"`
+	Path      string `yaml:"path"`
+	ChunkSize int64  `yaml:"chunk_size"`
+	MaxSize   int64  `yaml:"max_size"`
 }
 
 type Server struct {
@@ -52,33 +53,13 @@ func (s Server) Hostname() string {
 	return u.Hostname()
 }
 
+type AuthTTL struct {
+	JWT    time.Duration `yaml:"jwt"`    // jwt TTL
+	Cookie time.Duration `yaml:"cookie"` // auth cookie TTL
+}
+
 type Auth struct {
-	TTL struct {
-		JWT    time.Duration `yaml:"jwt"`    // jwt TTL
-		Cookie time.Duration `yaml:"cookie"` // auth cookie TTL
-	} `yaml:"ttl"`
-	Google    OAuth     `yaml:"google"`   // google oauth
-	Github    OAuth     `yaml:"github"`   // github oauth
-	Facebook  OAuth     `yaml:"facebook"` // facebook oauth
-	Twitter   OAuth     `yaml:"twitter"`  // twitter oauth
-	Dev       bool      `yaml:"dev"`      // enable dev (local) oauth2
-	User      User      `yaml:"user"`
-	Anonymous Anonymous `yaml:"anonymous"`
-}
-
-type OAuth struct {
-	CID  string `yaml:"cid"`  // OAuth client ID
-	CSEC string `yaml:"csec"` // OAuth client secret
-}
-
-type User struct {
-	GenerateHome bool       // if set, personal home folder will be generated
-	Home         HomeVolume `yaml:"home"` // default user home
-}
-
-type HomeVolume struct {
-	Path        string            `yaml:"path"` // must be defined for static and generated volume types
-	Permissions VolumePermissions `yaml:"permissions"`
+	TTL AuthTTL `yaml:"ttl"`
 }
 
 type VolumePermissions struct {
@@ -87,11 +68,6 @@ type VolumePermissions struct {
 	Modify bool `yaml:"modify"`
 	Delete bool `yaml:"delete"`
 	Share  bool `yaml:"share"`
-}
-
-type Anonymous struct {
-	Enabled bool       `yaml:"enabled"`
-	Home    HomeVolume `yaml:"home"` // home path
 }
 
 /*
