@@ -4,7 +4,7 @@
 // Build Date:
 // Built By:
 
-package filesystem
+package fsys
 
 import (
 	"fmt"

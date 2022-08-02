@@ -1,9 +1,17 @@
 //go:generate ${TOOLS_BIN}/go-enum --marshal --nocase --names --file $GOFILE
-package filesystem
+package fsys
 
 import (
+	"errors"
 	"io"
+	"os"
 	"time"
+)
+
+var (
+	ErrNotExist        = os.ErrNotExist
+	ErrExist           = os.ErrExist
+	ErrNotARegularFile = errors.New("not a regular file")
 )
 
 /*
@@ -29,6 +37,6 @@ type FS interface {
 	Stat(fPath string) (File, error)
 	List(fPath string) ([]File, error)
 	Read(fPath string) (io.ReadCloser, error)
-	Write(fPath string, reader io.Reader) error
+	Write(fPath string, reader io.Reader) (written int64, err error)
 	Move(src, dst string) error
 }
