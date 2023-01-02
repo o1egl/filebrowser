@@ -1,6 +1,6 @@
 module github.com/filebrowser/filebrowser
 
-go 1.18
+go 1.19
 
 require (
 	github.com/AlekSi/pointer v1.2.0

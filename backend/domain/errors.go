@@ -59,8 +59,8 @@ type AccessDeniedError struct {
 	object  string
 }
 
-func NewAccessDeniedError(subject string, object string) *AccessDeniedError {
-	return &AccessDeniedError{subject: subject, object: object}
+func NewAccessDeniedError(subject string, object string) AccessDeniedError {
+	return AccessDeniedError{subject: subject, object: object}
 }
 
 func (a AccessDeniedError) Error() string {

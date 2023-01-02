@@ -82,7 +82,7 @@ func (x *Format) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _FormatErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+var errFormatNilPtr = errors.New("value pointer is nil") // one per type for package clashes
 
 // Scan implements the Scanner interface.
 func (x *Format) Scan(value interface{}) (err error) {
@@ -106,7 +106,7 @@ func (x *Format) Scan(value interface{}) (err error) {
 		*x = Format(v)
 	case *Format:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = *v
 	case uint:
@@ -115,34 +115,34 @@ func (x *Format) Scan(value interface{}) (err error) {
 		*x = Format(v)
 	case *int:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = Format(*v)
 	case *int64:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = Format(*v)
 	case float64: // json marshals everything as a float64 if it's a number
 		*x = Format(v)
 	case *float64: // json marshals everything as a float64 if it's a number
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = Format(*v)
 	case *uint:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = Format(*v)
 	case *uint64:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x = Format(*v)
 	case *string:
 		if v == nil {
-			return _FormatErrNilPtr
+			return errFormatNilPtr
 		}
 		*x, err = ParseFormat(*v)
 	}
@@ -242,7 +242,7 @@ func (x *Level) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _LevelErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+var errLevelNilPtr = errors.New("value pointer is nil") // one per type for package clashes
 
 // Scan implements the Scanner interface.
 func (x *Level) Scan(value interface{}) (err error) {
@@ -266,7 +266,7 @@ func (x *Level) Scan(value interface{}) (err error) {
 		*x = Level(v)
 	case *Level:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = *v
 	case uint:
@@ -275,34 +275,34 @@ func (x *Level) Scan(value interface{}) (err error) {
 		*x = Level(v)
 	case *int:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = Level(*v)
 	case *int64:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = Level(*v)
 	case float64: // json marshals everything as a float64 if it's a number
 		*x = Level(v)
 	case *float64: // json marshals everything as a float64 if it's a number
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = Level(*v)
 	case *uint:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = Level(*v)
 	case *uint64:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x = Level(*v)
 	case *string:
 		if v == nil {
-			return _LevelErrNilPtr
+			return errLevelNilPtr
 		}
 		*x, err = ParseLevel(*v)
 	}

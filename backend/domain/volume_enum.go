@@ -14,61 +14,61 @@ import (
 )
 
 const (
-	// VolumeTypeFs is a VolumeType of type Fs.
-	VolumeTypeFs VolumeType = iota
+	// BackendTypeOs is a BackendType of type Os.
+	BackendTypeOs BackendType = iota
 )
 
-const _VolumeTypeName = "fs"
+const _BackendTypeName = "os"
 
-var _VolumeTypeNames = []string{
-	_VolumeTypeName[0:2],
+var _BackendTypeNames = []string{
+	_BackendTypeName[0:2],
 }
 
-// VolumeTypeNames returns a list of possible string values of VolumeType.
-func VolumeTypeNames() []string {
-	tmp := make([]string, len(_VolumeTypeNames))
-	copy(tmp, _VolumeTypeNames)
+// BackendTypeNames returns a list of possible string values of BackendType.
+func BackendTypeNames() []string {
+	tmp := make([]string, len(_BackendTypeNames))
+	copy(tmp, _BackendTypeNames)
 	return tmp
 }
 
-var _VolumeTypeMap = map[VolumeType]string{
-	VolumeTypeFs: _VolumeTypeName[0:2],
+var _BackendTypeMap = map[BackendType]string{
+	BackendTypeOs: _BackendTypeName[0:2],
 }
 
 // String implements the Stringer interface.
-func (x VolumeType) String() string {
-	if str, ok := _VolumeTypeMap[x]; ok {
+func (x BackendType) String() string {
+	if str, ok := _BackendTypeMap[x]; ok {
 		return str
 	}
-	return fmt.Sprintf("VolumeType(%d)", x)
+	return fmt.Sprintf("BackendType(%d)", x)
 }
 
-var _VolumeTypeValue = map[string]VolumeType{
-	_VolumeTypeName[0:2]:                  VolumeTypeFs,
-	strings.ToLower(_VolumeTypeName[0:2]): VolumeTypeFs,
+var _BackendTypeValue = map[string]BackendType{
+	_BackendTypeName[0:2]:                  BackendTypeOs,
+	strings.ToLower(_BackendTypeName[0:2]): BackendTypeOs,
 }
 
-// ParseVolumeType attempts to convert a string to a VolumeType.
-func ParseVolumeType(name string) (VolumeType, error) {
-	if x, ok := _VolumeTypeValue[name]; ok {
+// ParseBackendType attempts to convert a string to a BackendType.
+func ParseBackendType(name string) (BackendType, error) {
+	if x, ok := _BackendTypeValue[name]; ok {
 		return x, nil
 	}
 	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
-	if x, ok := _VolumeTypeValue[strings.ToLower(name)]; ok {
+	if x, ok := _BackendTypeValue[strings.ToLower(name)]; ok {
 		return x, nil
 	}
-	return VolumeType(0), fmt.Errorf("%s is not a valid VolumeType, try [%s]", name, strings.Join(_VolumeTypeNames, ", "))
+	return BackendType(0), fmt.Errorf("%s is not a valid BackendType, try [%s]", name, strings.Join(_BackendTypeNames, ", "))
 }
 
 // MarshalText implements the text marshaller method.
-func (x VolumeType) MarshalText() ([]byte, error) {
+func (x BackendType) MarshalText() ([]byte, error) {
 	return []byte(x.String()), nil
 }
 
 // UnmarshalText implements the text unmarshaller method.
-func (x *VolumeType) UnmarshalText(text []byte) error {
+func (x *BackendType) UnmarshalText(text []byte) error {
 	name := string(text)
-	tmp, err := ParseVolumeType(name)
+	tmp, err := ParseBackendType(name)
 	if err != nil {
 		return err
 	}
@@ -76,12 +76,12 @@ func (x *VolumeType) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _VolumeTypeErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+var errBackendTypeNilPtr = errors.New("value pointer is nil") // one per type for package clashes
 
 // Scan implements the Scanner interface.
-func (x *VolumeType) Scan(value interface{}) (err error) {
+func (x *BackendType) Scan(value interface{}) (err error) {
 	if value == nil {
-		*x = VolumeType(0)
+		*x = BackendType(0)
 		return
 	}
 
@@ -89,62 +89,62 @@ func (x *VolumeType) Scan(value interface{}) (err error) {
 	// driver.Value values at the top of the list for expediency
 	switch v := value.(type) {
 	case int64:
-		*x = VolumeType(v)
+		*x = BackendType(v)
 	case string:
-		*x, err = ParseVolumeType(v)
+		*x, err = ParseBackendType(v)
 	case []byte:
-		*x, err = ParseVolumeType(string(v))
-	case VolumeType:
+		*x, err = ParseBackendType(string(v))
+	case BackendType:
 		*x = v
 	case int:
-		*x = VolumeType(v)
-	case *VolumeType:
+		*x = BackendType(v)
+	case *BackendType:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
 		*x = *v
 	case uint:
-		*x = VolumeType(v)
+		*x = BackendType(v)
 	case uint64:
-		*x = VolumeType(v)
+		*x = BackendType(v)
 	case *int:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x = VolumeType(*v)
+		*x = BackendType(*v)
 	case *int64:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x = VolumeType(*v)
+		*x = BackendType(*v)
 	case float64: // json marshals everything as a float64 if it's a number
-		*x = VolumeType(v)
+		*x = BackendType(v)
 	case *float64: // json marshals everything as a float64 if it's a number
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x = VolumeType(*v)
+		*x = BackendType(*v)
 	case *uint:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x = VolumeType(*v)
+		*x = BackendType(*v)
 	case *uint64:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x = VolumeType(*v)
+		*x = BackendType(*v)
 	case *string:
 		if v == nil {
-			return _VolumeTypeErrNilPtr
+			return errBackendTypeNilPtr
 		}
-		*x, err = ParseVolumeType(*v)
+		*x, err = ParseBackendType(*v)
 	}
 
 	return
 }
 
 // Value implements the driver Valuer interface.
-func (x VolumeType) Value() (driver.Value, error) {
+func (x BackendType) Value() (driver.Value, error) {
 	return x.String(), nil
 }

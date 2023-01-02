@@ -88,7 +88,7 @@ func (x *Resource) UnmarshalText(text []byte) error {
 	return nil
 }
 
-var _ResourceErrNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+var errResourceNilPtr = errors.New("value pointer is nil") // one per type for package clashes
 
 // Scan implements the Scanner interface.
 func (x *Resource) Scan(value interface{}) (err error) {
@@ -112,7 +112,7 @@ func (x *Resource) Scan(value interface{}) (err error) {
 		*x = Resource(v)
 	case *Resource:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = *v
 	case uint:
@@ -121,34 +121,34 @@ func (x *Resource) Scan(value interface{}) (err error) {
 		*x = Resource(v)
 	case *int:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = Resource(*v)
 	case *int64:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = Resource(*v)
 	case float64: // json marshals everything as a float64 if it's a number
 		*x = Resource(v)
 	case *float64: // json marshals everything as a float64 if it's a number
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = Resource(*v)
 	case *uint:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = Resource(*v)
 	case *uint64:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x = Resource(*v)
 	case *string:
 		if v == nil {
-			return _ResourceErrNilPtr
+			return errResourceNilPtr
 		}
 		*x, err = ParseResource(*v)
 	}

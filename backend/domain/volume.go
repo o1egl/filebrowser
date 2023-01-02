@@ -1,17 +1,23 @@
-//go:generate ../../tools/bin/go-enum --sql --marshal --nocase --names --file $GOFILE
+//go:generate ${TOOLS_BIN}/go-enum --sql --marshal --nocase --names --file $GOFILE
 
 package domain
 
 /*
 ENUM(
-fs
+os
 )
 */
-type VolumeType int
+type BackendType int
+
+type Backend struct {
+	ID         int64
+	Type       BackendType
+	JsonConfig string
+}
 
 type Volume struct {
-	ID          int64
-	Type        VolumeType
+	ID int64
+	//Type        VolumeType
 	Label       string
 	Path        string
 	Description string

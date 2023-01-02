@@ -58,7 +58,7 @@ tasks:
       - ./scripts/bump_version.sh
 
   proto:
-    deps: [deps:all]
+    deps: [deps:buf, deps:protoc-gen-go, deps:protoc-gen-connect-go]
     desc: Generate protos
     cmds:
       - ${TOOLS_BIN}/buf generate

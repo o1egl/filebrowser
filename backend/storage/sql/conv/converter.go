@@ -9,19 +9,9 @@ import (
 
 func UserToDomain(source *model.User) *domain.User {
 	return &domain.User{
-		ID:       source.ID,
-		Username: source.Username,
-		Password: pointer.GetString(source.Password),
-		Home: domain.HomeVolume{
-			Path: source.Home,
-			Permissions: domain.VolumePermissions{
-				Read:   source.Read,
-				Create: source.Create,
-				Modify: source.Modify,
-				Delete: source.Delete,
-				Share:  source.Share,
-			},
-		},
+		ID:           source.ID,
+		Username:     source.Username,
+		Password:     pointer.GetString(source.Password),
 		Name:         source.Name,
 		Locale:       source.Locale,
 		LockPassword: source.LockPassword,
@@ -46,12 +36,6 @@ func UserFromDomain(source *domain.User) *model.User {
 		Locale:       source.Locale,
 		LockPassword: source.LockPassword,
 		Blocked:      source.Blocked,
-		Home:         source.Home.Path,
-		Read:         source.Home.Permissions.Read,
-		Create:       source.Home.Permissions.Create,
-		Modify:       source.Home.Permissions.Modify,
-		Delete:       source.Home.Permissions.Delete,
-		Share:        source.Home.Permissions.Share,
 		IsAdmin:      source.IsAdmin,
 	}
 }

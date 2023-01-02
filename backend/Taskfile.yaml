@@ -14,3 +14,9 @@ tasks:
     deps: [deps:golangci-lint]
     cmds:
       - ${TOOLS_BIN}/golangci-lint run -v
+
+  generate:
+    desc: Run code generators
+    deps: [deps:mockgen, deps:go-enum]
+    cmds:
+      - go generate ./...

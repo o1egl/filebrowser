@@ -53,8 +53,8 @@ func (s *Store) GetUserByUsername(ctx context.Context, username string) (*domain
 func (s *Store) GetUserByAuthProvider(ctx context.Context, provider string, token string) (*domain.User, error) {
 	var userModel model.User
 	found, err := s.db.Select().
-		From(usersTable).As("s").
-		Join(goqu.T(userAuthProviderTable).As("p"), goqu.On(goqu.Ex{"s.id": goqu.I("p.user_id")})).
+		From(usersTable).As("u").
+		Join(goqu.T(userAuthProviderTable).As("p"), goqu.On(goqu.Ex{"u.id": goqu.I("p.user_id")})).
 		Where(goqu.I("p.id").Eq(token)).
 		Executor().
 		ScanStructContext(ctx, &userModel)
