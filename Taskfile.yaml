@@ -1,0 +1,65 @@
+version: '3'
+
+includes:
+  deps:
+    internal: true
+    taskfile: ./tools
+    dir: ./tools
+
+tasks:
+  build:
+    desc: Build the app
+    cmds:
+      - task: build:frontend
+      - task: build:backend
+      - mkdir bin
+      - mv backend/filebrowser bin/filebrowser
+
+  build:backend:
+    desc: Build backend
+    dir: ./backend
+    cmds:
+      - task build
+
+  build:frontend:
+    desc: Build frontend
+    dir: ./frontend
+    cmds:
+      - task build
+
+  lint:
+    desc: Run all lints
+    deps:
+      - lint:proto
+      - lint:commits
+      - lint:backend
+
+  lint:backend:
+    desc: Run backend linters
+    dir: ./backend
+    cmds:
+      - task lint
+
+  lint:proto:
+    desc: Run proto linter
+    deps: [deps:buf]
+    cmds:
+      - ${TOOLS_BIN}/buf lint
+
+  lint:commits:
+    desc: Run commits linter
+    deps: [deps:all]
+    cmds:
+      - ./scripts/commitlint.sh
+
+  bump-version:
+    desc: Bump version
+    deps: [deps:all]
+    cmds:
+      - ./scripts/bump_version.sh
+
+  proto:
+    deps: [deps:buf, deps:protoc-gen-go, deps:protoc-gen-connect-go]
+    desc: Generate protos
+    cmds:
+      - ${TOOLS_BIN}/buf generate

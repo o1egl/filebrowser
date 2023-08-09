@@ -1,0 +1,22 @@
+version: '3'
+
+includes:
+  deps:
+    taskfile: ../tools/Taskfile.yaml
+    dir: ../tools
+
+tasks:
+  build:
+    desc: Build backend
+
+  lint:
+    desc: Run linters
+    deps: [deps:golangci-lint]
+    cmds:
+      - ${TOOLS_BIN}/golangci-lint run -v
+
+  generate:
+    desc: Run code generators
+    deps: [deps:mockgen, deps:go-enum]
+    cmds:
+      - go generate ./...

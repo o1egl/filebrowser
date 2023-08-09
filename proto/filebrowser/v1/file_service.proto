@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package filebrowser.v1;
+
+import "google/protobuf/timestamp.proto";
+import "filebrowser/v1/sort.proto";
+
+service FileService {
+  rpc List (FileServiceListRequest) returns (FileServiceListResponse) {};
+  rpc Rename (FileServiceRenameRequest) returns (FileServiceRenameResponse) {};
+  rpc Move (FileServiceMoveRequest) returns (FileServiceMoveResponse) {};
+  rpc Copy (FileServiceCopyRequest) returns (FileServiceCopyResponse) {};
+  rpc Delete (FileServiceDeleteRequest) returns (FileServiceDeleteResponse) {};
+}
+
+enum FileType {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  FILE_TYPE_REGULAR = 0;
+  FILE_TYPE_DIR = 1;
+  // named pipe, device file, or socket
+  FILE_TYPE_SPECIAL = 2;
+}
+
+enum FileSortBy {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  FILE_SORT_BY_NAME = 0;
+  FILE_SORT_BY_SIZE = 1;
+  FILE_SORT_BY_MOD_TIME = 2;
+}
+
+enum FileGroupBy {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  FILE_GROUP_BY_NONE = 0;
+  FILE_GROUP_BY_TYPE = 1;
+}
+
+enum FileOnConflict {
+  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
+  FILE_ON_CONFLICT_NONE = 0;
+  FILE_ON_CONFLICT_OVERRIDE = 1;
+  FILE_ON_CONFLICT_RENAME = 2;
+}
+
+message FileServiceListRequest {
+  int64 volume = 1;
+  string path = 2;
+  FileGroupBy group_by = 3;
+  FileSortBy sort_by = 4;
+  SortOrder sort_order = 5;
+}
+
+message FileServiceListResponse {
+  FileInfo info = 1;
+  repeated FileInfo children = 2;
+  FileListMetaData meta = 3;
+}
+
+message FileInfo {
+  string path = 1;
+  string name = 2;
+  int64 size = 3;
+  string extension = 4;
+  google.protobuf.Timestamp mod_time = 5;
+  uint32 mode = 6;
+  FileType type = 7;
+  bool is_symlink = 8;
+}
+
+message FileListMetaData {
+  int64 files_count = 1;
+  int64 dirs_count = 2;
+  int64 total_count = 3;
+}
+
+message FileServiceDeleteRequest {
+  int64 volume = 1;
+  string path = 2;
+}
+
+message FileServiceDeleteResponse {}
+
+message FileServiceRenameRequest {
+  int64 volume = 1;
+  string path = 2;
+  string name = 3;
+  FileOnConflict on_conflict = 4;
+}
+
+message FileServiceRenameResponse {}
+
+message FileLocation {
+  int64 volume = 1;
+  string path = 2;
+}
+
+message FileServiceMoveRequest {
+  FileLocation src = 1;
+  FileLocation dst = 2;
+  FileOnConflict on_conflict = 4;
+}
+
+message FileServiceMoveResponse {}
+
+message FileServiceCopyRequest {
+  FileLocation src = 1;
+  FileLocation dst = 2;
+  FileOnConflict on_conflict = 4;
+}
+
+message FileServiceCopyResponse {}
