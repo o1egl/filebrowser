@@ -335,3 +335,160 @@ func (x *LogOutput) Scan(value interface{}) (err error) {
 func (x LogOutput) Value() (driver.Value, error) {
 	return x.String(), nil
 }
+
+const (
+	// StoreTypeSqlite is a StoreType of type Sqlite.
+	StoreTypeSqlite StoreType = iota
+	// StoreTypeMysql is a StoreType of type Mysql.
+	StoreTypeMysql
+	// StoreTypePostgres is a StoreType of type Postgres.
+	StoreTypePostgres
+)
+
+var ErrInvalidStoreType = fmt.Errorf("not a valid StoreType, try [%s]", strings.Join(_StoreTypeNames, ", "))
+
+const _StoreTypeName = "sqlitemysqlpostgres"
+
+var _StoreTypeNames = []string{
+	_StoreTypeName[0:6],
+	_StoreTypeName[6:11],
+	_StoreTypeName[11:19],
+}
+
+// StoreTypeNames returns a list of possible string values of StoreType.
+func StoreTypeNames() []string {
+	tmp := make([]string, len(_StoreTypeNames))
+	copy(tmp, _StoreTypeNames)
+	return tmp
+}
+
+var _StoreTypeMap = map[StoreType]string{
+	StoreTypeSqlite:   _StoreTypeName[0:6],
+	StoreTypeMysql:    _StoreTypeName[6:11],
+	StoreTypePostgres: _StoreTypeName[11:19],
+}
+
+// String implements the Stringer interface.
+func (x StoreType) String() string {
+	if str, ok := _StoreTypeMap[x]; ok {
+		return str
+	}
+	return fmt.Sprintf("StoreType(%d)", x)
+}
+
+// IsValid provides a quick way to determine if the typed value is
+// part of the allowed enumerated values
+func (x StoreType) IsValid() bool {
+	_, ok := _StoreTypeMap[x]
+	return ok
+}
+
+var _StoreTypeValue = map[string]StoreType{
+	_StoreTypeName[0:6]:                    StoreTypeSqlite,
+	strings.ToLower(_StoreTypeName[0:6]):   StoreTypeSqlite,
+	_StoreTypeName[6:11]:                   StoreTypeMysql,
+	strings.ToLower(_StoreTypeName[6:11]):  StoreTypeMysql,
+	_StoreTypeName[11:19]:                  StoreTypePostgres,
+	strings.ToLower(_StoreTypeName[11:19]): StoreTypePostgres,
+}
+
+// ParseStoreType attempts to convert a string to a StoreType.
+func ParseStoreType(name string) (StoreType, error) {
+	if x, ok := _StoreTypeValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _StoreTypeValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
+	return StoreType(0), fmt.Errorf("%s is %w", name, ErrInvalidStoreType)
+}
+
+// MarshalText implements the text marshaller method.
+func (x StoreType) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *StoreType) UnmarshalText(text []byte) error {
+	name := string(text)
+	tmp, err := ParseStoreType(name)
+	if err != nil {
+		return err
+	}
+	*x = tmp
+	return nil
+}
+
+var errStoreTypeNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
+// Scan implements the Scanner interface.
+func (x *StoreType) Scan(value interface{}) (err error) {
+	if value == nil {
+		*x = StoreType(0)
+		return
+	}
+
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = StoreType(v)
+	case string:
+		*x, err = ParseStoreType(v)
+	case []byte:
+		*x, err = ParseStoreType(string(v))
+	case StoreType:
+		*x = v
+	case int:
+		*x = StoreType(v)
+	case *StoreType:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = StoreType(v)
+	case uint64:
+		*x = StoreType(v)
+	case *int:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = StoreType(*v)
+	case *int64:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = StoreType(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = StoreType(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = StoreType(*v)
+	case *uint:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = StoreType(*v)
+	case *uint64:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x = StoreType(*v)
+	case *string:
+		if v == nil {
+			return errStoreTypeNilPtr
+		}
+		*x, err = ParseStoreType(*v)
+	}
+
+	return
+}
+
+// Value implements the driver Valuer interface.
+func (x StoreType) Value() (driver.Value, error) {
+	return x.String(), nil
+}

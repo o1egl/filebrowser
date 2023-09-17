@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port"`
-	Log  Log    `yaml:"log"`
+	Host  string `yaml:"host"`
+	Port  int    `yaml:"port"`
+	Log   Log    `yaml:"log"`
+	Store Store  `yaml:"store"`
 }
 
 // ENUM(debug,info,warn,error)
@@ -27,6 +28,28 @@ type Log struct {
 	Level  LogLevel  `yaml:"level"`
 	Format LogFormat `yaml:"format"`
 	Output LogOutput `yaml:"output"`
+}
+
+// ENUM(sqlite,mysql,postgres)
+type StoreType int
+
+type Store struct {
+	Type     StoreType     `yaml:"type"`
+	SQLite   SQLiteStore   `yaml:"sqlite"`
+	Mysql    MysqlStore    `yaml:"mysql"`
+	Postgres PostgresStore `yaml:"postgres"`
+}
+
+type SQLiteStore struct {
+	File string `yaml:"file"` // sqlite file location
+}
+
+type MysqlStore struct {
+	DSN string `yaml:"dsn"` // mysql dsn (username:password@protocol(address)/dbname)
+}
+
+type PostgresStore struct {
+	DSN string `yaml:"dsn"` // postgres dsn (postgres://username:password@address/dbname?sslmode=disable)
 }
 
 // FromFile reads a config from a file.
@@ -54,6 +77,12 @@ func Default() *Config {
 			Level:  LogLevelInfo,
 			Format: LogFormatText,
 			Output: LogOutputStdout,
+		},
+		Store: Store{
+			Type: StoreTypeSqlite,
+			SQLite: SQLiteStore{
+				File: "filebrowser.db",
+			},
 		},
 	}
 }
