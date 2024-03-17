@@ -28,3 +28,5 @@ tasks:
     cmds:
       - go generate ./...
       - swag init -o ./docs
+      - ogen --target api/gen -package gen --clean docs/schema.yaml
+

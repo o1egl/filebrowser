@@ -15,6 +15,7 @@ tasks:
       - task: swag
       - task: standard-version
       - task: commitlint
+      - task: ogen
 
 
   go-enum:
@@ -37,6 +38,10 @@ tasks:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/swaggo/swag/cmd/swag }
+  ogen:
+    cmds:
+      - task: install-go-dep
+        vars: { PACKAGE: github.com/ogen-go/ogen/cmd/ogen }
   standard-version:
     deps: [install-js-deps]
   commitlint:
