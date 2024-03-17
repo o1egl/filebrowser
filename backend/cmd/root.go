@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/bep/simplecobra"
-	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/bep/simplecobra"
+	"github.com/spf13/cobra"
 )
 
 var errHelp = fmt.Errorf("help")
@@ -51,7 +52,6 @@ func newExec() (*simplecobra.Exec, error) {
 	}
 
 	return simplecobra.New(rootCmd)
-
 }
 
 type rootCommand struct {

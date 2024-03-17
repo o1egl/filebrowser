@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"context"
+	"io"
+	"os"
+
 	"github.com/bep/simplecobra"
 	"github.com/filebrowser/filebrowser/api"
 	"github.com/filebrowser/filebrowser/config"
 	"github.com/filebrowser/filebrowser/logger"
 	"golang.org/x/exp/slog"
-	"io"
-	"os"
 )
 
 type serveCommand struct {

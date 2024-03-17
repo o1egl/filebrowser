@@ -14,6 +14,151 @@ import (
 )
 
 const (
+	// FileSystemTypeLocal is a FileSystemType of type Local.
+	FileSystemTypeLocal FileSystemType = iota
+)
+
+var ErrInvalidFileSystemType = fmt.Errorf("not a valid FileSystemType, try [%s]", strings.Join(_FileSystemTypeNames, ", "))
+
+const _FileSystemTypeName = "local"
+
+var _FileSystemTypeNames = []string{
+	_FileSystemTypeName[0:5],
+}
+
+// FileSystemTypeNames returns a list of possible string values of FileSystemType.
+func FileSystemTypeNames() []string {
+	tmp := make([]string, len(_FileSystemTypeNames))
+	copy(tmp, _FileSystemTypeNames)
+	return tmp
+}
+
+var _FileSystemTypeMap = map[FileSystemType]string{
+	FileSystemTypeLocal: _FileSystemTypeName[0:5],
+}
+
+// String implements the Stringer interface.
+func (x FileSystemType) String() string {
+	if str, ok := _FileSystemTypeMap[x]; ok {
+		return str
+	}
+	return fmt.Sprintf("FileSystemType(%d)", x)
+}
+
+// IsValid provides a quick way to determine if the typed value is
+// part of the allowed enumerated values
+func (x FileSystemType) IsValid() bool {
+	_, ok := _FileSystemTypeMap[x]
+	return ok
+}
+
+var _FileSystemTypeValue = map[string]FileSystemType{
+	_FileSystemTypeName[0:5]:                  FileSystemTypeLocal,
+	strings.ToLower(_FileSystemTypeName[0:5]): FileSystemTypeLocal,
+}
+
+// ParseFileSystemType attempts to convert a string to a FileSystemType.
+func ParseFileSystemType(name string) (FileSystemType, error) {
+	if x, ok := _FileSystemTypeValue[name]; ok {
+		return x, nil
+	}
+	// Case insensitive parse, do a separate lookup to prevent unnecessary cost of lowercasing a string if we don't need to.
+	if x, ok := _FileSystemTypeValue[strings.ToLower(name)]; ok {
+		return x, nil
+	}
+	return FileSystemType(0), fmt.Errorf("%s is %w", name, ErrInvalidFileSystemType)
+}
+
+// MarshalText implements the text marshaller method.
+func (x FileSystemType) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *FileSystemType) UnmarshalText(text []byte) error {
+	name := string(text)
+	tmp, err := ParseFileSystemType(name)
+	if err != nil {
+		return err
+	}
+	*x = tmp
+	return nil
+}
+
+var errFileSystemTypeNilPtr = errors.New("value pointer is nil") // one per type for package clashes
+
+// Scan implements the Scanner interface.
+func (x *FileSystemType) Scan(value interface{}) (err error) {
+	if value == nil {
+		*x = FileSystemType(0)
+		return
+	}
+
+	// A wider range of scannable types.
+	// driver.Value values at the top of the list for expediency
+	switch v := value.(type) {
+	case int64:
+		*x = FileSystemType(v)
+	case string:
+		*x, err = ParseFileSystemType(v)
+	case []byte:
+		*x, err = ParseFileSystemType(string(v))
+	case FileSystemType:
+		*x = v
+	case int:
+		*x = FileSystemType(v)
+	case *FileSystemType:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = *v
+	case uint:
+		*x = FileSystemType(v)
+	case uint64:
+		*x = FileSystemType(v)
+	case *int:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = FileSystemType(*v)
+	case *int64:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = FileSystemType(*v)
+	case float64: // json marshals everything as a float64 if it's a number
+		*x = FileSystemType(v)
+	case *float64: // json marshals everything as a float64 if it's a number
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = FileSystemType(*v)
+	case *uint:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = FileSystemType(*v)
+	case *uint64:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x = FileSystemType(*v)
+	case *string:
+		if v == nil {
+			return errFileSystemTypeNilPtr
+		}
+		*x, err = ParseFileSystemType(*v)
+	}
+
+	return
+}
+
+// Value implements the driver Valuer interface.
+func (x FileSystemType) Value() (driver.Value, error) {
+	return x.String(), nil
+}
+
+const (
 	// LogFormatText is a LogFormat of type text.
 	LogFormatText LogFormat = "text"
 	// LogFormatJson is a LogFormat of type json.

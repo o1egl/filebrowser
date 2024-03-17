@@ -3,11 +3,12 @@ package logger
 import (
 	"bytes"
 	"context"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/exp/slog"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/exp/slog"
 )
 
 func TestWithContextAttrs(t *testing.T) {

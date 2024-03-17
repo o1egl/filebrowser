@@ -3,16 +3,31 @@
 package config
 
 import (
+	"fmt"
+	"net"
+	"os"
+	"strconv"
+
 	"github.com/filebrowser/filebrowser/errutils"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 type Config struct {
-	Host  string `yaml:"host"`
-	Port  int    `yaml:"port"`
-	Log   Log    `yaml:"log"`
-	Store Store  `yaml:"store"`
+	Host        string       `yaml:"host"`
+	Port        int          `yaml:"port"`
+	Domain      string       `yaml:"domain"`
+	BasePath    string       `yaml:"basepath"`
+	Log         Log          `yaml:"log"`
+	Store       Store        `yaml:"store"`
+	FileSystems []FileSystem `yaml:"filesystem"`
+}
+
+func (c Config) PublicAddress() string {
+	address := net.JoinHostPort(c.Host, strconv.Itoa(c.Port))
+	if c.Domain != "" {
+		address = c.Domain
+	}
+	return fmt.Sprintf("http://%s%s", address, c.BasePath)
 }
 
 // ENUM(debug,info,warn,error)
@@ -52,6 +67,19 @@ type PostgresStore struct {
 	DSN string `yaml:"dsn"` // postgres dsn (postgres://username:password@address/dbname?sslmode=disable)
 }
 
+// ENUM(local)
+type FileSystemType int
+
+type FileSystem struct {
+	Name            string          `yaml:"name"`
+	Type            FileSystemType  `yaml:"type"`
+	LocalFileSystem LocalFileSystem `yaml:"local"`
+}
+
+type LocalFileSystem struct {
+	Path string `yaml:"path"`
+}
+
 // FromFile reads a config from a file.
 func FromFile(fPath string) (_ *Config, err error) {
 	file, err := os.Open(fPath)
@@ -71,8 +99,9 @@ func FromFile(fPath string) (_ *Config, err error) {
 // Default returns a default config.
 func Default() *Config {
 	return &Config{
-		Host: "localhost",
-		Port: 8080,
+		Host:     "localhost",
+		Port:     8080,
+		BasePath: "/",
 		Log: Log{
 			Level:  LogLevelInfo,
 			Format: LogFormatText,
@@ -82,6 +111,15 @@ func Default() *Config {
 			Type: StoreTypeSqlite,
 			SQLite: SQLiteStore{
 				File: "filebrowser.db",
+			},
+		},
+		FileSystems: []FileSystem{
+			{
+				Name: "local",
+				Type: FileSystemTypeLocal,
+				LocalFileSystem: LocalFileSystem{
+					Path: "/",
+				},
 			},
 		},
 	}

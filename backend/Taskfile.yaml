@@ -15,8 +15,16 @@ tasks:
     cmds:
       - ${TOOLS_BIN}/golangci-lint run -v
 
+  format:
+    desc: Format code
+    deps: [deps:gofumpt, deps:swag]
+    cmds:
+      - ${TOOLS_BIN}/gofumpt -w .
+      - ${TOOLS_BIN}/swag fmt
+
   generate:
     desc: Run code generators
     deps: [deps:mockgen, deps:go-enum]
     cmds:
       - go generate ./...
+      - swag init -o ./docs

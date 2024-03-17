@@ -10,11 +10,9 @@ package tools
 //
 // nolint
 import (
-	_ "connectrpc.com/connect/cmd/protoc-gen-connect-go"
 	_ "github.com/abice/go-enum"
-	_ "github.com/bufbuild/buf/cmd/buf"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/swaggo/swag/cmd/swag"
 	_ "go.uber.org/mock/mockgen"
-	_ "golang.org/x/tools/cmd/goimports"
-	_ "google.golang.org/protobuf/cmd/protoc-gen-go"
+	_ "mvdan.cc/gofumpt"
 )

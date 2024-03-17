@@ -4,14 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/filebrowser/filebrowser/config"
-	"github.com/filebrowser/filebrowser/gen/proto/filebrowser/v1/filebrowserv1connect"
-	"github.com/go-chi/chi/v5"
-	"golang.org/x/exp/slog"
 	"net"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"time"
+
+	"github.com/filebrowser/filebrowser/config"
+	_ "github.com/filebrowser/filebrowser/docs"
+	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 type Server struct {
@@ -22,14 +25,26 @@ func NewServer(cfg *config.Config) *Server {
 	r := chi.NewRouter()
 
 	fileService := NewFileService()
-	userService := NewUserService()
 
-	r.Route("/api", func(r chi.Router) {
-		fileServicePath, fileServiceHandler := filebrowserv1connect.NewFileServiceHandler(fileService)
-		r.Handle(fileServicePath, fileServiceHandler)
+	serverURI, err := url.Parse(cfg.PublicAddress())
+	if err != nil {
+		slog.Error("Failed to parse server uri: %w", err)
+		os.Exit(1)
+	}
 
-		userServicePath, userServiceHandler := filebrowserv1connect.NewUserServiceHandler(userService)
-		r.Handle(userServicePath, userServiceHandler)
+	r.Route(cfg.BasePath, func(r chi.Router) {
+		r.Route("/api", func(r chi.Router) {
+			r.Route("/v1", func(r chi.Router) {
+				r.Route("/files", func(r chi.Router) {
+					r.Get("/list", fileService.List)
+					r.Patch("/rename", fileService.Rename)
+					r.Patch("/move", fileService.Move)
+					r.Post("/copy", fileService.Copy)
+					r.Delete("/delete", fileService.Delete)
+				})
+			})
+			r.Handle("/swagger/*", swaggerHandler(serverURI))
+		})
 	})
 
 	return &Server{

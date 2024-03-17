@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/filebrowser/filebrowser/config"
-	"github.com/filebrowser/filebrowser/domain"
 	"os"
 	"path/filepath"
+
+	"github.com/filebrowser/filebrowser/config"
+	"github.com/filebrowser/filebrowser/domain"
 )
 
 type Store interface {
@@ -79,7 +80,7 @@ func newMysqlStore(cfg config.Store) (Store, error) {
 // mkdir -p for all dirs
 func makeDirs(dirs ...string) error {
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0700); err != nil { // If path is already a directory, MkdirAll does nothing
+		if err := os.MkdirAll(dir, 0o700); err != nil { // If path is already a directory, MkdirAll does nothing
 			return fmt.Errorf("can't make directory %s: %w", dir, err)
 		}
 	}

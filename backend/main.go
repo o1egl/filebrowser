@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/filebrowser/filebrowser/cmd"
 	"golang.org/x/exp/slog"
-	"os"
 )
 
 func main() {

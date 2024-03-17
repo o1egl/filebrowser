@@ -9,12 +9,10 @@ tasks:
     desc: Install build dependencies
     cmds:
       - task: go-enum
-      - task: goimports
       - task: golangci-lint
       - task: mockgen
-      - task: buf
-      - task: protoc-gen-go
-      - task: protoc-gen-connect-go
+      - task: gofumpt
+      - task: swag
       - task: standard-version
       - task: commitlint
 
@@ -23,10 +21,6 @@ tasks:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/abice/go-enum }
-  goimports:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: golang.org/x/tools/cmd/goimports }
   golangci-lint:
     cmds:
       - task: install-go-dep
@@ -35,18 +29,14 @@ tasks:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: go.uber.org/mock/mockgen }
-  buf:
+  gofumpt:
     cmds:
       - task: install-go-dep
-        vars: { PACKAGE: github.com/bufbuild/buf/cmd/buf  }
-  protoc-gen-go:
+        vars: { PACKAGE: mvdan.cc/gofumpt }
+  swag:
     cmds:
       - task: install-go-dep
-        vars: { PACKAGE: google.golang.org/protobuf/cmd/protoc-gen-go }
-  protoc-gen-connect-go:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: connectrpc.com/connect/cmd/protoc-gen-connect-go }
+        vars: { PACKAGE: github.com/swaggo/swag/cmd/swag }
   standard-version:
     deps: [install-js-deps]
   commitlint:

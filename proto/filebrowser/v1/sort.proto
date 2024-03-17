@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-package filebrowser.v1;
-
-enum SortOrder {
-  // buf:lint:ignore ENUM_ZERO_VALUE_SUFFIX
-  SORT_ORDER_ASC = 0;
-  SORT_ORDER_DESC = 1;
-}
