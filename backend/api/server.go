@@ -33,6 +33,12 @@ func NewServer(cfg *config.Config) *Server {
 	}
 
 	r.Route(cfg.BasePath, func(r chi.Router) {
+		r.Route("/auth", func(r chi.Router) {
+			r.Route("/local", func(r chi.Router) {
+				r.Post("/login", nil)
+			})
+			r.Delete("/logout", nil)
+		})
 		r.Route("/api", func(r chi.Router) {
 			r.Route("/v1", func(r chi.Router) {
 				r.Route("/files", func(r chi.Router) {
