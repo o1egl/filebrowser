@@ -1,4 +1,4 @@
-package cmd
+package cmdoled
 
 import (
 	"context"
@@ -6,9 +6,8 @@ import (
 	"os"
 
 	"github.com/bep/simplecobra"
-	"github.com/filebrowser/filebrowser/api"
-	"github.com/filebrowser/filebrowser/config"
-	"github.com/filebrowser/filebrowser/logger"
+	"github.com/filebrowser/filebrowser/backend/config"
+	"github.com/filebrowser/filebrowser/backend/logger"
 	"golang.org/x/exp/slog"
 )
 
@@ -44,9 +43,7 @@ func (s *serveCommand) PreRun(cd, runner *simplecobra.Commandeer) (err error) {
 }
 
 func (s *serveCommand) Run(ctx context.Context, cd *simplecobra.Commandeer, args []string) error {
-	server := api.NewServer(s.cfg)
-
-	return server.Run(ctx)
+	return nil
 }
 
 func (s *serveCommand) Commands() []simplecobra.Commander {

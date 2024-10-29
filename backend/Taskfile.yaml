@@ -24,9 +24,8 @@ tasks:
 
   generate:
     desc: Run code generators
-    deps: [deps:mockgen, deps:go-enum]
+    deps: [deps:mockgen, deps:go-enum, deps:ogen]
     cmds:
       - go generate ./...
-      - swag init -o ./docs
-      - ogen --target api/gen -package gen --clean docs/schema.yaml
+      - ${TOOLS_BIN}/ogen --target api/gen -package gen --clean docs/openapi.yaml
 
