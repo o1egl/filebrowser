@@ -4,11 +4,12 @@ managed:
   go_package_prefix:
     default: github.com/filebrowser/filebrowser/gen/proto
 plugins:
-  - name: go
-    path: ./tools/bin/protoc-gen-go
+  - plugin: buf.build/protocolbuffers/go:v1.28.1
+    revision: 4
     out: backend/gen/proto
-    opt: paths=source_relative
-  - name: connect-go
-    path: ./tools/bin/protoc-gen-connect-go
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/bufbuild/connect-go:v1.4.1
     out: backend/gen/proto
-    opt: paths=source_relative
+    opt:
+      - paths=source_relative

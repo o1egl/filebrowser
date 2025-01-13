@@ -13,8 +13,6 @@ tasks:
       - task: golangci-lint
       - task: mockgen
       - task: buf
-      - task: protoc-gen-go
-      - task: protoc-gen-connect-go
       - task: standard-version
       - task: commitlint
 
@@ -39,14 +37,6 @@ tasks:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: github.com/bufbuild/buf/cmd/buf  }
-  protoc-gen-go:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: google.golang.org/protobuf/cmd/protoc-gen-go }
-  protoc-gen-connect-go:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go }
   standard-version:
     deps: [install-js-deps]
   commitlint:

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/AlekSi/pointer v1.2.0
-	github.com/bufbuild/connect-go v0.1.1
+	github.com/bufbuild/connect-go v1.4.1
 	github.com/doug-martin/goqu/v9 v9.18.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/golang/mock v1.6.0
