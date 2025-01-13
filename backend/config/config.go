@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/filebrowser/filebrowser/errutils"
+	"github.com/filebrowser/filebrowser/backend/errutils"
 	"gopkg.in/yaml.v3"
 )
 

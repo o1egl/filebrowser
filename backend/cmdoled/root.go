@@ -1,6 +1,6 @@
 package cmdoled
 
-import (
+/*import (
 	"context"
 	"errors"
 	"fmt"
@@ -135,3 +135,4 @@ func (c *simpleCommand) PreRun(cd, runner *simplecobra.Commandeer) error {
 	}
 	return nil
 }
+*/

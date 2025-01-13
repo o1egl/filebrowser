@@ -12,7 +12,6 @@ tasks:
       - task: golangci-lint
       - task: mockgen
       - task: gofumpt
-      - task: swag
       - task: standard-version
       - task: commitlint
       - task: ogen
@@ -34,10 +33,6 @@ tasks:
     cmds:
       - task: install-go-dep
         vars: { PACKAGE: mvdan.cc/gofumpt }
-  swag:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: github.com/swaggo/swag/cmd/swag }
   ogen:
     cmds:
       - task: install-go-dep

@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/filebrowser/filebrowser/api/gen"
+	"github.com/filebrowser/filebrowser/backend/api/gen"
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	"github.com/ogen-go/ogen/ogenerrors"

@@ -7,8 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/filebrowser/filebrowser/config"
-	"github.com/filebrowser/filebrowser/domain"
+	"github.com/filebrowser/filebrowser/backend/config"
+	"github.com/filebrowser/filebrowser/backend/domain"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "modernc.org/sqlite"
 )
 
 type Store interface {
@@ -24,7 +27,7 @@ type UserStore interface {
 }
 
 type VolumeStore interface {
-	GetUserVolumes(ctx context.Context, userID int64) ([]*domain.VolumeWithPermissions, error)
+	//GetUserVolumes(ctx context.Context, userID int64) ([]*domain.VolumeWithPermissions, error)
 	CreateVolume(ctx context.Context, volume *domain.Volume) error
 }
 
@@ -56,25 +59,27 @@ func newSqliteStore(cfg config.Store) (Store, error) {
 }
 
 func newPostgresStore(cfg config.Store) (Store, error) {
-	db, err := sql.Open("postgres", cfg.Postgres.DSN)
+	/*db, err := sql.Open("postgres", cfg.Postgres.DSN)
 	if err != nil {
 		return nil, err
 	}
 	if err := migrations.Up(db, config.StoreTypePostgres); err != nil {
 		return nil, err
 	}
-	return postgres.NewStore(db), nil
+	return postgres.NewStore(db), nil*/
+	return nil, nil
 }
 
 func newMysqlStore(cfg config.Store) (Store, error) {
-	db, err := sql.Open("mysql", cfg.Postgres.DSN)
+	/*db, err := sql.Open("mysql", cfg.Postgres.DSN)
 	if err != nil {
 		return nil, err
 	}
 	if err := migrations.Up(db, config.StoreTypeMysql); err != nil {
 		return nil, err
 	}
-	return mysql.NewStore(db), nil
+	return mysql.NewStore(db), nil*/
+	return nil, nil
 }
 
 // mkdir -p for all dirs

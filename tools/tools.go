@@ -13,7 +13,6 @@ import (
 	_ "github.com/abice/go-enum"
 	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
 	_ "github.com/ogen-go/ogen/cmd/ogen"
-	_ "github.com/swaggo/swag/cmd/swag"
 	_ "go.uber.org/mock/mockgen"
 	_ "mvdan.cc/gofumpt"
 )

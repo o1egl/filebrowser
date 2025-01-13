@@ -1,6 +1,6 @@
 package cmdoled
 
-import (
+/*import (
 	"context"
 	"io"
 	"os"
@@ -94,3 +94,4 @@ func initLogger(cfg config.Log) error {
 
 	return nil
 }
+*/

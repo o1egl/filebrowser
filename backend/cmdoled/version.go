@@ -1,6 +1,6 @@
 package cmdoled
 
-import (
+/*import (
 	"context"
 	"fmt"
 
@@ -19,3 +19,4 @@ func newVersionCmd() *simpleCommand {
 		},
 	}
 }
+*/
