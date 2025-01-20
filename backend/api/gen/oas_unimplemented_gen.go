@@ -22,6 +22,15 @@ func (UnimplementedHandler) V1FilesListGet(ctx context.Context, params V1FilesLi
 	return r, ht.ErrNotImplemented
 }
 
+// V1VolumesGet implements GET /v1/volumes operation.
+//
+// List all volumes.
+//
+// GET /v1/volumes
+func (UnimplementedHandler) V1VolumesGet(ctx context.Context) (r []V1VolumesGetOKItem, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // NewError creates *ErrorStatusCode from error returned by handler.
 //
 // Used for common default response.

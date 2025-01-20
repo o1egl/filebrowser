@@ -29,3 +29,8 @@ tasks:
       - go generate ./...
       - ${TOOLS_BIN}/ogen --target api/gen -package gen --clean docs/openapi.yaml
 
+  schema-inspect:
+    desc: Inspect schema
+    cmds:
+      - atlas schema inspect -u "ent://storage/ent/schema" --dev-url "sqlite://file?mode=memory&_fk=1" --format '{{"{{"}} sql . "  " {{"}}"}}'
+

@@ -51,6 +51,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /v1/admin/volumes:
+    get:
+      summary: List volumes
+      description: List all volumes
+      responses:
+        '200':
+          description: A list of volumes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+        default:
+          description: An error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -71,6 +95,15 @@ components:
       enum:
         - asc
         - desc
+    FileGroupCollection:
+      type: object
+      properties:
+        permissions:
+          $ref: '#/components/schemas/FilePermissions'
+        fileGroups:
+          type: array
+          items:
+            $ref: '#/components/schemas/FileGroup'
     FileGroup:
       type: object
       properties:
@@ -91,8 +124,6 @@ components:
           type: string
         is_dir:
           type: boolean
-        permissions:
-          $ref: '#/components/schemas/FilePermissions'
     FilePermissions:
       type: object
       properties:
@@ -102,10 +133,32 @@ components:
           type: boolean
         delete:
           type: boolean
-        move:
-          type: boolean
         share:
           type: boolean
+    Volume:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        path:
+          type: string
+        backend:
+          $ref: '#/components/schemas/Backend'
+    Backend:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/BackendType'
+    BackendType:
+      type: string
+      enum:
+        - local
     Error:
       type: object
       properties:
@@ -113,4 +166,7 @@ components:
           type: integer
         message:
           type: string
+      required:
+        - code
+        - message
 

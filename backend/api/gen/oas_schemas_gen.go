@@ -14,27 +14,27 @@ func (s *ErrorStatusCode) Error() string {
 
 // Ref: #/components/schemas/Error
 type Error struct {
-	Code    OptInt    `json:"code"`
-	Message OptString `json:"message"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 
 // GetCode returns the value of Code.
-func (s *Error) GetCode() OptInt {
+func (s *Error) GetCode() int {
 	return s.Code
 }
 
 // GetMessage returns the value of Message.
-func (s *Error) GetMessage() OptString {
+func (s *Error) GetMessage() string {
 	return s.Message
 }
 
 // SetCode sets the value of Code.
-func (s *Error) SetCode(val OptInt) {
+func (s *Error) SetCode(val int) {
 	s.Code = val
 }
 
 // SetMessage sets the value of Message.
-func (s *Error) SetMessage(val OptString) {
+func (s *Error) SetMessage(val string) {
 	s.Message = val
 }
 
@@ -66,11 +66,10 @@ func (s *ErrorStatusCode) SetResponse(val Error) {
 
 // Ref: #/components/schemas/File
 type File struct {
-	Name        OptString          `json:"name"`
-	Size        OptInt             `json:"size"`
-	Modified    OptString          `json:"modified"`
-	IsDir       OptBool            `json:"is_dir"`
-	Permissions OptFilePermissions `json:"permissions"`
+	Name     OptString `json:"name"`
+	Size     OptInt    `json:"size"`
+	Modified OptString `json:"modified"`
+	IsDir    OptBool   `json:"is_dir"`
 }
 
 // GetName returns the value of Name.
@@ -93,11 +92,6 @@ func (s *File) GetIsDir() OptBool {
 	return s.IsDir
 }
 
-// GetPermissions returns the value of Permissions.
-func (s *File) GetPermissions() OptFilePermissions {
-	return s.Permissions
-}
-
 // SetName sets the value of Name.
 func (s *File) SetName(val OptString) {
 	s.Name = val
@@ -116,11 +110,6 @@ func (s *File) SetModified(val OptString) {
 // SetIsDir sets the value of IsDir.
 func (s *File) SetIsDir(val OptBool) {
 	s.IsDir = val
-}
-
-// SetPermissions sets the value of Permissions.
-func (s *File) SetPermissions(val OptFilePermissions) {
-	s.Permissions = val
 }
 
 // Ref: #/components/schemas/FileGroup
@@ -196,65 +185,6 @@ func (s *FileGroupBy) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
-}
-
-// Ref: #/components/schemas/FilePermissions
-type FilePermissions struct {
-	Read   OptBool `json:"read"`
-	Write  OptBool `json:"write"`
-	Delete OptBool `json:"delete"`
-	Move   OptBool `json:"move"`
-	Share  OptBool `json:"share"`
-}
-
-// GetRead returns the value of Read.
-func (s *FilePermissions) GetRead() OptBool {
-	return s.Read
-}
-
-// GetWrite returns the value of Write.
-func (s *FilePermissions) GetWrite() OptBool {
-	return s.Write
-}
-
-// GetDelete returns the value of Delete.
-func (s *FilePermissions) GetDelete() OptBool {
-	return s.Delete
-}
-
-// GetMove returns the value of Move.
-func (s *FilePermissions) GetMove() OptBool {
-	return s.Move
-}
-
-// GetShare returns the value of Share.
-func (s *FilePermissions) GetShare() OptBool {
-	return s.Share
-}
-
-// SetRead sets the value of Read.
-func (s *FilePermissions) SetRead(val OptBool) {
-	s.Read = val
-}
-
-// SetWrite sets the value of Write.
-func (s *FilePermissions) SetWrite(val OptBool) {
-	s.Write = val
-}
-
-// SetDelete sets the value of Delete.
-func (s *FilePermissions) SetDelete(val OptBool) {
-	s.Delete = val
-}
-
-// SetMove sets the value of Move.
-func (s *FilePermissions) SetMove(val OptBool) {
-	s.Move = val
-}
-
-// SetShare sets the value of Share.
-func (s *FilePermissions) SetShare(val OptBool) {
-	s.Share = val
 }
 
 // Ref: #/components/schemas/FileSortBy
@@ -392,52 +322,6 @@ func (o OptFileGroupBy) Get() (v FileGroupBy, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptFileGroupBy) Or(d FileGroupBy) FileGroupBy {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
-// NewOptFilePermissions returns new OptFilePermissions with value set to v.
-func NewOptFilePermissions(v FilePermissions) OptFilePermissions {
-	return OptFilePermissions{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptFilePermissions is optional FilePermissions.
-type OptFilePermissions struct {
-	Value FilePermissions
-	Set   bool
-}
-
-// IsSet returns true if OptFilePermissions was set.
-func (o OptFilePermissions) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptFilePermissions) Reset() {
-	var v FilePermissions
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptFilePermissions) SetTo(v FilePermissions) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptFilePermissions) Get() (v FilePermissions, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptFilePermissions) Or(d FilePermissions) FilePermissions {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -668,4 +552,29 @@ func (s *SortOrder) UnmarshalText(data []byte) error {
 	default:
 		return errors.Errorf("invalid value: %q", data)
 	}
+}
+
+type V1VolumesGetOKItem struct {
+	ID   OptInt    `json:"id"`
+	Name OptString `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *V1VolumesGetOKItem) GetID() OptInt {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *V1VolumesGetOKItem) GetName() OptString {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *V1VolumesGetOKItem) SetID(val OptInt) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *V1VolumesGetOKItem) SetName(val OptString) {
+	s.Name = val
 }
