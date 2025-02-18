@@ -14,7 +14,7 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-func decodeV1FilesListGetResponse(resp *http.Response) (res *FileGroup, _ error) {
+func decodeV1AdminVolumesGetResponse(resp *http.Response) (res []V1AdminVolumesGetOKItem, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -30,9 +30,17 @@ func decodeV1FilesListGetResponse(resp *http.Response) (res *FileGroup, _ error)
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response FileGroup
+			var response []V1AdminVolumesGetOKItem
 			if err := func() error {
-				if err := response.Decode(d); err != nil {
+				response = make([]V1AdminVolumesGetOKItem, 0)
+				if err := d.Arr(func(d *jx.Decoder) error {
+					var elem V1AdminVolumesGetOKItem
+					if err := elem.Decode(d); err != nil {
+						return err
+					}
+					response = append(response, elem)
+					return nil
+				}); err != nil {
 					return err
 				}
 				if err := d.Skip(); err != io.EOF {
@@ -47,7 +55,16 @@ func decodeV1FilesListGetResponse(resp *http.Response) (res *FileGroup, _ error)
 				}
 				return res, err
 			}
-			return &response, nil
+			// Validate response.
+			if err := func() error {
+				if response == nil {
+					return errors.New("nil is invalid value")
+				}
+				return nil
+			}(); err != nil {
+				return res, errors.Wrap(err, "validate")
+			}
+			return response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
@@ -97,7 +114,7 @@ func decodeV1FilesListGetResponse(resp *http.Response) (res *FileGroup, _ error)
 	return res, errors.Wrap(defRes, "error")
 }
 
-func decodeV1VolumesGetResponse(resp *http.Response) (res []V1VolumesGetOKItem, _ error) {
+func decodeV1FilesListGetResponse(resp *http.Response) (res *FileGroup, _ error) {
 	switch resp.StatusCode {
 	case 200:
 		// Code 200.
@@ -113,17 +130,9 @@ func decodeV1VolumesGetResponse(resp *http.Response) (res []V1VolumesGetOKItem, 
 			}
 			d := jx.DecodeBytes(buf)
 
-			var response []V1VolumesGetOKItem
+			var response FileGroup
 			if err := func() error {
-				response = make([]V1VolumesGetOKItem, 0)
-				if err := d.Arr(func(d *jx.Decoder) error {
-					var elem V1VolumesGetOKItem
-					if err := elem.Decode(d); err != nil {
-						return err
-					}
-					response = append(response, elem)
-					return nil
-				}); err != nil {
+				if err := response.Decode(d); err != nil {
 					return err
 				}
 				if err := d.Skip(); err != io.EOF {
@@ -138,16 +147,7 @@ func decodeV1VolumesGetResponse(resp *http.Response) (res []V1VolumesGetOKItem, 
 				}
 				return res, err
 			}
-			// Validate response.
-			if err := func() error {
-				if response == nil {
-					return errors.New("nil is invalid value")
-				}
-				return nil
-			}(); err != nil {
-				return res, errors.Wrap(err, "validate")
-			}
-			return response, nil
+			return &response, nil
 		default:
 			return res, validate.InvalidContentType(ct)
 		}

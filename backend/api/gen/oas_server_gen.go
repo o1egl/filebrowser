@@ -8,18 +8,18 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// V1AdminVolumesGet implements GET /v1/admin/volumes operation.
+	//
+	// List all volumes.
+	//
+	// GET /v1/admin/volumes
+	V1AdminVolumesGet(ctx context.Context) ([]V1AdminVolumesGetOKItem, error)
 	// V1FilesListGet implements GET /v1/files/list operation.
 	//
 	// List files in a directory.
 	//
 	// GET /v1/files/list
 	V1FilesListGet(ctx context.Context, params V1FilesListGetParams) (*FileGroup, error)
-	// V1VolumesGet implements GET /v1/volumes operation.
-	//
-	// List all volumes.
-	//
-	// GET /v1/volumes
-	V1VolumesGet(ctx context.Context) ([]V1VolumesGetOKItem, error)
 	// NewError creates *ErrorStatusCode from error returned by handler.
 	//
 	// Used for common default response.

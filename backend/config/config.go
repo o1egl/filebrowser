@@ -1,4 +1,4 @@
-//go:generate ${TOOLS_BIN}/go-enum --sql --marshal --nocase --names --file $GOFILE
+//go:generate go tool go-enum --sql --marshal --nocase --names --file $GOFILE
 
 package config
 

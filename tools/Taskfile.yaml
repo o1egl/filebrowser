@@ -8,52 +8,13 @@ tasks:
   all:
     desc: Install build dependencies
     cmds:
-      - task: go-enum
-      - task: golangci-lint
-      - task: mockgen
-      - task: gofumpt
       - task: standard-version
       - task: commitlint
-      - task: ogen
 
-
-  go-enum:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: github.com/abice/go-enum }
-  golangci-lint:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: github.com/golangci/golangci-lint/cmd/golangci-lint }
-  mockgen:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: go.uber.org/mock/mockgen }
-  gofumpt:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: mvdan.cc/gofumpt }
-  ogen:
-    cmds:
-      - task: install-go-dep
-        vars: { PACKAGE: github.com/ogen-go/ogen/cmd/ogen }
   standard-version:
     deps: [install-js-deps]
   commitlint:
     deps: [install-js-deps]
-
-
-  install-go-dep:
-    vars:
-      BIN:
-        sh: basename "{{ .PACKAGE }}"
-    label: "install-{{.BIN}}"
-    cmds:
-      - go build -o bin/{{ .BIN }}  "{{ .PACKAGE }}"
-    sources:
-      - go.mod
-    generates:
-      - bin/{{ .BIN }}
 
 
   install-js-deps:

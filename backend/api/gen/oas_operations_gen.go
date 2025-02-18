@@ -6,6 +6,6 @@ package gen
 type OperationName = string
 
 const (
-	V1FilesListGetOperation OperationName = "V1FilesListGet"
-	V1VolumesGetOperation   OperationName = "V1VolumesGet"
+	V1AdminVolumesGetOperation OperationName = "V1AdminVolumesGet"
+	V1FilesListGetOperation    OperationName = "V1FilesListGet"
 )

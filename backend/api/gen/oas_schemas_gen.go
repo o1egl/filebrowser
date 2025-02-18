@@ -554,27 +554,27 @@ func (s *SortOrder) UnmarshalText(data []byte) error {
 	}
 }
 
-type V1VolumesGetOKItem struct {
+type V1AdminVolumesGetOKItem struct {
 	ID   OptInt    `json:"id"`
 	Name OptString `json:"name"`
 }
 
 // GetID returns the value of ID.
-func (s *V1VolumesGetOKItem) GetID() OptInt {
+func (s *V1AdminVolumesGetOKItem) GetID() OptInt {
 	return s.ID
 }
 
 // GetName returns the value of Name.
-func (s *V1VolumesGetOKItem) GetName() OptString {
+func (s *V1AdminVolumesGetOKItem) GetName() OptString {
 	return s.Name
 }
 
 // SetID sets the value of ID.
-func (s *V1VolumesGetOKItem) SetID(val OptInt) {
+func (s *V1AdminVolumesGetOKItem) SetID(val OptInt) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
-func (s *V1VolumesGetOKItem) SetName(val OptString) {
+func (s *V1AdminVolumesGetOKItem) SetName(val OptString) {
 	s.Name = val
 }

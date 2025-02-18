@@ -13,21 +13,21 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// V1AdminVolumesGet implements GET /v1/admin/volumes operation.
+//
+// List all volumes.
+//
+// GET /v1/admin/volumes
+func (UnimplementedHandler) V1AdminVolumesGet(ctx context.Context) (r []V1AdminVolumesGetOKItem, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // V1FilesListGet implements GET /v1/files/list operation.
 //
 // List files in a directory.
 //
 // GET /v1/files/list
 func (UnimplementedHandler) V1FilesListGet(ctx context.Context, params V1FilesListGetParams) (r *FileGroup, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// V1VolumesGet implements GET /v1/volumes operation.
-//
-// List all volumes.
-//
-// GET /v1/volumes
-func (UnimplementedHandler) V1VolumesGet(ctx context.Context) (r []V1VolumesGetOKItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

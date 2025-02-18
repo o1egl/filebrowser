@@ -11,23 +11,19 @@ tasks:
 
   lint:
     desc: Run linters
-    deps: [deps:golangci-lint]
     cmds:
-      - ${TOOLS_BIN}/golangci-lint run -v
+      - go tool golangci-lint run -v
 
   format:
     desc: Format code
-    deps: [deps:gofumpt, deps:swag]
     cmds:
-      - ${TOOLS_BIN}/gofumpt -w .
-      - ${TOOLS_BIN}/swag fmt
+      - go tool gofumpt -w .
 
   generate:
     desc: Run code generators
-    deps: [deps:mockgen, deps:go-enum, deps:ogen]
     cmds:
       - go generate ./...
-      - ${TOOLS_BIN}/ogen --target api/gen -package gen --clean docs/openapi.yaml
+      - go tool ogen --target api/gen -package gen --clean docs/openapi.yaml
 
   schema-inspect:
     desc: Inspect schema

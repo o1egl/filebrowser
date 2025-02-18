@@ -60,6 +60,27 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			switch elem[0] {
+			case 'a': // Prefix: "admin/volumes"
+				origElem := elem
+				if l := len("admin/volumes"); len(elem) >= l && elem[0:l] == "admin/volumes" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleV1AdminVolumesGetRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, "GET")
+					}
+
+					return
+				}
+
+				elem = origElem
 			case 'f': // Prefix: "files/list"
 				origElem := elem
 				if l := len("files/list"); len(elem) >= l && elem[0:l] == "files/list" {
@@ -73,27 +94,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					switch r.Method {
 					case "GET":
 						s.handleV1FilesListGetRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, "GET")
-					}
-
-					return
-				}
-
-				elem = origElem
-			case 'v': // Prefix: "volumes"
-				origElem := elem
-				if l := len("volumes"); len(elem) >= l && elem[0:l] == "volumes" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch r.Method {
-					case "GET":
-						s.handleV1VolumesGetRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, "GET")
 					}
@@ -197,6 +197,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				break
 			}
 			switch elem[0] {
+			case 'a': // Prefix: "admin/volumes"
+				origElem := elem
+				if l := len("admin/volumes"); len(elem) >= l && elem[0:l] == "admin/volumes" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = V1AdminVolumesGetOperation
+						r.summary = "List volumes"
+						r.operationID = ""
+						r.pathPattern = "/v1/admin/volumes"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
+				elem = origElem
 			case 'f': // Prefix: "files/list"
 				origElem := elem
 				if l := len("files/list"); len(elem) >= l && elem[0:l] == "files/list" {
@@ -213,31 +238,6 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						r.summary = "List files"
 						r.operationID = ""
 						r.pathPattern = "/v1/files/list"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
-					}
-				}
-
-				elem = origElem
-			case 'v': // Prefix: "volumes"
-				origElem := elem
-				if l := len("volumes"); len(elem) >= l && elem[0:l] == "volumes" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					// Leaf node.
-					switch method {
-					case "GET":
-						r.name = V1VolumesGetOperation
-						r.summary = "List volumes"
-						r.operationID = ""
-						r.pathPattern = "/v1/volumes"
 						r.args = args
 						r.count = 0
 						return r, true

@@ -436,14 +436,14 @@ func (s *OptString) UnmarshalJSON(data []byte) error {
 }
 
 // Encode implements json.Marshaler.
-func (s *V1VolumesGetOKItem) Encode(e *jx.Encoder) {
+func (s *V1AdminVolumesGetOKItem) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
 	e.ObjEnd()
 }
 
 // encodeFields encodes fields.
-func (s *V1VolumesGetOKItem) encodeFields(e *jx.Encoder) {
+func (s *V1AdminVolumesGetOKItem) encodeFields(e *jx.Encoder) {
 	{
 		if s.ID.Set {
 			e.FieldStart("id")
@@ -458,15 +458,15 @@ func (s *V1VolumesGetOKItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfV1VolumesGetOKItem = [2]string{
+var jsonFieldsNameOfV1AdminVolumesGetOKItem = [2]string{
 	0: "id",
 	1: "name",
 }
 
-// Decode decodes V1VolumesGetOKItem from json.
-func (s *V1VolumesGetOKItem) Decode(d *jx.Decoder) error {
+// Decode decodes V1AdminVolumesGetOKItem from json.
+func (s *V1AdminVolumesGetOKItem) Decode(d *jx.Decoder) error {
 	if s == nil {
-		return errors.New("invalid: unable to decode V1VolumesGetOKItem to nil")
+		return errors.New("invalid: unable to decode V1AdminVolumesGetOKItem to nil")
 	}
 
 	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
@@ -496,21 +496,21 @@ func (s *V1VolumesGetOKItem) Decode(d *jx.Decoder) error {
 		}
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "decode V1VolumesGetOKItem")
+		return errors.Wrap(err, "decode V1AdminVolumesGetOKItem")
 	}
 
 	return nil
 }
 
 // MarshalJSON implements stdjson.Marshaler.
-func (s *V1VolumesGetOKItem) MarshalJSON() ([]byte, error) {
+func (s *V1AdminVolumesGetOKItem) MarshalJSON() ([]byte, error) {
 	e := jx.Encoder{}
 	s.Encode(&e)
 	return e.Bytes(), nil
 }
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *V1VolumesGetOKItem) UnmarshalJSON(data []byte) error {
+func (s *V1AdminVolumesGetOKItem) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }
