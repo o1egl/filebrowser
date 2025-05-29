@@ -9,7 +9,6 @@ import (
 	"github.com/ogen-go/ogen/middleware"
 	"github.com/ogen-go/ogen/ogenerrors"
 	"github.com/ogen-go/ogen/uri"
-	"github.com/ogen-go/ogen/validate"
 )
 
 // V1FilesListGetParams is parameters of GET /v1/files/list operation.
@@ -142,7 +141,7 @@ func decodeV1FilesListGetParams(args [0]string, argsEscaped bool, r *http.Reques
 				return err
 			}
 		} else {
-			return validate.ErrFieldRequired
+			return err
 		}
 		return nil
 	}(); err != nil {
